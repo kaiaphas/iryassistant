@@ -2,6 +2,8 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { MemberTable } from "@/components/members/MemberTable";
 import { getAdminUsers } from "@/services/master-service";
 
+export const dynamic = "force-dynamic";
+
 export default async function MembersPage() {
   const members = await getAdminUsers();
 

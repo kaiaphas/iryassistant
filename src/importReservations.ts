@@ -203,6 +203,7 @@ export function normalizeScheduleRow(row: MySqlScheduleRow, index: number): Norm
     departure_time: normalizeTime(row.departure_time),
     return_time: normalizeTime(row.return_time),
     vehicle_no: toNullableString(row.vehicle_no),
+    bus_company: toNullableString(row.bus_company),
     vehicle_capacity: toNullableString(row.vehicle_capacity),
     guide_name: toNullableString(row.guide_name),
     driver_name: toNullableString(row.driver_name),
@@ -271,7 +272,7 @@ export async function updateImportBatch(batchId: string, update: ImportBatchUpda
   }
 }
 
-async function upsertSchedules(rows: NormalizedSchedule[]) {
+async function upsertSourceSchedules(rows: NormalizedSchedule[]) {
   const scheduleRows = rows.map((row) => ({
     id: row.id,
     source_schedule_key: row.source_schedule_key,
@@ -282,6 +283,7 @@ async function upsertSchedules(rows: NormalizedSchedule[]) {
     departure_time: row.departure_time,
     return_time: row.return_time,
     vehicle_no: row.vehicle_no,
+    bus_company: row.bus_company,
     vehicle_capacity: row.vehicle_capacity,
     guide_name: row.guide_name,
     driver_name: row.driver_name,
@@ -294,16 +296,38 @@ async function upsertSchedules(rows: NormalizedSchedule[]) {
 
   for (const chunkRows of chunk(scheduleRows, config.batch.chunkSize)) {
     const { error } = await supabase
-      .from("reservation_schedules")
+      .from("reservation_schedule_sources")
       .upsert(chunkRows, { onConflict: "source_schedule_key" });
 
     if (error) {
-      throw new Error(`reservation_schedules upsert 실패: ${getSupabaseErrorMessage(error)}`);
+      throw new Error(`reservation_schedule_sources upsert 실패: ${getSupabaseErrorMessage(error)}`);
     }
   }
 }
 
-async function syncHotelBookings(rows: NormalizedSchedule[]) {
+async function syncSourceRestaurantBookings(rows: NormalizedSchedule[]) {
+  const scheduleIds = rows.map((row) => row.id);
+  if (scheduleIds.length === 0) return;
+
+  for (const ids of chunk(scheduleIds, config.batch.chunkSize)) {
+    const { error } = await supabase.from("source_schedule_restaurant_bookings").delete().in("schedule_id", ids);
+    if (error) {
+      throw new Error(`기존 원본 식당 예약현황 삭제 실패: ${getSupabaseErrorMessage(error)}`);
+    }
+  }
+
+  const restaurantRows = rows.flatMap((row) => row.restaurants);
+  for (const chunkRows of chunk(restaurantRows, config.batch.chunkSize)) {
+    const { error } = await supabase
+      .from("source_schedule_restaurant_bookings")
+      .upsert(chunkRows, { onConflict: "id" });
+    if (error) {
+      throw new Error(`원본 식당 예약현황 upsert 실패: ${getSupabaseErrorMessage(error)}`);
+    }
+  }
+}
+
+async function syncSourceHotelBookings(rows: NormalizedSchedule[]) {
   const scheduleIds = rows.map((row) => row.id);
   if (scheduleIds.length === 0) return;
 
@@ -312,19 +336,37 @@ async function syncHotelBookings(rows: NormalizedSchedule[]) {
     .map((row) => row.id);
 
   for (const ids of chunk(schedulesWithoutHotel, config.batch.chunkSize)) {
-    const { error } = await supabase.from("schedule_hotel_bookings").delete().in("schedule_id", ids);
+    const { error } = await supabase.from("source_schedule_hotel_bookings").delete().in("schedule_id", ids);
     if (error) {
-      throw new Error(`기존 숙소 예약현황 삭제 실패: ${getSupabaseErrorMessage(error)}`);
+      throw new Error(`기존 원본 숙소 예약현황 삭제 실패: ${getSupabaseErrorMessage(error)}`);
     }
   }
 
   const hotelRows = rows.flatMap((row) => row.hotel ? [row.hotel] : []);
   for (const chunkRows of chunk(hotelRows, config.batch.chunkSize)) {
     const { error } = await supabase
-      .from("schedule_hotel_bookings")
+      .from("source_schedule_hotel_bookings")
       .upsert(chunkRows, { onConflict: "id" });
     if (error) {
-      throw new Error(`숙소 예약현황 upsert 실패: ${getSupabaseErrorMessage(error)}`);
+      throw new Error(`원본 숙소 예약현황 upsert 실패: ${getSupabaseErrorMessage(error)}`);
+    }
+  }
+
+  const hotelIds = hotelRows.map((row) => row.id);
+  for (const ids of chunk(hotelIds, config.batch.chunkSize)) {
+    const { error } = await supabase.from("source_schedule_hotel_room_assignments").delete().in("hotel_booking_id", ids);
+    if (error) {
+      throw new Error(`기존 원본 객실배정 삭제 실패: ${getSupabaseErrorMessage(error)}`);
+    }
+  }
+
+  const roomRows = rows.flatMap((row) => row.rooms).filter((row) => row.room_count > 0);
+  for (const chunkRows of chunk(roomRows, config.batch.chunkSize)) {
+    const { error } = await supabase
+      .from("source_schedule_hotel_room_assignments")
+      .upsert(chunkRows, { onConflict: "hotel_booking_id,room_type" });
+    if (error) {
+      throw new Error(`원본 객실배정 upsert 실패: ${getSupabaseErrorMessage(error)}`);
     }
   }
 }
@@ -336,14 +378,14 @@ async function fetchActiveScheduleIds() {
 
   while (true) {
     const to = from + pageSize - 1;
-    const { data, error } = await supabase
-      .from("reservation_schedules")
+      const { data, error } = await supabase
+      .from("reservation_schedule_sources")
       .select("id")
       .eq("is_active", true)
       .range(from, to);
 
     if (error) {
-      throw new Error(`기존 reservation_schedules 조회 실패: ${getSupabaseErrorMessage(error)}`);
+      throw new Error(`기존 reservation_schedule_sources 조회 실패: ${getSupabaseErrorMessage(error)}`);
     }
 
     if (!data || data.length === 0) break;
@@ -362,12 +404,12 @@ export async function deactivateMissingSchedules(validRows: NormalizedSchedule[]
 
   for (const ids of chunk(missingIds, config.batch.chunkSize)) {
     const { error } = await supabase
-      .from("reservation_schedules")
+      .from("reservation_schedule_sources")
       .update({ is_active: false })
       .in("id", ids);
 
     if (error) {
-      throw new Error(`기존 일정 비활성화 실패: ${getSupabaseErrorMessage(error)}`);
+      throw new Error(`기존 원본 일정 비활성화 실패: ${getSupabaseErrorMessage(error)}`);
     }
   }
 
@@ -392,8 +434,9 @@ export async function importReservationSchedules(rows: MySqlScheduleRow[], mode:
     }
 
     const validation = validateRows(rows);
-    await upsertSchedules(validation.validRows);
-    await syncHotelBookings(validation.validRows);
+    await upsertSourceSchedules(validation.validRows);
+    await syncSourceRestaurantBookings(validation.validRows);
+    await syncSourceHotelBookings(validation.validRows);
     const deactivatedCount = mode === "full" ? await deactivateMissingSchedules(validation.validRows) : 0;
 
     const status = validation.invalidRows.length > 0 ? "PARTIAL_FAILED" : "SUCCESS";

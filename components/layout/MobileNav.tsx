@@ -3,15 +3,19 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
-import { navItems } from "@/lib/constants";
+import { getNavItemsByRole } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import * as React from "react";
+import { useCurrentAuth } from "@/lib/client-auth";
 
 export function MobileNav() {
   const [open, setOpen] = React.useState(false);
   const pathname = usePathname();
+  const auth = useCurrentAuth();
+  const navItems = getNavItemsByRole(auth.role);
+  const roleLabel = auth.role === "admin" ? "관리자" : "담당자";
 
   return (
     <div className="lg:hidden">
@@ -19,7 +23,7 @@ export function MobileNav() {
         <Menu className="h-5 w-5" />
       </Button>
       <Sheet open={open} onOpenChange={setOpen} title="irytour.com" side="left" className="w-[300px]">
-        <p className="mb-5 text-sm text-slate-500">인천로열투어 관리자</p>
+        <p className="mb-5 text-sm text-slate-500">인천로열투어 {roleLabel}</p>
         <nav className="space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;

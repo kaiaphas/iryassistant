@@ -11,12 +11,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { GuideForm } from "@/components/guides/GuideForm";
 
 export function GuideTable({ guides }: { guides: Guide[] }) {
+  const [items, setItems] = React.useState(guides);
   const [query, setQuery] = React.useState("");
   const [assignable, setAssignable] = React.useState("");
   const [selected, setSelected] = React.useState<Guide | undefined>();
   const [open, setOpen] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState("");
 
-  const filtered = guides.filter((guide) => {
+  const filtered = items.filter((guide) => {
     const q = query.toLowerCase();
     const assignableMatch = !assignable || (assignable === "가능" ? guide.assignable : !guide.assignable);
     return (!q || [guide.name, guide.phone, guide.memo].some((value) => value?.toLowerCase().includes(q))) && assignableMatch;
@@ -25,6 +28,30 @@ export function GuideTable({ guides }: { guides: Guide[] }) {
   function edit(guide?: Guide) {
     setSelected(guide);
     setOpen(true);
+  }
+
+  async function save(guide: Guide) {
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch("/api/masters/guides", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(guide),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message ?? "가이드 저장에 실패했습니다.");
+
+      setItems((current) => {
+        const exists = current.some((item) => item.id === payload.id);
+        return exists ? current.map((item) => (item.id === payload.id ? payload : item)) : [payload, ...current];
+      });
+      setOpen(false);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "가이드 저장에 실패했습니다.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -39,6 +66,7 @@ export function GuideTable({ guides }: { guides: Guide[] }) {
         <Button>검색</Button>
         <Button onClick={() => edit()}>+ 등록</Button>
       </div>
+      {error ? <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
 
       <div className="overflow-hidden rounded-xl border bg-white shadow-soft">
         <div className="overflow-x-auto">
@@ -63,7 +91,7 @@ export function GuideTable({ guides }: { guides: Guide[] }) {
           </Table>
         </div>
       </div>
-      <GuideForm guide={selected} open={open} onOpenChange={setOpen} />
+      <GuideForm guide={selected} open={open} saving={saving} onOpenChange={setOpen} onSave={save} />
     </div>
   );
 }

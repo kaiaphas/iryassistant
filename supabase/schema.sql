@@ -115,13 +115,16 @@ create table if not exists public.reservation_schedules (
   return_time time,
 
   vehicle_no text,
+  bus_company text,
   vehicle_capacity text, -- 화면 표시명: 인승. 예: 28인승, 45인승
 
   guide_id uuid,
   guide_name text,
+  guide_phone text,
 
   driver_id uuid,
   driver_name text,
+  driver_phone text,
 
   progress_status public.schedule_progress_status not null default 'IN_PROGRESS',
 
@@ -286,12 +289,15 @@ select
   to_char(s.departure_time, 'HH24:MI') as departure_time,
   to_char(s.return_time, 'HH24:MI') as return_time,
   s.vehicle_no,
+  s.bus_company,
   s.vehicle_capacity,
 
   s.guide_id,
   s.guide_name,
+  s.guide_phone,
   s.driver_id,
   s.driver_name,
+  s.driver_phone,
 
   coalesce(r.restaurant_names, '-') as restaurant_names,
   coalesce(r.restaurant_statuses, array[]::public.reservation_work_status[]) as restaurant_statuses,

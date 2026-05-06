@@ -1,15 +1,14 @@
+import { findCodeItems, findVehicles } from "@/repositories/mock/master-repository";
 import {
-  findAdminUsers,
-  findCodeItems,
-  findDrivers,
-  findGuides,
-  findHotels,
-  findRestaurants,
-  findVehicles,
-} from "@/repositories/mock/master-repository";
+  findAdminMembersFromSupabase,
+  findDriversFromSupabase,
+  findGuidesFromSupabase,
+  findHotelsFromSupabase,
+  findRestaurantsFromSupabase,
+} from "@/repositories/supabase/master-repository";
 
 export async function getGuides() {
-  return findGuides();
+  return findGuidesFromSupabase();
 }
 
 export async function getVehicles() {
@@ -17,15 +16,15 @@ export async function getVehicles() {
 }
 
 export async function getDrivers() {
-  return findDrivers();
+  return findDriversFromSupabase();
 }
 
 export async function getRestaurants() {
-  return findRestaurants();
+  return findRestaurantsFromSupabase();
 }
 
 export async function getHotels() {
-  return findHotels();
+  return findHotelsFromSupabase();
 }
 
 export async function getCodeItems() {
@@ -33,5 +32,5 @@ export async function getCodeItems() {
 }
 
 export async function getAdminUsers() {
-  return findAdminUsers();
+  return findAdminMembersFromSupabase();
 }

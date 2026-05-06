@@ -1,18 +1,21 @@
 "use client";
 
 import { BedDouble } from "lucide-react";
-import type { ScheduleGroup } from "@/lib/types";
+import type { Hotel, ScheduleGroup } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { FacilityStatusSelector } from "@/components/reservations/FacilityStatusSelector";
 
 export function HotelReservationSection({
   schedule,
+  hotels,
   onChange,
 }: {
   schedule: ScheduleGroup;
+  hotels: Hotel[];
   onChange: (schedule: ScheduleGroup) => void;
 }) {
   const booking = schedule.hotelBooking;
+  const listId = `reservation-hotel-options-${schedule.id}`;
   const totalRooms = booking.rooms.double + booking.rooms.triple + booking.rooms.quadruple;
   const assignedPeople = booking.rooms.double * 2 + booking.rooms.triple * 3 + booking.rooms.quadruple * 4;
 
@@ -22,16 +25,20 @@ export function HotelReservationSection({
   const patchRooms = (next: Partial<typeof booking.rooms>) => {
     patch({ rooms: { ...booking.rooms, ...next } });
   };
+  const updateHotelName = (name: string) => {
+    const hotel = hotels.find((item) => item.shopName === name);
+    patch({ name, phone: hotel?.phone ?? booking.phone });
+  };
 
   return (
-    <section className="rounded-lg border bg-white p-4">
-      <div className="mb-3 flex items-center gap-2 text-sm font-bold text-emerald-900">
+    <section className="rounded-lg border bg-white p-3">
+      <div className="mb-2 flex items-center gap-2 text-sm font-bold text-emerald-900">
         <BedDouble className="h-4 w-4" />
         숙소 예약현황
       </div>
-      <div className="grid gap-3 xl:grid-cols-[1fr_180px_1.3fr_300px]">
-        <Input value={booking.name} onChange={(event) => patch({ name: event.target.value })} placeholder="숙소명" />
-        <Input value={booking.phone || ""} onChange={(event) => patch({ phone: event.target.value })} placeholder="연락처" />
+      <div className="grid gap-2 xl:grid-cols-[1fr_150px_1.35fr_250px]">
+        <Input className="h-9 text-xs" list={listId} value={booking.name} onChange={(event) => updateHotelName(event.target.value)} placeholder="숙소명" />
+        <Input className="h-9 text-xs" value={booking.phone || ""} onChange={(event) => patch({ phone: event.target.value })} placeholder="연락처" />
         <div className="flex flex-wrap items-center gap-2">
           <label className="flex items-center gap-1 rounded-md border bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-800">
             2인실 x
@@ -49,6 +56,13 @@ export function HotelReservationSection({
         </div>
         <FacilityStatusSelector value={booking.status} onChange={(status) => patch({ status })} />
       </div>
+      <datalist id={listId}>
+        {hotels.map((hotel) => (
+          <option key={hotel.id} value={hotel.shopName}>
+            {[hotel.regionName, hotel.phone].filter(Boolean).join(" · ")}
+          </option>
+        ))}
+      </datalist>
     </section>
   );
 }

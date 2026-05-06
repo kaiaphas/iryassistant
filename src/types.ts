@@ -36,6 +36,7 @@ export type MySqlScheduleRow = {
   return_time?: string | null;
   bus_info?: string | null;
   vehicle_no?: string | number | null;
+  bus_company?: string | number | null;
   vehicle_capacity?: string | number | null;
   guide_name?: string | null;
   driver_name?: string | null;
@@ -97,6 +98,7 @@ export type NormalizedSchedule = {
   departure_time: string | null;
   return_time: string | null;
   vehicle_no: string | null;
+  bus_company: string | null;
   vehicle_capacity: string | null;
   guide_name: string | null;
   driver_name: string | null;
@@ -146,6 +148,7 @@ export type ScheduleOverviewRow = {
   departure_time: string | null;
   return_time: string | null;
   vehicle_no: string | null;
+  bus_company: string | null;
   vehicle_capacity: string | null;
   guide_name: string | null;
   driver_name: string | null;

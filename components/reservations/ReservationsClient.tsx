@@ -1,21 +1,52 @@
 "use client";
 
 import * as React from "react";
-import type { ScheduleGroup } from "@/lib/types";
+import type { Driver, Guide, Hotel, Restaurant, ScheduleGroup } from "@/lib/types";
 import { CalendarDays } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ReservationFilters, type ReservationFilterState } from "@/components/reservations/ReservationFilters";
 import { ScheduleAccordionCards } from "@/components/reservations/ScheduleAccordionCards";
 import { ScheduleAccordionTable } from "@/components/reservations/ScheduleAccordionTable";
+import { getRestaurantAggregateStatus, getScheduleProgressStatus } from "@/lib/reservation-status";
 
-export function ReservationsClient({ scheduleGroups }: { scheduleGroups: ScheduleGroup[] }) {
+function formatDateInput(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getDefaultDateRange() {
+  const start = new Date();
+  const end = new Date(start);
+  end.setDate(start.getDate() + 7);
+  return {
+    startDate: formatDateInput(start),
+    endDate: formatDateInput(end),
+  };
+}
+
+export function ReservationsClient({
+  scheduleGroups,
+  guides,
+  drivers,
+  restaurants,
+  hotels,
+}: {
+  scheduleGroups: ScheduleGroup[];
+  guides: Guide[];
+  drivers: Driver[];
+  restaurants: Restaurant[];
+  hotels: Hotel[];
+}) {
+  const defaultDateRange = React.useMemo(() => getDefaultDateRange(), []);
   const [schedules, setSchedules] = React.useState(scheduleGroups);
   const [savingId, setSavingId] = React.useState<string | null>(null);
   const [saveMessage, setSaveMessage] = React.useState<string>("");
   const [filters, setFilters] = React.useState<ReservationFilterState>({
     query: "",
-    startDate: "",
-    endDate: "",
+    startDate: defaultDateRange.startDate,
+    endDate: defaultDateRange.endDate,
     status: "",
     tourType: "",
     guide: "",
@@ -40,13 +71,13 @@ export function ReservationsClient({ scheduleGroups }: { scheduleGroups: Schedul
         schedule.hotelBooking.name,
         schedule.vehicle.busInfo,
       ].some((value) => value?.toLowerCase().includes(q));
-    const statusMatch = !filters.status || schedule.progressStatus === filters.status;
+    const statusMatch = !filters.status || getScheduleProgressStatus(schedule) === filters.status;
     return dateMatch
       && queryMatch
       && statusMatch
       && (!filters.tourType || schedule.tourType === filters.tourType)
       && (!filters.guide || schedule.guide.name === filters.guide)
-      && (!filters.restaurantStatus || schedule.restaurantBookings.some((booking) => booking.status === filters.restaurantStatus))
+      && (!filters.restaurantStatus || getRestaurantAggregateStatus(schedule.restaurantBookings) === filters.restaurantStatus)
       && (!filters.hotelStatus || schedule.tourType === "당일" || schedule.hotelBooking.status === filters.hotelStatus);
   });
 
@@ -59,6 +90,11 @@ export function ReservationsClient({ scheduleGroups }: { scheduleGroups: Schedul
   }
 
   async function saveSchedule(schedule: ScheduleGroup) {
+    if (!schedule?.id) {
+      setSaveMessage("저장할 일정 정보가 올바르지 않습니다.");
+      return;
+    }
+
     setSavingId(schedule.id);
     setSaveMessage("");
 
@@ -92,7 +128,7 @@ export function ReservationsClient({ scheduleGroups }: { scheduleGroups: Schedul
           </CardContent>
         </Card>
       </div>
-        <ReservationFilters value={filters} onChange={setFilters} />
+        <ReservationFilters value={filters} onChange={setFilters} guides={guides} />
         {saveMessage ? (
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900">
             {saveMessage}
@@ -105,6 +141,10 @@ export function ReservationsClient({ scheduleGroups }: { scheduleGroups: Schedul
           onChangeSchedule={updateSchedule}
           onSaveSchedule={saveSchedule}
           savingId={savingId}
+          guides={guides}
+          drivers={drivers}
+          restaurants={restaurants}
+          hotels={hotels}
         />
         <ScheduleAccordionCards
           schedules={filtered}
@@ -113,6 +153,10 @@ export function ReservationsClient({ scheduleGroups }: { scheduleGroups: Schedul
           onChangeSchedule={updateSchedule}
           onSaveSchedule={saveSchedule}
           savingId={savingId}
+          guides={guides}
+          drivers={drivers}
+          restaurants={restaurants}
+          hotels={hotels}
         />
     </div>
   );

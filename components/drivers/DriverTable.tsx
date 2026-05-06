@@ -11,16 +11,43 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DriverForm } from "@/components/drivers/DriverForm";
 
 export function DriverTable({ drivers }: { drivers: Driver[] }) {
+  const [items, setItems] = React.useState(drivers);
   const [query, setQuery] = React.useState("");
   const [assignable, setAssignable] = React.useState("");
   const [selected, setSelected] = React.useState<Driver | undefined>();
   const [open, setOpen] = React.useState(false);
-  const filtered = drivers.filter((driver) => {
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const filtered = items.filter((driver) => {
     const q = query.toLowerCase();
     const assignableMatch = !assignable || (assignable === "가능" ? driver.assignable : !driver.assignable);
     return (!q || [driver.name, driver.phone, driver.company, driver.memo].some((value) => value?.toLowerCase().includes(q))) && assignableMatch;
   });
   const edit = (driver?: Driver) => { setSelected(driver); setOpen(true); };
+
+  async function save(driver: Driver) {
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch("/api/masters/drivers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(driver),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message ?? "기사 저장에 실패했습니다.");
+
+      setItems((current) => {
+        const exists = current.some((item) => item.id === payload.id);
+        return exists ? current.map((item) => (item.id === payload.id ? payload : item)) : [payload, ...current];
+      });
+      setOpen(false);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "기사 저장에 실패했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -31,6 +58,7 @@ export function DriverTable({ drivers }: { drivers: Driver[] }) {
         </Select>
         <Button>검색</Button><Button onClick={() => edit()}>+ 등록</Button>
       </div>
+      {error ? <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
       <div className="overflow-hidden rounded-xl border bg-white shadow-soft">
         <div className="overflow-x-auto">
           <Table className="min-w-[860px]">
@@ -47,7 +75,7 @@ export function DriverTable({ drivers }: { drivers: Driver[] }) {
           </Table>
         </div>
       </div>
-      <DriverForm driver={selected} open={open} onOpenChange={setOpen} />
+      <DriverForm driver={selected} open={open} saving={saving} onOpenChange={setOpen} onSave={save} />
     </div>
   );
 }

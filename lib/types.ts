@@ -60,6 +60,7 @@ export type HotelBooking = {
 
 export type ScheduleGroup = {
   id: string;
+  sourceScheduleKey?: string;
   tourType: "당일" | "숙박";
   tourDate: string;
   dayLabel: string;
@@ -72,6 +73,7 @@ export type ScheduleGroup = {
     id?: string;
     busInfo: string;
     busType: string;
+    busCompany?: string;
     seatCount: number;
   };
   guide: ScheduleMasterRef;
@@ -177,15 +179,36 @@ export type CodeItem = {
 
 export type AdminUser = {
   id: string;
+  authUserId?: string;
   name: string;
   loginId: string;
   role: string;
   department?: string;
   phone?: string;
   email?: string;
-  status: "active" | "inactive";
+  status: "active" | "inactive" | "pending";
   lastLoginAt?: string;
   createdAt: string;
+};
+
+export type RefundItem = {
+  id: string;
+  no: number;
+  customerName: string;
+  departureDate: string;
+  peopleCount: number;
+  phone: string;
+  paymentMethod: string;
+  depositDate: string;
+  productAmount: number;
+  depositAmount: number;
+  refundRequestAmount: number;
+  depositor: string;
+  balanceAmount?: number;
+  registeredBy: string;
+  status: "환불요청" | "처리중" | "환불완료" | "취소";
+  bankAccount: string;
+  memo?: string;
 };
 
 export type NavItem = {

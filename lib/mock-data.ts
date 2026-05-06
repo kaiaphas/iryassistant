@@ -1,4 +1,4 @@
-import type { AdminUser, CodeItem, Driver, Guide, Hotel, Reservation, Restaurant, ScheduleGroup, Vehicle } from "@/lib/types";
+import type { AdminUser, CodeItem, Driver, Guide, Hotel, RefundItem, Reservation, Restaurant, ScheduleGroup, Vehicle } from "@/lib/types";
 
 export const reservations: Reservation[] = [
   {
@@ -325,4 +325,12 @@ export const adminUsers: AdminUser[] = [
   { id: "U004", name: "박준호", loginId: "pjh", role: "차량담당자", department: "차량팀", phone: "010-3333-3333", email: "pjh@irytour.com", status: "active", lastLoginAt: "2026-04-30", createdAt: "2024-04-05" },
   { id: "U005", name: "최수진", loginId: "csj", role: "회계담당자", department: "회계팀", phone: "010-4444-4444", email: "csj@irytour.com", status: "inactive", lastLoginAt: "2026-04-02", createdAt: "2024-04-20" },
   { id: "U006", name: "오지훈", loginId: "ojh", role: "일반사용자", department: "온라인팀", phone: "010-5555-5555", email: "ojh@irytour.com", status: "active", lastLoginAt: "2026-05-02", createdAt: "2024-05-15" },
+];
+
+export const refundItems: RefundItem[] = [
+  { id: "REF-20260504-001", no: 1, customerName: "허정숙", departureDate: "2026-05-30", peopleCount: 2, phone: "010-9998-7114", paymentMethod: "홈페이지결제", depositDate: "2026-04-17", productAmount: 490000, depositAmount: 490000, refundRequestAmount: 490000, depositor: "허정숙", registeredBy: "윤혜원", status: "환불완료", bankAccount: "승인 번호 : 30212149" },
+  { id: "REF-20260504-002", no: 2, customerName: "김선옥", departureDate: "2026-05-09", peopleCount: 1, phone: "010-5496-0213", paymentMethod: "홈페이지결제", depositDate: "2026-04-13", productAmount: 87000, depositAmount: 87000, refundRequestAmount: 87000, depositor: "김선옥", registeredBy: "윤혜원", status: "환불완료", bankAccount: "승인 번호 : 30044162" },
+  { id: "REF-20260504-003", no: 3, customerName: "정원자", departureDate: "2026-06-20", peopleCount: 4, phone: "010-7568-6769", paymentMethod: "홈페이지결제", depositDate: "2026-04-20", productAmount: 372000, depositAmount: 388000, refundRequestAmount: 16000, depositor: "정원자", balanceAmount: 372000, registeredBy: "윤혜원", status: "환불완료", bankAccount: "승인 번호 : 00272718", memo: "전산오류가격차액발생 환불" },
+  { id: "REF-20260504-005", no: 5, customerName: "박귀숙", departureDate: "2026-05-24", peopleCount: 2, phone: "010-4075-5180", paymentMethod: "계좌이체", depositDate: "2026-05-24", productAmount: 194000, depositAmount: 194000, refundRequestAmount: 194000, depositor: "박귀숙", registeredBy: "윤혜원", status: "환불완료", bankAccount: "기업은행 10810186501015 박귀숙" },
+  { id: "REF-20260504-006", no: 6, customerName: "박순자", departureDate: "2026-05-09", peopleCount: 2, phone: "010-2506-5806", paymentMethod: "계좌이체", depositDate: "2026-04-05", productAmount: 194000, depositAmount: 100000, refundRequestAmount: 100000, depositor: "박순자", registeredBy: "윤혜원", status: "환불완료", bankAccount: "신한은행 110-410-489802 박순자" },
 ];

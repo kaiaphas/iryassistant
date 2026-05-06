@@ -1,31 +1,55 @@
-import { Bus, CalendarCheck, Hotel, Soup, UserCheck, UsersRound } from "lucide-react";
+import { Bus, CalendarCheck, Hotel, Soup, UserCheck } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { TodayDepartureTable } from "@/components/dashboard/TodayDepartureTable";
 import { getScheduleGroups } from "@/services/reservation-service";
+import { getRestaurantAggregateStatus } from "@/lib/reservation-status";
 
 export const dynamic = "force-dynamic";
 
+function formatDateInput(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export default async function DashboardPage() {
   const schedules = await getScheduleGroups();
-  const todaySchedules = schedules.slice(0, 5);
-  const totalPeople = schedules.reduce((sum, schedule) => sum + schedule.reservations.reduce((people, reservation) => people + reservation.totalPeople, 0), 0);
-  const hotelNeedsCheck = schedules.filter((schedule) => schedule.hotelBooking.status === "예약전").length;
-  const restaurantNeedsCheck = schedules.filter((schedule) => schedule.restaurantBookings.some((booking) => booking.status === "예약전")).length;
+  const today = formatDateInput(new Date());
+  const sevenDaysLaterDate = new Date();
+  sevenDaysLaterDate.setDate(sevenDaysLaterDate.getDate() + 7);
+  const sevenDaysLater = formatDateInput(sevenDaysLaterDate);
+  const todaySchedules = schedules.filter((schedule) => schedule.tourDate === today);
+  const futureSchedules = schedules.filter((schedule) => schedule.tourDate >= today);
+  const nextWeekSchedules = schedules
+    .filter((schedule) => schedule.tourDate >= today && schedule.tourDate <= sevenDaysLater)
+    .sort((left, right) => {
+      const dateCompare = left.tourDate.localeCompare(right.tourDate);
+      if (dateCompare !== 0) return dateCompare;
+
+      const busCompare = (left.busNo || "").localeCompare(right.busNo || "", "ko", { numeric: true });
+      if (busCompare !== 0) return busCompare;
+
+      return (left.departureTime || "").localeCompare(right.departureTime || "");
+    });
+  const vehicleUnassigned = futureSchedules.filter((schedule) => !schedule.vehicle.busInfo && !schedule.vehicle.busType && !schedule.vehicle.busCompany).length;
+  const guideUnassigned = futureSchedules.filter((schedule) => !schedule.guide.name || schedule.guide.name === "-").length;
+  const hotelNeedsCheck = futureSchedules.filter((schedule) => schedule.tourType === "숙박" && schedule.hotelBooking.status === "예약전").length;
+  const restaurantNeedsCheck = futureSchedules.filter((schedule) => getRestaurantAggregateStatus(schedule.restaurantBookings) === "예약전").length;
 
   return (
-    <PageContainer title="대시보드" description="오늘 출발 일정과 운영 준비 상태를 확인합니다.">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-        <StatCard title="오늘 출발" value={`${todaySchedules.length}건`} icon={CalendarCheck} />
-        <StatCard title="차량 미배정" value="3건" icon={Bus} />
-        <StatCard title="가이드 미배정" value="2건" icon={UserCheck} />
+    <PageContainer title="대시보드" description="금일 일정과 향후 운영 준비 상태를 확인합니다.">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <StatCard title="금일 일정" value={`${todaySchedules.length}건`} icon={CalendarCheck} />
+        <StatCard title="차량 미배정" value={`${vehicleUnassigned}건`} icon={Bus} />
+        <StatCard title="가이드 미배정" value={`${guideUnassigned}건`} icon={UserCheck} />
         <StatCard title="숙소 확인 필요" value={`${hotelNeedsCheck}건`} icon={Hotel} />
         <StatCard title="식당 확인 필요" value={`${restaurantNeedsCheck}건`} icon={Soup} />
-        <StatCard title="전체 인원" value={`${totalPeople}명`} icon={UsersRound} />
       </div>
 
       <div className="mt-4">
-        <TodayDepartureTable schedules={todaySchedules} />
+        <TodayDepartureTable schedules={nextWeekSchedules} />
       </div>
     </PageContainer>
   );

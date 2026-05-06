@@ -31,8 +31,9 @@ function buildScheduleConditionQuery(whereClause = "") {
       a.time1 AS departure_time,
       a.time2 AS return_time,
       a.status AS progress_status,
-      a.bus_info AS vehicle_no,
-      a.bus_info AS vehicle_capacity,
+      a.bus_info AS bus_company,
+      a.bus AS vehicle_no,
+      a.bus_type AS vehicle_capacity,
       a.driver AS driver_name,
       a.guide AS guide_name,
       a.hotel AS hotel_name,
@@ -63,7 +64,7 @@ function buildScheduleConditionQuery(whereClause = "") {
       ON d.info_code = CONCAT(a.tid, '_', REPLACE(a.tour_date, '/', ''))
     WHERE REPLACE(a.tour_date, '/', '') BETWEEN ? AND ?
     ${whereClause}
-    and a.bit_condition1 IN (1, 2)
+    and a.status = '출발확정'
     ORDER BY a.tour_date ASC, c.tid ASC
   `;
 }

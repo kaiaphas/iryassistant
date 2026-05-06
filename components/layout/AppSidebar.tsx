@@ -2,11 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { navItems } from "@/lib/constants";
+import { getNavItemsByRole } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { useCurrentAuth } from "@/lib/client-auth";
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const auth = useCurrentAuth();
+  const navItems = getNavItemsByRole(auth.role);
+  const roleLabel = auth.role === "admin" ? "관리자" : "담당자";
 
   return (
     <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col bg-emerald-950 text-white lg:flex">
@@ -14,7 +18,7 @@ export function AppSidebar() {
         <Link href="/" className="block text-xl font-bold tracking-tight">
           irytour<span className="font-normal text-emerald-200">.com</span>
         </Link>
-        <p className="mt-1 text-xs text-emerald-200">인천로열투어 관리자</p>
+        <p className="mt-1 text-xs text-emerald-200">인천로열투어 {roleLabel}</p>
       </div>
       <nav className="flex-1 space-y-1 px-3">
         {navItems.map((item) => {
@@ -36,7 +40,8 @@ export function AppSidebar() {
         })}
       </nav>
       <div className="border-t border-emerald-900 p-4 text-xs text-emerald-200">
-        mock data mode
+        {roleLabel}
+        {auth.email ? <div className="mt-1 truncate">{auth.email}</div> : null}
       </div>
     </aside>
   );

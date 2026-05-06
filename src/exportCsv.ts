@@ -39,6 +39,7 @@ export async function exportReservationsCsv(rows: MySqlScheduleRow[]) {
       "return_time",
       "progress_status",
       "vehicle_no",
+      "bus_company",
       "vehicle_capacity",
       "driver_name",
       "guide_name",

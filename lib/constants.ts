@@ -6,6 +6,7 @@ import {
   ClipboardList,
   Database,
   Hotel,
+  ReceiptText,
   Soup,
   Settings,
   UserRoundCog,
@@ -19,10 +20,16 @@ export const navItems = [
   { title: "기사관리", href: "/drivers", icon: Bus },
   { title: "식당관리", href: "/restaurants", icon: Soup },
   { title: "호텔관리", href: "/hotels", icon: Hotel },
+  { title: "환불명단", href: "/refunds", icon: ReceiptText },
   { title: "기준정보", href: "/codes", icon: Database },
   { title: "회원관리", href: "/members", icon: UsersRound },
   { title: "설정", href: "/settings", icon: Settings },
 ] as const;
+
+export function getNavItemsByRole(role: "admin" | "staff") {
+  if (role === "admin") return navItems;
+  return navItems.filter((item) => ["/", "/reservations", "/restaurants", "/hotels"].includes(item.href));
+}
 
 export const codeCategories = [
   { group: "PRODUCT_CODE", label: "상품코드", icon: CalendarDays },

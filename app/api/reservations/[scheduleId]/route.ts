@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/repositories/supabase/reservation-repository";
 import type { FacilityBookingStatus, RestaurantBooking, ScheduleGroup } from "@/lib/types";
+import { getScheduleProgressStatus } from "@/lib/reservation-status";
 
 type RouteContext = {
   params: Promise<{
@@ -33,11 +34,62 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   if (!scheduleId || scheduleId !== schedule.id) {
     return NextResponse.json({ message: "일정 ID가 올바르지 않습니다." }, { status: 400 });
   }
+  const progressStatus = getScheduleProgressStatus(schedule);
 
-  const { error: scheduleError } = await supabase
+  let { error: scheduleError } = await supabase
     .from("reservation_schedules")
-    .update({ memo: cleanText(schedule.dispatchMemo) })
-    .eq("id", scheduleId);
+    .upsert({
+      id: scheduleId,
+      source_schedule_key: cleanText(schedule.sourceScheduleKey),
+      tour_date: schedule.tourDate,
+      tour_type: schedule.tourType === "숙박" ? "STAY" : "DAY",
+      product_code: cleanText(schedule.productCode),
+      product_name: cleanText(schedule.productName) ?? "상품명 미정",
+      departure_time: cleanText(schedule.departureTime),
+      return_time: cleanText(schedule.returnTime),
+      guide_name: cleanText(schedule.guide.name),
+      guide_phone: cleanText(schedule.guide.phone),
+      driver_name: cleanText(schedule.driver.name),
+      driver_phone: cleanText(schedule.driver.phone),
+      vehicle_no: cleanText(schedule.vehicle.busInfo),
+      bus_company: cleanText(schedule.vehicle.busCompany),
+      vehicle_capacity: cleanText(schedule.vehicle.busType),
+      progress_status: progressStatus === "취소완료" ? "CANCELED" : progressStatus === "예약완료" ? "COMPLETED" : "IN_PROGRESS",
+      memo: cleanText(schedule.dispatchMemo),
+      is_active: true,
+    });
+
+  if (scheduleError?.message.includes("guide_phone") || scheduleError?.message.includes("driver_phone")) {
+    return NextResponse.json(
+      { message: "가이드/기사 연락처 저장 컬럼이 없습니다. supabase/20260505_add_schedule_contact_columns.sql을 먼저 실행해주세요." },
+      { status: 500 },
+    );
+  }
+
+  if (scheduleError?.message.includes("bus_company")) {
+    const fallback = await supabase
+      .from("reservation_schedules")
+      .upsert({
+        id: scheduleId,
+        source_schedule_key: cleanText(schedule.sourceScheduleKey),
+        tour_date: schedule.tourDate,
+        tour_type: schedule.tourType === "숙박" ? "STAY" : "DAY",
+        product_code: cleanText(schedule.productCode),
+        product_name: cleanText(schedule.productName) ?? "상품명 미정",
+        departure_time: cleanText(schedule.departureTime),
+        return_time: cleanText(schedule.returnTime),
+        guide_name: cleanText(schedule.guide.name),
+        guide_phone: cleanText(schedule.guide.phone),
+        driver_name: cleanText(schedule.driver.name),
+        driver_phone: cleanText(schedule.driver.phone),
+        vehicle_no: cleanText(schedule.vehicle.busInfo),
+        vehicle_capacity: cleanText(schedule.vehicle.busType),
+        progress_status: progressStatus === "취소완료" ? "CANCELED" : progressStatus === "예약완료" ? "COMPLETED" : "IN_PROGRESS",
+        memo: cleanText(schedule.dispatchMemo),
+        is_active: true,
+      });
+    scheduleError = fallback.error;
+  }
 
   if (scheduleError) {
     return NextResponse.json({ message: `일정 메모 저장 실패: ${scheduleError.message}` }, { status: 500 });

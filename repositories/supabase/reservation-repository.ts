@@ -11,9 +11,12 @@ type ReservationScheduleOverviewRow = {
   departure_time: string | null;
   return_time: string | null;
   vehicle_no: string | null;
+  bus_company: string | null;
   vehicle_capacity: string | null;
   guide_name: string | null;
+  guide_phone: string | null;
   driver_name: string | null;
+  driver_phone: string | null;
   restaurant_names: string | null;
   restaurant_status_labels: string[] | null;
   restaurant_bookings?: RestaurantBooking[];
@@ -46,6 +49,12 @@ type HotelBookingRow = {
   hotel_memo: string | null;
   booking_status: "BEFORE" | "COMPLETED" | "CANCELED";
 };
+
+const overviewSelectWithContacts =
+  "id,source_schedule_key,tour_date,tour_type_label,product_code,product_name,departure_time,return_time,vehicle_no,bus_company,vehicle_capacity,guide_name,guide_phone,driver_name,driver_phone,restaurant_names,restaurant_status_labels,hotel_name,hotel_status_label,room_assignments,progress_status_label,memo,notice_memo";
+
+const overviewSelectFallback =
+  "id,source_schedule_key,tour_date,tour_type_label,product_code,product_name,departure_time,return_time,vehicle_no,vehicle_capacity,guide_name,driver_name,restaurant_names,restaurant_status_labels,hotel_name,hotel_status_label,room_assignments,progress_status_label,memo,notice_memo";
 
 export function createSupabaseServerClient() {
   const url = process.env.SUPABASE_URL;
@@ -125,10 +134,11 @@ function mapRestaurantRow(row: RestaurantBookingRow): RestaurantBooking {
 function mapOverviewRow(row: ReservationScheduleOverviewRow): ScheduleGroup {
   const productName = row.product_name ?? "상품명 미정";
   const tourDate = row.tour_date;
-  const vehicleLabel = row.vehicle_capacity || row.vehicle_no || "";
+  const vehicleLabel = row.vehicle_capacity || "";
 
   return {
     id: row.id,
+    sourceScheduleKey: row.source_schedule_key ?? undefined,
     tourType: row.tour_type_label === "숙박" ? "숙박" : "당일",
     tourDate,
     dayLabel: getDayLabel(tourDate),
@@ -140,10 +150,11 @@ function mapOverviewRow(row: ReservationScheduleOverviewRow): ScheduleGroup {
     vehicle: {
       busInfo: row.vehicle_no ?? "",
       busType: vehicleLabel,
+      busCompany: row.bus_company ?? "",
       seatCount: Number.parseInt(vehicleLabel, 10) || 0,
     },
-    guide: { name: row.guide_name ?? "-" },
-    driver: { name: row.driver_name ?? "-" },
+    guide: { name: row.guide_name ?? "-", phone: row.guide_phone ?? undefined },
+    driver: { name: row.driver_name ?? "-", phone: row.driver_phone ?? undefined },
     restaurant: { name: row.restaurant_names ?? "-" },
     hotel: row.hotel_name ? { name: row.hotel_name } : undefined,
     restaurantBookings: parseRestaurantBookings(row),
@@ -159,56 +170,121 @@ function mapOverviewRow(row: ReservationScheduleOverviewRow): ScheduleGroup {
   };
 }
 
-export async function findScheduleGroupsFromSupabase() {
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("reservation_schedule_overview")
-    .select(
-      "id,source_schedule_key,tour_date,tour_type_label,product_code,product_name,departure_time,return_time,vehicle_no,vehicle_capacity,guide_name,driver_name,restaurant_names,restaurant_status_labels,hotel_name,hotel_status_label,room_assignments,progress_status_label,memo,notice_memo",
-    )
-    .eq("is_active", true)
-    .order("tour_date", { ascending: true })
-    .order("departure_time", { ascending: true, nullsFirst: false })
-    .limit(1000);
+function chunk<T>(items: T[], size: number) {
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+}
 
-  if (error) {
-    throw new Error(`예약현황 Supabase 조회 실패: ${error.message}`);
+function needsLegacyOverviewFallback(message: string | undefined) {
+  return Boolean(
+    message?.includes("bus_company")
+    || message?.includes("guide_phone")
+    || message?.includes("driver_phone"),
+  );
+}
+
+async function fetchOverviewRows(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  select: string,
+  withFallbackColumns: boolean,
+) {
+  const rows: ReservationScheduleOverviewRow[] = [];
+  const pageSize = 1000;
+  let from = 0;
+
+  while (true) {
+    const to = from + pageSize - 1;
+    const { data, error } = await supabase
+      .from("reservation_schedule_overview")
+      .select(select)
+      .eq("is_active", true)
+      .order("tour_date", { ascending: true })
+      .order("departure_time", { ascending: true, nullsFirst: false })
+      .range(from, to);
+
+    if (error) {
+      throw error;
+    }
+
+    const page = ((data ?? []) as Partial<ReservationScheduleOverviewRow>[]).map((row) => ({
+      ...row,
+      bus_company: withFallbackColumns ? row.bus_company : null,
+      guide_phone: withFallbackColumns ? row.guide_phone : null,
+      driver_phone: withFallbackColumns ? row.driver_phone : null,
+    })) as ReservationScheduleOverviewRow[];
+
+    rows.push(...page);
+    if (page.length < pageSize) break;
+    from += pageSize;
   }
 
-  const rows = (data ?? []) as ReservationScheduleOverviewRow[];
+  return rows;
+}
+
+export async function findScheduleGroupsFromSupabase() {
+  const supabase = createSupabaseServerClient();
+
+  let rows: ReservationScheduleOverviewRow[];
+  try {
+    rows = await fetchOverviewRows(supabase, overviewSelectWithContacts, true);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!needsLegacyOverviewFallback(message)) {
+      throw new Error(`예약현황 Supabase 조회 실패: ${message}`);
+    }
+
+    try {
+      rows = await fetchOverviewRows(supabase, overviewSelectFallback, false);
+    } catch (fallbackError) {
+      const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+      throw new Error(`예약현황 Supabase 조회 실패: ${fallbackMessage}`);
+    }
+  }
+
   const scheduleIds = rows.map((row) => row.id);
 
   if (scheduleIds.length === 0) return [];
 
-  const [{ data: restaurantRows, error: restaurantError }, { data: hotelRows, error: hotelError }] = await Promise.all([
-    supabase
-      .from("schedule_restaurant_bookings")
-      .select("id,schedule_id,meal_type,restaurant_name,restaurant_phone,restaurant_memo,booking_status,sort_order")
-      .in("schedule_id", scheduleIds)
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("schedule_hotel_bookings")
-      .select("id,schedule_id,hotel_name,hotel_phone,hotel_memo,booking_status")
-      .in("schedule_id", scheduleIds),
-  ]);
+  const restaurantRows: RestaurantBookingRow[] = [];
+  const hotelRows: HotelBookingRow[] = [];
 
-  if (restaurantError) {
-    throw new Error(`식당 예약현황 Supabase 조회 실패: ${restaurantError.message}`);
-  }
+  for (const ids of chunk(scheduleIds, 500)) {
+    const [{ data: restaurantData, error: restaurantError }, { data: hotelData, error: hotelError }] = await Promise.all([
+      supabase
+        .from("schedule_restaurant_bookings")
+        .select("id,schedule_id,meal_type,restaurant_name,restaurant_phone,restaurant_memo,booking_status,sort_order")
+        .in("schedule_id", ids)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("schedule_hotel_bookings")
+        .select("id,schedule_id,hotel_name,hotel_phone,hotel_memo,booking_status")
+        .in("schedule_id", ids),
+    ]);
 
-  if (hotelError) {
-    throw new Error(`숙소 예약현황 Supabase 조회 실패: ${hotelError.message}`);
+    if (restaurantError) {
+      throw new Error(`식당 예약현황 Supabase 조회 실패: ${restaurantError.message}`);
+    }
+
+    if (hotelError) {
+      throw new Error(`숙소 예약현황 Supabase 조회 실패: ${hotelError.message}`);
+    }
+
+    restaurantRows.push(...((restaurantData ?? []) as RestaurantBookingRow[]));
+    hotelRows.push(...((hotelData ?? []) as HotelBookingRow[]));
   }
 
   const restaurantsBySchedule = new Map<string, RestaurantBooking[]>();
-  for (const row of (restaurantRows ?? []) as RestaurantBookingRow[]) {
+  for (const row of restaurantRows) {
     const items = restaurantsBySchedule.get(row.schedule_id) ?? [];
     items.push(mapRestaurantRow(row));
     restaurantsBySchedule.set(row.schedule_id, items);
   }
 
   const hotelsBySchedule = new Map<string, HotelBookingRow>();
-  for (const row of (hotelRows ?? []) as HotelBookingRow[]) {
+  for (const row of hotelRows) {
     hotelsBySchedule.set(row.schedule_id, row);
   }
 

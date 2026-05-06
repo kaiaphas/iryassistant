@@ -1,0 +1,26 @@
+import { NextRequest, NextResponse } from "next/server";
+import { upsertDriverToSupabase } from "@/repositories/supabase/master-repository";
+import type { Driver } from "@/lib/types";
+
+export async function POST(request: NextRequest) {
+  try {
+    const driver = (await request.json()) as Driver;
+    if (!driver.name?.trim()) {
+      return NextResponse.json({ message: "기사명을 입력해주세요." }, { status: 400 });
+    }
+
+    const saved = await upsertDriverToSupabase({
+      ...driver,
+      name: driver.name.trim(),
+      capacity: driver.capacity?.trim() ?? "",
+      phone: driver.phone?.trim() ?? "",
+      company: driver.company?.trim() ?? "",
+      memo: driver.memo?.trim() ?? "",
+    });
+
+    return NextResponse.json(saved);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "기사 저장 중 알 수 없는 오류가 발생했습니다.";
+    return NextResponse.json({ message }, { status: 500 });
+  }
+}

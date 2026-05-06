@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AppSidebar } from "@/components/layout/AppSidebar";
-import { MobileBottomTabs } from "@/components/layout/MobileBottomTabs";
+import { AppShell } from "@/components/layout/AppShell";
 
 export const metadata: Metadata = {
   title: "irytour.com 인천로열투어 관리자",
@@ -12,9 +11,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ko">
       <body>
-        <AppSidebar />
-        <div className="min-h-screen pb-16 lg:pb-0 lg:pl-64">{children}</div>
-        <MobileBottomTabs />
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

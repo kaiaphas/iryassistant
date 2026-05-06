@@ -2,6 +2,8 @@ import { GuideTable } from "@/components/guides/GuideTable";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { getGuides } from "@/services/master-service";
 
+export const dynamic = "force-dynamic";
+
 export default async function GuidesPage() {
   const guides = await getGuides();
 
