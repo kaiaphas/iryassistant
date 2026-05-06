@@ -70,21 +70,26 @@ export function GuideTable({ guides }: { guides: Guide[] }) {
 
       <div className="overflow-hidden rounded-xl border bg-white shadow-soft">
         <div className="overflow-x-auto">
-          <Table className="min-w-[720px]">
+          <Table className="min-w-[860px] text-sm">
             <TableHeader>
               <TableRow>
-                {["이름", "전화번호", "배정가능", "사용여부", "메모", "수정"].map((head) => <TableHead key={head}>{head}</TableHead>)}
+                <TableHead className="w-[120px] text-center">이름</TableHead>
+                <TableHead className="w-[150px] text-center">전화번호</TableHead>
+                <TableHead className="w-[110px] text-center">배정가능</TableHead>
+                <TableHead className="w-[110px] text-center">사용여부</TableHead>
+                <TableHead>메모</TableHead>
+                <TableHead className="w-[90px] text-center">수정</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map((guide) => (
                 <TableRow key={guide.id}>
-                  <TableCell className="font-semibold">{guide.name}</TableCell>
-                  <TableCell>{guide.phone}</TableCell>
-                  <TableCell><StatusBadge value={guide.assignable ? "가능" : "불가"} /></TableCell>
-                  <TableCell><Switch checked={guide.active} /></TableCell>
-                  <TableCell>{guide.memo || "-"}</TableCell>
-                  <TableCell><Button size="sm" variant="outline" onClick={() => edit(guide)}>수정</Button></TableCell>
+                  <TableCell className="whitespace-nowrap text-center font-semibold">{guide.name}</TableCell>
+                  <TableCell className="whitespace-nowrap text-center">{guide.phone}</TableCell>
+                  <TableCell className="text-center"><StatusBadge value={guide.assignable ? "가능" : "불가"} /></TableCell>
+                  <TableCell className="text-center"><Switch checked={guide.active} /></TableCell>
+                  <TableCell className="max-w-[420px] truncate" title={guide.memo || ""}>{guide.memo || "-"}</TableCell>
+                  <TableCell className="text-center"><Button size="sm" variant="outline" onClick={() => edit(guide)}>수정</Button></TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -61,14 +61,30 @@ export function DriverTable({ drivers }: { drivers: Driver[] }) {
       {error ? <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
       <div className="overflow-hidden rounded-xl border bg-white shadow-soft">
         <div className="overflow-x-auto">
-          <Table className="min-w-[860px]">
-            <TableHeader><TableRow>{["이름", "인승", "전화번호", "회사", "배정가능", "사용여부", "메모", "수정"].map((head) => <TableHead key={head}>{head}</TableHead>)}</TableRow></TableHeader>
+          <Table className="min-w-[1040px] text-sm">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[120px] text-center">이름</TableHead>
+                <TableHead className="w-[90px] text-center">인승</TableHead>
+                <TableHead className="w-[150px] text-center">전화번호</TableHead>
+                <TableHead className="w-[160px] text-center">회사</TableHead>
+                <TableHead className="w-[110px] text-center">배정가능</TableHead>
+                <TableHead className="w-[110px] text-center">사용여부</TableHead>
+                <TableHead>메모</TableHead>
+                <TableHead className="w-[90px] text-center">수정</TableHead>
+              </TableRow>
+            </TableHeader>
             <TableBody>
               {filtered.map((driver) => (
                 <TableRow key={driver.id}>
-                  <TableCell className="font-semibold">{driver.name}</TableCell><TableCell>{driver.capacity}</TableCell><TableCell>{driver.phone}</TableCell><TableCell>{driver.company}</TableCell>
-                  <TableCell><StatusBadge value={driver.assignable ? "가능" : "불가"} /></TableCell><TableCell><Switch checked={driver.active} /></TableCell><TableCell>{driver.memo || "-"}</TableCell>
-                  <TableCell><Button size="sm" variant="outline" onClick={() => edit(driver)}>수정</Button></TableCell>
+                  <TableCell className="whitespace-nowrap text-center font-semibold">{driver.name}</TableCell>
+                  <TableCell className="whitespace-nowrap text-center">{driver.capacity}</TableCell>
+                  <TableCell className="whitespace-nowrap text-center">{driver.phone}</TableCell>
+                  <TableCell className="max-w-[160px] truncate text-center" title={driver.company}>{driver.company}</TableCell>
+                  <TableCell className="text-center"><StatusBadge value={driver.assignable ? "가능" : "불가"} /></TableCell>
+                  <TableCell className="text-center"><Switch checked={driver.active} /></TableCell>
+                  <TableCell className="max-w-[360px] truncate" title={driver.memo || ""}>{driver.memo || "-"}</TableCell>
+                  <TableCell className="text-center"><Button size="sm" variant="outline" onClick={() => edit(driver)}>수정</Button></TableCell>
                 </TableRow>
               ))}
             </TableBody>

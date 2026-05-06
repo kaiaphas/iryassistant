@@ -13,5 +13,5 @@ export function StatusBadge({ value }: { value?: string }) {
             ? "default"
             : "secondary";
 
-  return <Badge variant={variant}>{text}</Badge>;
+  return <Badge variant={variant} className="whitespace-nowrap">{text}</Badge>;
 }

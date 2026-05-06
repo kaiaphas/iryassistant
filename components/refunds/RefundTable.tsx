@@ -125,12 +125,26 @@ export function RefundTable({ refunds }: { refunds: RefundItem[] }) {
 
       <div className="overflow-hidden rounded-xl border bg-white shadow-soft">
         <div className="overflow-x-auto scrollbar-thin">
-          <Table className="min-w-[1540px] text-xs">
+          <Table className="min-w-[1680px] text-xs">
             <TableHeader>
               <TableRow>
-                {["no.", "고객명", "출발일", "인원", "전화번호", "결제방식", "입금일", "상품총액", "입금액", "환불요청금액", "입금자", "잔금", "등록자", "상태", "은행 / 계좌번호 / 예금주", "메모", ""].map((head) => (
-                  <TableHead key={head} className="h-9 whitespace-nowrap px-2 text-center text-[11px]">{head}</TableHead>
-                ))}
+                <TableHead className="h-9 w-[54px] whitespace-nowrap px-2 text-center text-[11px]">no.</TableHead>
+                <TableHead className="w-[90px] whitespace-nowrap px-2 text-center text-[11px]">고객명</TableHead>
+                <TableHead className="w-[108px] whitespace-nowrap px-2 text-center text-[11px]">출발일</TableHead>
+                <TableHead className="w-[58px] whitespace-nowrap px-2 text-center text-[11px]">인원</TableHead>
+                <TableHead className="w-[132px] whitespace-nowrap px-2 text-center text-[11px]">전화번호</TableHead>
+                <TableHead className="w-[116px] whitespace-nowrap px-2 text-center text-[11px]">결제방식</TableHead>
+                <TableHead className="w-[108px] whitespace-nowrap px-2 text-center text-[11px]">입금일</TableHead>
+                <TableHead className="w-[108px] whitespace-nowrap px-2 text-right text-[11px]">상품총액</TableHead>
+                <TableHead className="w-[108px] whitespace-nowrap px-2 text-right text-[11px]">입금액</TableHead>
+                <TableHead className="w-[126px] whitespace-nowrap px-2 text-right text-[11px]">환불요청금액</TableHead>
+                <TableHead className="w-[90px] whitespace-nowrap px-2 text-center text-[11px]">입금자</TableHead>
+                <TableHead className="w-[100px] whitespace-nowrap px-2 text-right text-[11px]">잔금</TableHead>
+                <TableHead className="w-[90px] whitespace-nowrap px-2 text-center text-[11px]">등록자</TableHead>
+                <TableHead className="w-[100px] whitespace-nowrap px-2 text-center text-[11px]">상태</TableHead>
+                <TableHead className="min-w-[260px] whitespace-nowrap px-2 text-center text-[11px]">은행 / 계좌번호 / 예금주</TableHead>
+                <TableHead className="min-w-[220px] whitespace-nowrap px-2 text-center text-[11px]">메모</TableHead>
+                <TableHead className="w-[116px] whitespace-nowrap px-2 text-center text-[11px]">관리</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -157,23 +171,23 @@ export function RefundTable({ refunds }: { refunds: RefundItem[] }) {
 function RefundReadRow({ item, onEdit, disabled }: { item: RefundItem; onEdit: (item: RefundItem) => void; disabled: boolean }) {
   return (
     <TableRow>
-      <TableCell className="px-2 text-center">{item.no}</TableCell>
-      <TableCell className="px-2 text-center font-semibold">{item.customerName}</TableCell>
-      <TableCell className="px-2 text-center">{item.departureDate}</TableCell>
-      <TableCell className="px-2 text-center">{item.peopleCount}</TableCell>
-      <TableCell className="px-2 text-center">{item.phone}</TableCell>
-      <TableCell className="px-2 text-center">{item.paymentMethod}</TableCell>
-      <TableCell className="px-2 text-center">{item.depositDate}</TableCell>
-      <TableCell className="px-2 text-right">{formatCurrency(item.productAmount)}</TableCell>
-      <TableCell className="px-2 text-right">{formatCurrency(item.depositAmount)}</TableCell>
-      <TableCell className="px-2 text-right font-semibold text-rose-700">{formatCurrency(item.refundRequestAmount)}</TableCell>
-      <TableCell className="px-2 text-center">{item.depositor}</TableCell>
-      <TableCell className="px-2 text-right">{item.balanceAmount ? formatCurrency(item.balanceAmount) : "-"}</TableCell>
-      <TableCell className="px-2 text-center">{item.registeredBy}</TableCell>
+      <TableCell className="whitespace-nowrap px-2 text-center">{item.no}</TableCell>
+      <TableCell className="whitespace-nowrap px-2 text-center font-semibold">{item.customerName}</TableCell>
+      <TableCell className="whitespace-nowrap px-2 text-center">{item.departureDate}</TableCell>
+      <TableCell className="whitespace-nowrap px-2 text-center">{item.peopleCount}</TableCell>
+      <TableCell className="whitespace-nowrap px-2 text-center">{item.phone}</TableCell>
+      <TableCell className="whitespace-nowrap px-2 text-center">{item.paymentMethod}</TableCell>
+      <TableCell className="whitespace-nowrap px-2 text-center">{item.depositDate}</TableCell>
+      <TableCell className="whitespace-nowrap px-2 text-right">{formatCurrency(item.productAmount)}</TableCell>
+      <TableCell className="whitespace-nowrap px-2 text-right">{formatCurrency(item.depositAmount)}</TableCell>
+      <TableCell className="whitespace-nowrap px-2 text-right font-semibold text-rose-700">{formatCurrency(item.refundRequestAmount)}</TableCell>
+      <TableCell className="whitespace-nowrap px-2 text-center">{item.depositor}</TableCell>
+      <TableCell className="whitespace-nowrap px-2 text-right">{item.balanceAmount ? formatCurrency(item.balanceAmount) : "-"}</TableCell>
+      <TableCell className="whitespace-nowrap px-2 text-center">{item.registeredBy}</TableCell>
       <TableCell className="px-2 text-center"><StatusBadge value={item.status} /></TableCell>
       <TableCell className="max-w-[260px] truncate px-2" title={item.bankAccount}>{item.bankAccount}</TableCell>
       <TableCell className="max-w-[240px] truncate px-2" title={item.memo}>{item.memo || "-"}</TableCell>
-      <TableCell className="px-2 text-center"><Button size="sm" variant="outline" onClick={() => onEdit(item)} disabled={disabled}>수정</Button></TableCell>
+      <TableCell className="whitespace-nowrap px-2 text-center"><Button size="sm" variant="outline" onClick={() => onEdit(item)} disabled={disabled}>수정</Button></TableCell>
     </TableRow>
   );
 }
@@ -194,35 +208,35 @@ function RefundEditRow({
   return (
     <TableRow className="bg-emerald-50/70 hover:bg-emerald-50/70">
       <TableCell className="px-2 text-center font-semibold">{item.no}</TableCell>
-      <TableCell className="px-1"><Input className={inputClass} value={item.customerName} onChange={(event) => onChange("customerName", event.target.value)} /></TableCell>
-      <TableCell className="px-1"><Input className={inputClass} type="date" value={item.departureDate} onChange={(event) => onChange("departureDate", event.target.value)} /></TableCell>
+      <TableCell className="px-1"><Input className={`${inputClass} w-[86px]`} value={item.customerName} onChange={(event) => onChange("customerName", event.target.value)} /></TableCell>
+      <TableCell className="px-1"><Input className={`${inputClass} w-[106px]`} type="date" value={item.departureDate} onChange={(event) => onChange("departureDate", event.target.value)} /></TableCell>
       <TableCell className="px-1"><Input className={`${inputClass} w-16`} type="number" value={item.peopleCount} onChange={(event) => onChange("peopleCount", Number(event.target.value) || 0)} /></TableCell>
-      <TableCell className="px-1"><Input className={inputClass} value={item.phone} onChange={(event) => onChange("phone", event.target.value)} /></TableCell>
+      <TableCell className="px-1"><Input className={`${inputClass} w-[128px]`} value={item.phone} onChange={(event) => onChange("phone", event.target.value)} /></TableCell>
       <TableCell className="px-1">
-        <Select className="h-8 text-xs" value={item.paymentMethod} onChange={(event) => onChange("paymentMethod", event.target.value)}>
+        <Select className="h-8 w-[112px] text-xs" value={item.paymentMethod} onChange={(event) => onChange("paymentMethod", event.target.value)}>
           <option>홈페이지결제</option>
           <option>계좌이체</option>
           <option>카드결제</option>
           <option>현금</option>
         </Select>
       </TableCell>
-      <TableCell className="px-1"><Input className={inputClass} value={item.depositDate} onChange={(event) => onChange("depositDate", event.target.value)} /></TableCell>
-      <TableCell className="px-1"><Input className={`${inputClass} text-right`} value={String(item.productAmount || "")} onChange={(event) => onChange("productAmount", numberValue(event.target.value))} /></TableCell>
-      <TableCell className="px-1"><Input className={`${inputClass} text-right`} value={String(item.depositAmount || "")} onChange={(event) => onChange("depositAmount", numberValue(event.target.value))} /></TableCell>
-      <TableCell className="px-1"><Input className={`${inputClass} text-right font-semibold text-rose-700`} value={String(item.refundRequestAmount || "")} onChange={(event) => onChange("refundRequestAmount", numberValue(event.target.value))} /></TableCell>
-      <TableCell className="px-1"><Input className={inputClass} value={item.depositor} onChange={(event) => onChange("depositor", event.target.value)} /></TableCell>
-      <TableCell className="px-1"><Input className={`${inputClass} text-right`} value={String(item.balanceAmount || "")} onChange={(event) => onChange("balanceAmount", numberValue(event.target.value))} /></TableCell>
-      <TableCell className="px-1"><Input className={inputClass} value={item.registeredBy} onChange={(event) => onChange("registeredBy", event.target.value)} /></TableCell>
+      <TableCell className="px-1"><Input className={`${inputClass} w-[104px]`} value={item.depositDate} onChange={(event) => onChange("depositDate", event.target.value)} /></TableCell>
+      <TableCell className="px-1"><Input className={`${inputClass} w-[104px] text-right`} value={String(item.productAmount || "")} onChange={(event) => onChange("productAmount", numberValue(event.target.value))} /></TableCell>
+      <TableCell className="px-1"><Input className={`${inputClass} w-[104px] text-right`} value={String(item.depositAmount || "")} onChange={(event) => onChange("depositAmount", numberValue(event.target.value))} /></TableCell>
+      <TableCell className="px-1"><Input className={`${inputClass} w-[122px] text-right font-semibold text-rose-700`} value={String(item.refundRequestAmount || "")} onChange={(event) => onChange("refundRequestAmount", numberValue(event.target.value))} /></TableCell>
+      <TableCell className="px-1"><Input className={`${inputClass} w-[86px]`} value={item.depositor} onChange={(event) => onChange("depositor", event.target.value)} /></TableCell>
+      <TableCell className="px-1"><Input className={`${inputClass} w-[96px] text-right`} value={String(item.balanceAmount || "")} onChange={(event) => onChange("balanceAmount", numberValue(event.target.value))} /></TableCell>
+      <TableCell className="px-1"><Input className={`${inputClass} w-[86px]`} value={item.registeredBy} onChange={(event) => onChange("registeredBy", event.target.value)} /></TableCell>
       <TableCell className="px-1">
-        <Select className="h-8 text-xs" value={item.status} onChange={(event) => onChange("status", event.target.value as RefundItem["status"])}>
+        <Select className="h-8 w-[96px] text-xs" value={item.status} onChange={(event) => onChange("status", event.target.value as RefundItem["status"])}>
           <option>환불요청</option>
           <option>처리중</option>
           <option>환불완료</option>
           <option>취소</option>
         </Select>
       </TableCell>
-      <TableCell className="px-1"><Input className={inputClass} value={item.bankAccount} onChange={(event) => onChange("bankAccount", event.target.value)} /></TableCell>
-      <TableCell className="px-1"><Input className={inputClass} value={item.memo ?? ""} onChange={(event) => onChange("memo", event.target.value)} /></TableCell>
+      <TableCell className="px-1"><Input className={`${inputClass} w-[250px]`} value={item.bankAccount} onChange={(event) => onChange("bankAccount", event.target.value)} /></TableCell>
+      <TableCell className="px-1"><Input className={`${inputClass} w-[210px]`} value={item.memo ?? ""} onChange={(event) => onChange("memo", event.target.value)} /></TableCell>
       <TableCell className="whitespace-nowrap px-2 text-center">
         <Button size="sm" onClick={onSave}>저장</Button>
         <Button size="sm" variant="outline" className="ml-1" onClick={onCancel}>취소</Button>

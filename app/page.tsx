@@ -4,22 +4,14 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { TodayDepartureTable } from "@/components/dashboard/TodayDepartureTable";
 import { getScheduleGroups } from "@/services/reservation-service";
 import { getRestaurantAggregateStatus } from "@/lib/reservation-status";
+import { getKstDateInput } from "@/lib/date";
 
 export const dynamic = "force-dynamic";
 
-function formatDateInput(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 export default async function DashboardPage() {
   const schedules = await getScheduleGroups();
-  const today = formatDateInput(new Date());
-  const sevenDaysLaterDate = new Date();
-  sevenDaysLaterDate.setDate(sevenDaysLaterDate.getDate() + 7);
-  const sevenDaysLater = formatDateInput(sevenDaysLaterDate);
+  const today = getKstDateInput();
+  const sevenDaysLater = getKstDateInput(7);
   const todaySchedules = schedules.filter((schedule) => schedule.tourDate === today);
   const futureSchedules = schedules.filter((schedule) => schedule.tourDate >= today);
   const nextWeekSchedules = schedules

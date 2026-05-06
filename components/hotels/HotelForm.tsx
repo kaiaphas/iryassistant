@@ -95,9 +95,25 @@ export function HotelForm({ hotel, open, saving = false, onOpenChange, onSave, o
         />
         <Input value={form.phone} onChange={(event) => update("phone", event.target.value)} placeholder="연락처" />
         <Input value={form.address} onChange={(event) => update("address", event.target.value)} placeholder="주소" />
-        <div className="grid grid-cols-2 gap-2">
-          <Select value={form.driverBenefit} onChange={(event) => update("driverBenefit", event.target.value as Hotel["driverBenefit"])}><option>제공</option><option>부분할인</option><option>미제공</option></Select>
-          <Select value={form.guideBenefit} onChange={(event) => update("guideBenefit", event.target.value as Hotel["guideBenefit"])}><option>제공</option><option>부분할인</option><option>미제공</option></Select>
+        <div className="grid gap-3 rounded-lg border bg-slate-50 p-3 sm:grid-cols-2">
+          <label className="space-y-1 text-xs font-semibold text-slate-600">
+            기사 혜택
+            <Select value={form.driverBenefit} onChange={(event) => update("driverBenefit", event.target.value as Hotel["driverBenefit"])}>
+              <option value="제공">기사 제공</option>
+              <option value="부분할인">기사 부분할인</option>
+              <option value="미제공">기사 미제공</option>
+            </Select>
+            <span className="block text-[11px] font-normal text-slate-500">기사 숙박/조식 제공 여부</span>
+          </label>
+          <label className="space-y-1 text-xs font-semibold text-slate-600">
+            가이드 혜택
+            <Select value={form.guideBenefit} onChange={(event) => update("guideBenefit", event.target.value as Hotel["guideBenefit"])}>
+              <option value="제공">가이드 제공</option>
+              <option value="부분할인">가이드 부분할인</option>
+              <option value="미제공">가이드 미제공</option>
+            </Select>
+            <span className="block text-[11px] font-normal text-slate-500">가이드 숙박/조식 제공 여부</span>
+          </label>
         </div>
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onCancel} disabled={saving}>취소</Button>

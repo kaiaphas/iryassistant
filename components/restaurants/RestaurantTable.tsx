@@ -63,9 +63,31 @@ export function RestaurantTable({ restaurants }: { restaurants: Restaurant[] }) 
           <Button onClick={add}>+ 등록</Button>
         </div>
         {error ? <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
-        <div className="overflow-hidden rounded-xl border bg-white shadow-soft"><div className="overflow-x-auto"><Table className="min-w-[900px]">
-          <TableHeader><TableRow>{["상품명", "지역명", "상호명", "메뉴", "소비자가", "입금가", "서비스여부", "연락처", "수정"].map((head) => <TableHead key={head}>{head}</TableHead>)}</TableRow></TableHeader>
-          <TableBody>{filtered.map((item) => <TableRow key={item.id}><TableCell>{item.productName}</TableCell><TableCell>{item.regionName}</TableCell><TableCell className="font-semibold">{item.shopName}</TableCell><TableCell>{item.menu}</TableCell><TableCell>{formatCurrency(item.retailPrice)}</TableCell><TableCell>{formatCurrency(item.depositPrice)}</TableCell><TableCell>{item.serviceType}</TableCell><TableCell>{item.phone}</TableCell><TableCell><Button size="sm" variant="outline" onClick={() => edit(item)}>수정</Button></TableCell></TableRow>)}</TableBody>
+        <div className="overflow-hidden rounded-xl border bg-white shadow-soft"><div className="overflow-x-auto"><Table className="min-w-[1120px] text-sm">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="min-w-[200px]">상품명</TableHead>
+              <TableHead className="w-[130px] text-center">지역명</TableHead>
+              <TableHead className="min-w-[160px]">상호명</TableHead>
+              <TableHead className="w-[130px] text-center">메뉴</TableHead>
+              <TableHead className="w-[110px] text-right">소비자가</TableHead>
+              <TableHead className="w-[110px] text-right">입금가</TableHead>
+              <TableHead className="w-[120px] text-center">서비스여부</TableHead>
+              <TableHead className="w-[150px] text-center">연락처</TableHead>
+              <TableHead className="w-[90px] text-center">수정</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>{filtered.map((item) => <TableRow key={item.id}>
+            <TableCell className="max-w-[240px] truncate" title={item.productName}>{item.productName}</TableCell>
+            <TableCell className="whitespace-nowrap text-center">{item.regionName}</TableCell>
+            <TableCell className="max-w-[180px] truncate font-semibold" title={item.shopName}>{item.shopName}</TableCell>
+            <TableCell className="max-w-[130px] truncate text-center" title={item.menu}>{item.menu}</TableCell>
+            <TableCell className="whitespace-nowrap text-right">{formatCurrency(item.retailPrice)}</TableCell>
+            <TableCell className="whitespace-nowrap text-right">{formatCurrency(item.depositPrice)}</TableCell>
+            <TableCell className="whitespace-nowrap text-center">{item.serviceType}</TableCell>
+            <TableCell className="whitespace-nowrap text-center">{item.phone}</TableCell>
+            <TableCell className="text-center"><Button size="sm" variant="outline" onClick={() => edit(item)}>수정</Button></TableCell>
+          </TableRow>)}</TableBody>
         </Table></div></div>
       <RestaurantForm restaurant={selected} open={open} saving={saving} onOpenChange={setOpen} onSave={save} onCancel={() => setOpen(false)} />
     </div>

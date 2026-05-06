@@ -8,21 +8,12 @@ import { ReservationFilters, type ReservationFilterState } from "@/components/re
 import { ScheduleAccordionCards } from "@/components/reservations/ScheduleAccordionCards";
 import { ScheduleAccordionTable } from "@/components/reservations/ScheduleAccordionTable";
 import { getRestaurantAggregateStatus, getScheduleProgressStatus } from "@/lib/reservation-status";
-
-function formatDateInput(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
+import { getKstDateInput } from "@/lib/date";
 
 function getDefaultDateRange() {
-  const start = new Date();
-  const end = new Date(start);
-  end.setDate(start.getDate() + 7);
   return {
-    startDate: formatDateInput(start),
-    endDate: formatDateInput(end),
+    startDate: getKstDateInput(),
+    endDate: getKstDateInput(7),
   };
 }
 

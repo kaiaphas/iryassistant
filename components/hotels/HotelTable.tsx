@@ -67,9 +67,27 @@ export function HotelTable({ hotels }: { hotels: Hotel[] }) {
           <Button onClick={add}>+ 등록</Button>
         </div>
         {error ? <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
-        <div className="overflow-hidden rounded-xl border bg-white shadow-soft"><div className="overflow-x-auto"><Table className="min-w-[1000px]">
-          <TableHeader><TableRow>{["지역명", "상호명", "2인실 단가 요약", "3인실 단가 요약", "4인실 단가 요약", "연락처", "수정"].map((head) => <TableHead key={head}>{head}</TableHead>)}</TableRow></TableHeader>
-          <TableBody>{filtered.map((item) => <TableRow key={item.id}><TableCell>{item.regionName}</TableCell><TableCell className="font-semibold">{item.shopName}</TableCell><TableCell>{rateSummary(item.roomRates.double)}</TableCell><TableCell>{rateSummary(item.roomRates.triple)}</TableCell><TableCell>{rateSummary(item.roomRates.quad)}</TableCell><TableCell>{item.phone}</TableCell><TableCell><Button size="sm" variant="outline" onClick={() => edit(item)}>수정</Button></TableCell></TableRow>)}</TableBody>
+        <div className="overflow-hidden rounded-xl border bg-white shadow-soft"><div className="overflow-x-auto"><Table className="min-w-[1320px] text-sm">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[130px] text-center">지역명</TableHead>
+              <TableHead className="min-w-[180px]">상호명</TableHead>
+              <TableHead className="min-w-[280px]">2인실 단가 요약</TableHead>
+              <TableHead className="min-w-[280px]">3인실 단가 요약</TableHead>
+              <TableHead className="min-w-[280px]">4인실 단가 요약</TableHead>
+              <TableHead className="w-[150px] text-center">연락처</TableHead>
+              <TableHead className="w-[90px] text-center">수정</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>{filtered.map((item) => <TableRow key={item.id}>
+            <TableCell className="whitespace-nowrap text-center">{item.regionName}</TableCell>
+            <TableCell className="max-w-[200px] truncate font-semibold" title={item.shopName}>{item.shopName}</TableCell>
+            <TableCell className="max-w-[300px] truncate" title={rateSummary(item.roomRates.double)}>{rateSummary(item.roomRates.double)}</TableCell>
+            <TableCell className="max-w-[300px] truncate" title={rateSummary(item.roomRates.triple)}>{rateSummary(item.roomRates.triple)}</TableCell>
+            <TableCell className="max-w-[300px] truncate" title={rateSummary(item.roomRates.quad)}>{rateSummary(item.roomRates.quad)}</TableCell>
+            <TableCell className="whitespace-nowrap text-center">{item.phone}</TableCell>
+            <TableCell className="text-center"><Button size="sm" variant="outline" onClick={() => edit(item)}>수정</Button></TableCell>
+          </TableRow>)}</TableBody>
         </Table></div></div>
       <HotelForm hotel={selected} open={open} saving={saving} onOpenChange={setOpen} onSave={save} onCancel={() => setOpen(false)} />
     </div>

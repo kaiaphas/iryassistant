@@ -43,23 +43,22 @@ export function ScheduleAccordionTable({
     { label: "상품명", className: "min-w-[180px]" },
     { label: "호차", className: "w-[68px] text-center" },
     { label: "출발", className: "w-[70px] text-center" },
-    { label: "도착", className: "w-[70px] text-center" },
     { label: "버스회사", className: "w-[112px] text-center" },
     { label: "인승", className: "w-[74px] text-center" },
     { label: "가이드", className: "w-[150px] text-center" },
     { label: "기사", className: "w-[150px] text-center" },
     { label: "식사", className: "w-[64px] text-center" },
     { label: "식당명", className: "min-w-[180px]" },
-    { label: "식당상태", className: "w-[98px] text-center" },
+    { label: "식당상태", className: "w-[112px] text-center" },
     { label: "숙소명", className: "min-w-[130px]" },
-    { label: "숙소상태", className: "w-[98px] text-center" },
-    { label: "진행상태", className: "w-[98px] text-center" },
+    { label: "숙소상태", className: "w-[112px] text-center" },
+    { label: "진행상태", className: "w-[112px] text-center" },
   ];
 
   return (
     <div className="hidden overflow-hidden rounded-xl border bg-white shadow-soft lg:block">
       <div className="overflow-x-auto scrollbar-thin">
-        <Table className="min-w-[1280px] text-xs">
+        <Table className="min-w-[1340px] text-xs">
           <TableHeader>
             <TableRow>
               {headers.map((head) => (
@@ -89,7 +88,6 @@ export function ScheduleAccordionTable({
                     <TableCell className="max-w-[180px] truncate px-2 py-2 font-semibold" title={schedule.productName}>{schedule.productName}</TableCell>
                     <TableCell className="whitespace-nowrap px-2 py-2 text-center">{schedule.busNo || "-"}</TableCell>
                     <TableCell className="whitespace-nowrap px-2 py-2 text-center font-semibold">{schedule.departureTime}</TableCell>
-                    <TableCell className="whitespace-nowrap px-2 py-2 text-center">{schedule.returnTime}</TableCell>
                     <TableCell className="max-w-[112px] truncate px-2 py-2 text-center" title={schedule.vehicle.busCompany || ""}>{schedule.vehicle.busCompany || "-"}</TableCell>
                     <TableCell className="whitespace-nowrap px-2 py-2 text-center font-semibold text-emerald-800">{schedule.vehicle.busType || "-"}</TableCell>
                     <TableCell className="max-w-[150px] truncate px-2 py-2 text-center" title={formatPersonWithPhone(schedule.guide)}>{formatPersonWithPhone(schedule.guide)}</TableCell>
@@ -98,14 +96,14 @@ export function ScheduleAccordionTable({
                     <TableCell className="max-w-[230px] truncate px-2 py-2 font-medium" title={schedule.restaurantBookings.map((booking) => `${booking.mealType} · ${booking.name}`).join(" / ")}>
                       {schedule.restaurantBookings.map((booking) => `${booking.mealType} · ${booking.name}`).join(" / ") || "-"}
                     </TableCell>
-                    <TableCell className="px-2 py-2 text-center"><StatusBadge value={restaurantStatus} /></TableCell>
+                    <TableCell className="w-[112px] px-2 py-2 text-center"><StatusBadge value={restaurantStatus} /></TableCell>
                     <TableCell className="max-w-[140px] truncate px-2 py-2" title={schedule.hotelBooking.name}>{schedule.tourType === "숙박" ? schedule.hotelBooking.name || "-" : "-"}</TableCell>
-                    <TableCell className="px-2 py-2 text-center">{schedule.tourType === "숙박" ? <StatusBadge value={schedule.hotelBooking.status} /> : "-"}</TableCell>
-                    <TableCell className="px-2 py-2 text-center"><StatusBadge value={progressStatus} /></TableCell>
+                    <TableCell className="w-[112px] px-2 py-2 text-center">{schedule.tourType === "숙박" ? <StatusBadge value={schedule.hotelBooking.status} /> : "-"}</TableCell>
+                    <TableCell className="w-[112px] px-2 py-2 text-center"><StatusBadge value={progressStatus} /></TableCell>
                   </TableRow>
                   {open ? (
                     <TableRow className="bg-emerald-50/40 hover:bg-emerald-50/40">
-                      <TableCell colSpan={16} className="p-3">
+                      <TableCell colSpan={15} className="p-3">
                         <div className="ml-3 space-y-2 border-l-2 border-emerald-200 pl-3">
                           <ScheduleOperationSection schedule={schedule} guides={guides} drivers={drivers} onChange={onChangeSchedule} />
                           <RestaurantReservationSection schedule={schedule} restaurants={restaurants} onChange={onChangeSchedule} />

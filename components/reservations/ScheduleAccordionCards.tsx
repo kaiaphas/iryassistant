@@ -53,7 +53,7 @@ export function ScheduleAccordionCards({
                     <TourTypeBadge value={schedule.tourType} />
                   </div>
                   <p className="mt-2 font-semibold">{schedule.productName}</p>
-                  <p className="mt-2 text-sm text-slate-600">{schedule.departureTime} ~ {schedule.returnTime}</p>
+                  <p className="mt-2 text-sm text-slate-600">출발 {schedule.departureTime}</p>
                   <p className="text-sm text-slate-600">{schedule.busNo || "-"} · {schedule.vehicle.busCompany || "-"} · {schedule.vehicle.busType || "-"}</p>
                   <p className="mt-1 text-sm text-slate-600">가이드 {formatPersonWithPhone(schedule.guide)}</p>
                   <p className="text-sm text-slate-600">기사 {formatPersonWithPhone(schedule.driver)}</p>

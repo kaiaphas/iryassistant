@@ -64,7 +64,6 @@ function buildScheduleConditionQuery(whereClause = "") {
       ON d.info_code = CONCAT(a.tid, '_', REPLACE(a.tour_date, '/', ''))
     WHERE REPLACE(a.tour_date, '/', '') BETWEEN ? AND ?
     ${whereClause}
-    and a.status = '출발확정'
     ORDER BY a.tour_date ASC, c.tid ASC
   `;
 }
