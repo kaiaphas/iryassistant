@@ -66,8 +66,8 @@ export function RestaurantTable({ restaurants }: { restaurants: Restaurant[] }) 
         <div className="overflow-hidden rounded-xl border bg-white shadow-soft"><div className="overflow-x-auto"><Table className="min-w-[1120px] text-sm">
           <TableHeader>
             <TableRow>
-              <TableHead className="min-w-[200px]">상품명</TableHead>
               <TableHead className="w-[130px] text-center">지역명</TableHead>
+              <TableHead className="min-w-[200px]">상품명</TableHead>
               <TableHead className="min-w-[160px]">상호명</TableHead>
               <TableHead className="w-[130px] text-center">메뉴</TableHead>
               <TableHead className="w-[110px] text-right">소비자가</TableHead>
@@ -78,8 +78,8 @@ export function RestaurantTable({ restaurants }: { restaurants: Restaurant[] }) 
             </TableRow>
           </TableHeader>
           <TableBody>{filtered.map((item) => <TableRow key={item.id}>
-            <TableCell className="max-w-[240px] truncate" title={item.productName}>{item.productName}</TableCell>
             <TableCell className="whitespace-nowrap text-center">{item.regionName}</TableCell>
+            <TableCell className="max-w-[240px] truncate" title={item.productName}>{item.productName}</TableCell>
             <TableCell className="max-w-[180px] truncate font-semibold" title={item.shopName}>{item.shopName}</TableCell>
             <TableCell className="max-w-[130px] truncate text-center" title={item.menu}>{item.menu}</TableCell>
             <TableCell className="whitespace-nowrap text-right">{formatCurrency(item.retailPrice)}</TableCell>

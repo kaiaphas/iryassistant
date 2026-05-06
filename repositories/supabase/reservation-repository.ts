@@ -74,7 +74,9 @@ export function createSupabaseServerClient() {
 
 function getDayLabel(date: string) {
   const labels = ["일", "월", "화", "수", "목", "금", "토"];
-  const day = new Date(`${date}T00:00:00+09:00`).getDay();
+  const [year, month, dayOfMonth] = date.split(/[-/]/).map(Number);
+  if (!year || !month || !dayOfMonth) return "";
+  const day = new Date(Date.UTC(year, month - 1, dayOfMonth)).getUTCDay();
   return labels[day] ?? "";
 }
 
