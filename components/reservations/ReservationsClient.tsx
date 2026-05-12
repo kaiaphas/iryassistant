@@ -17,6 +17,21 @@ function getDefaultDateRange() {
   };
 }
 
+function getBusNoSortValue(busNo: string) {
+  const match = busNo.match(/\d+/);
+  return match ? Number(match[0]) : Number.MAX_SAFE_INTEGER;
+}
+
+function sortSchedules(left: ScheduleGroup, right: ScheduleGroup) {
+  const dateCompare = left.tourDate.localeCompare(right.tourDate);
+  if (dateCompare !== 0) return dateCompare;
+
+  const busNoCompare = getBusNoSortValue(left.busNo) - getBusNoSortValue(right.busNo);
+  if (busNoCompare !== 0) return busNoCompare;
+
+  return left.busNo.localeCompare(right.busNo, "ko", { numeric: true });
+}
+
 export function ReservationsClient({
   scheduleGroups,
   guides,
@@ -70,7 +85,8 @@ export function ReservationsClient({
       && (!filters.guide || schedule.guide.name === filters.guide)
       && (!filters.restaurantStatus || getRestaurantAggregateStatus(schedule.restaurantBookings) === filters.restaurantStatus)
       && (!filters.hotelStatus || schedule.tourType === "당일" || schedule.hotelBooking.status === filters.hotelStatus);
-  });
+  }).sort(sortSchedules);
+  const filteredReservationCount = filtered.reduce((total, schedule) => total + schedule.reservationCount, 0);
 
   function toggleSchedule(id: string) {
     setOpenIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
@@ -114,7 +130,7 @@ export function ReservationsClient({
       <div className="grid gap-3 sm:grid-cols-1">
         <Card>
           <CardContent className="flex items-center justify-between p-4">
-            <div><p className="text-sm text-slate-500">전체 일정</p><p className="mt-1 text-2xl font-bold">{filtered.length}건</p></div>
+            <div><p className="text-sm text-slate-500">전체 일정 / 인원</p><p className="mt-1 text-2xl font-bold">{filtered.length}건 · {filteredReservationCount}명</p></div>
             <CalendarDays className="h-6 w-6 text-emerald-700" />
           </CardContent>
         </Card>

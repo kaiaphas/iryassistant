@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { upsertRestaurantToSupabase } from "@/repositories/supabase/master-repository";
+import { deleteRestaurantFromSupabase, upsertRestaurantToSupabase } from "@/repositories/supabase/master-repository";
 import type { Restaurant } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
 
     const saved = await upsertRestaurantToSupabase({
       ...restaurant,
+      tourType: restaurant.tourType === "당일" ? "당일" : "숙박",
       productName: restaurant.productName?.trim() ?? "",
       regionName: restaurant.regionName?.trim() ?? "",
       shopName: restaurant.shopName.trim(),
@@ -26,6 +27,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(saved);
   } catch (error) {
     const message = error instanceof Error ? error.message : "식당 저장 중 알 수 없는 오류가 발생했습니다.";
+    return NextResponse.json({ message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const id = request.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ message: "삭제할 식당을 선택해주세요." }, { status: 400 });
+
+    await deleteRestaurantFromSupabase(id);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "식당 삭제 중 알 수 없는 오류가 발생했습니다.";
     return NextResponse.json({ message }, { status: 500 });
   }
 }

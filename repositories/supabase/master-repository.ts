@@ -18,6 +18,7 @@ type DriverRow = GuideRow & {
 
 type RestaurantRow = {
   id: string;
+  tour_type?: Restaurant["tourType"] | null;
   product_name: string | null;
   region_name: string | null;
   shop_name: string;
@@ -115,6 +116,7 @@ function mapDriver(row: DriverRow): Driver {
 function mapRestaurant(row: RestaurantRow): Restaurant {
   return {
     id: row.id,
+    tourType: row.tour_type === "당일" ? "당일" : "숙박",
     productName: textValue(row.product_name),
     regionName: textValue(row.region_name),
     shopName: row.shop_name,
@@ -252,11 +254,21 @@ export async function findDriversFromSupabase() {
 
 export async function findRestaurantsFromSupabase() {
   const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  let { data, error }: { data: RestaurantRow[] | null; error: { message?: string; code?: string } | null } = await supabase
     .from("master_restaurants")
-    .select("id,product_name,region_name,shop_name,menu,retail_price,deposit_price,service_type,phone,address,note")
+    .select("id,tour_type,product_name,region_name,shop_name,menu,retail_price,deposit_price,service_type,phone,address,note")
     .order("region_name", { ascending: true })
     .order("shop_name", { ascending: true });
+
+  if (error?.message?.includes("tour_type")) {
+    const fallback = await supabase
+      .from("master_restaurants")
+      .select("id,product_name,region_name,shop_name,menu,retail_price,deposit_price,service_type,phone,address,note")
+      .order("region_name", { ascending: true })
+      .order("shop_name", { ascending: true });
+    data = (fallback.data ?? null) as RestaurantRow[] | null;
+    error = fallback.error;
+  }
 
   if (isMissingTable(error)) return restaurants;
   if (error) throw new Error(`식당관리 Supabase 조회 실패: ${error.message}`);
@@ -294,6 +306,12 @@ export async function upsertGuideToSupabase(guide: Guide) {
   return mapGuide(data as GuideRow);
 }
 
+export async function deleteGuideFromSupabase(id: string) {
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.from("master_guides").delete().eq("id", id);
+  if (error) throw new Error(`가이드 삭제 실패: ${error.message}`);
+}
+
 export async function upsertDriverToSupabase(driver: Driver) {
   const supabase = createSupabaseServerClient();
   const payload = {
@@ -316,10 +334,17 @@ export async function upsertDriverToSupabase(driver: Driver) {
   return mapDriver(data as DriverRow);
 }
 
+export async function deleteDriverFromSupabase(id: string) {
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.from("master_drivers").delete().eq("id", id);
+  if (error) throw new Error(`기사 삭제 실패: ${error.message}`);
+}
+
 export async function upsertRestaurantToSupabase(restaurant: Restaurant) {
   const supabase = createSupabaseServerClient();
   const payload = {
     ...(restaurant.id ? { id: restaurant.id } : {}),
+    tour_type: restaurant.tourType || "숙박",
     product_name: restaurant.productName || null,
     region_name: restaurant.regionName || null,
     shop_name: restaurant.shopName,
@@ -332,13 +357,32 @@ export async function upsertRestaurantToSupabase(restaurant: Restaurant) {
     note: restaurant.note || null,
   };
 
-  const { data, error } = await supabase
+  let { data, error }: { data: RestaurantRow | null; error: { message?: string; code?: string } | null } = await supabase
     .from("master_restaurants")
     .upsert(payload)
-    .select("id,product_name,region_name,shop_name,menu,retail_price,deposit_price,service_type,phone,address,note")
+    .select("id,tour_type,product_name,region_name,shop_name,menu,retail_price,deposit_price,service_type,phone,address,note")
     .single();
+
+  if (error?.message?.includes("tour_type")) {
+    const fallbackPayload = { ...payload } as Omit<typeof payload, "tour_type"> & { tour_type?: string };
+    delete fallbackPayload.tour_type;
+    const fallback = await supabase
+      .from("master_restaurants")
+      .upsert(fallbackPayload)
+      .select("id,product_name,region_name,shop_name,menu,retail_price,deposit_price,service_type,phone,address,note")
+      .single();
+    data = (fallback.data ?? null) as RestaurantRow | null;
+    error = fallback.error;
+  }
+
   if (error) throw new Error(`식당 저장 실패: ${error.message}`);
   return mapRestaurant(data as RestaurantRow);
+}
+
+export async function deleteRestaurantFromSupabase(id: string) {
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.from("master_restaurants").delete().eq("id", id);
+  if (error) throw new Error(`식당 삭제 실패: ${error.message}`);
 }
 
 export async function upsertHotelToSupabase(hotel: Hotel) {
@@ -362,4 +406,10 @@ export async function upsertHotelToSupabase(hotel: Hotel) {
     .single();
   if (error) throw new Error(`호텔 저장 실패: ${error.message}`);
   return mapHotel(data as HotelRow);
+}
+
+export async function deleteHotelFromSupabase(id: string) {
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.from("master_hotels").delete().eq("id", id);
+  if (error) throw new Error(`호텔 삭제 실패: ${error.message}`);
 }

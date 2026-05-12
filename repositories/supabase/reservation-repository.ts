@@ -8,6 +8,7 @@ type ReservationScheduleOverviewRow = {
   tour_type_label: "당일" | "숙박" | null;
   product_code: string | null;
   product_name: string | null;
+  reservation_count: number | null;
   departure_time: string | null;
   return_time: string | null;
   vehicle_no: string | null;
@@ -24,6 +25,7 @@ type ReservationScheduleOverviewRow = {
   hotel_phone?: string | null;
   hotel_memo?: string | null;
   hotel_status_label: FacilityBookingStatus | null;
+  hotel_provisional_status_label?: FacilityBookingStatus | null;
   room_assignments: string | null;
   progress_status_label: string | null;
   memo: string | null;
@@ -47,11 +49,15 @@ type HotelBookingRow = {
   hotel_name: string;
   hotel_phone: string | null;
   hotel_memo: string | null;
+  provisional_booking_status?: "BEFORE" | "COMPLETED" | "CANCELED" | null;
+  provisional_double_room_count?: number | null;
+  provisional_triple_room_count?: number | null;
+  provisional_quad_room_count?: number | null;
   booking_status: "BEFORE" | "COMPLETED" | "CANCELED";
 };
 
 const overviewSelectWithContacts =
-  "id,source_schedule_key,tour_date,tour_type_label,product_code,product_name,departure_time,return_time,vehicle_no,bus_company,vehicle_capacity,guide_name,guide_phone,driver_name,driver_phone,restaurant_names,restaurant_status_labels,hotel_name,hotel_status_label,room_assignments,progress_status_label,memo,notice_memo";
+  "id,source_schedule_key,tour_date,tour_type_label,product_code,product_name,reservation_count,departure_time,return_time,vehicle_no,bus_company,vehicle_capacity,guide_name,guide_phone,driver_name,driver_phone,restaurant_names,restaurant_status_labels,hotel_name,hotel_status_label,room_assignments,progress_status_label,memo,notice_memo";
 
 const overviewSelectFallback =
   "id,source_schedule_key,tour_date,tour_type_label,product_code,product_name,departure_time,return_time,vehicle_no,vehicle_capacity,guide_name,driver_name,restaurant_names,restaurant_status_labels,hotel_name,hotel_status_label,room_assignments,progress_status_label,memo,notice_memo";
@@ -146,6 +152,7 @@ function mapOverviewRow(row: ReservationScheduleOverviewRow): ScheduleGroup {
     dayLabel: getDayLabel(tourDate),
     productCode: row.product_code ?? row.source_schedule_key ?? row.id,
     productName,
+    reservationCount: row.reservation_count ?? 0,
     departureTime: row.departure_time ?? "-",
     returnTime: row.return_time ?? "-",
     busNo: row.vehicle_no ?? "",
@@ -163,7 +170,9 @@ function mapOverviewRow(row: ReservationScheduleOverviewRow): ScheduleGroup {
     hotelBooking: {
       name: row.hotel_name ?? "",
       phone: row.hotel_phone ?? "",
+      provisionalRooms: { double: 0, triple: 0, quadruple: 0 },
       rooms: parseRoomAssignments(row.room_assignments),
+      provisionalStatus: normalizeFacilityStatus(row.hotel_provisional_status_label),
       status: normalizeFacilityStatus(row.hotel_status_label),
     },
     progressStatus: row.progress_status_label ?? "진행중",
@@ -184,7 +193,8 @@ function needsLegacyOverviewFallback(message: string | undefined) {
   return Boolean(
     message?.includes("bus_company")
     || message?.includes("guide_phone")
-    || message?.includes("driver_phone"),
+    || message?.includes("driver_phone")
+    || message?.includes("reservation_count"),
   );
 }
 
@@ -204,7 +214,7 @@ async function fetchOverviewRows(
       .select(select)
       .eq("is_active", true)
       .order("tour_date", { ascending: true })
-      .order("departure_time", { ascending: true, nullsFirst: false })
+      .order("vehicle_no", { ascending: true, nullsFirst: false })
       .range(from, to);
 
     if (error) {
@@ -252,9 +262,10 @@ export async function findScheduleGroupsFromSupabase() {
 
   const restaurantRows: RestaurantBookingRow[] = [];
   const hotelRows: HotelBookingRow[] = [];
+  const detailLookupChunkSize = 100;
 
-  for (const ids of chunk(scheduleIds, 500)) {
-    const [{ data: restaurantData, error: restaurantError }, { data: hotelData, error: hotelError }] = await Promise.all([
+  for (const ids of chunk(scheduleIds, detailLookupChunkSize)) {
+    const [{ data: restaurantData, error: restaurantError }, hotelResult] = await Promise.all([
       supabase
         .from("schedule_restaurant_bookings")
         .select("id,schedule_id,meal_type,restaurant_name,restaurant_phone,restaurant_memo,booking_status,sort_order")
@@ -262,9 +273,26 @@ export async function findScheduleGroupsFromSupabase() {
         .order("sort_order", { ascending: true }),
       supabase
         .from("schedule_hotel_bookings")
-        .select("id,schedule_id,hotel_name,hotel_phone,hotel_memo,booking_status")
+        .select("id,schedule_id,hotel_name,hotel_phone,hotel_memo,provisional_booking_status,provisional_double_room_count,provisional_triple_room_count,provisional_quad_room_count,booking_status")
         .in("schedule_id", ids),
     ]);
+    let hotelData = hotelResult.data;
+    let hotelError = hotelResult.error;
+
+    if (hotelError?.message?.includes("provisional_")) {
+      const fallback = await supabase
+        .from("schedule_hotel_bookings")
+        .select("id,schedule_id,hotel_name,hotel_phone,hotel_memo,booking_status")
+        .in("schedule_id", ids);
+      hotelData = (fallback.data ?? []).map((row) => ({
+        ...row,
+        provisional_booking_status: null,
+        provisional_double_room_count: null,
+        provisional_triple_room_count: null,
+        provisional_quad_room_count: null,
+      }));
+      hotelError = fallback.error;
+    }
 
     if (restaurantError) {
       throw new Error(`식당 예약현황 Supabase 조회 실패: ${restaurantError.message}`);
@@ -292,14 +320,27 @@ export async function findScheduleGroupsFromSupabase() {
 
   return rows.map((row) => {
     const hotel = hotelsBySchedule.get(row.id);
-    return mapOverviewRow({
+    const schedule = mapOverviewRow({
       ...row,
       restaurant_bookings: restaurantsBySchedule.get(row.id),
       hotel_name: hotel?.hotel_name ?? row.hotel_name,
       hotel_phone: hotel?.hotel_phone ?? row.hotel_phone,
       hotel_memo: hotel?.hotel_memo ?? row.hotel_memo,
+      hotel_provisional_status_label: hotel ? normalizeFacilityStatus(hotel.provisional_booking_status) : undefined,
       hotel_status_label: hotel ? normalizeFacilityStatus(hotel.booking_status) : row.hotel_status_label,
       memo: hotel?.hotel_memo ? [row.memo, `숙소메모: ${hotel.hotel_memo}`].filter(Boolean).join("\n") : row.memo,
     });
+    if (!hotel) return schedule;
+    return {
+      ...schedule,
+      hotelBooking: {
+        ...schedule.hotelBooking,
+        provisionalRooms: {
+          double: hotel.provisional_double_room_count ?? 0,
+          triple: hotel.provisional_triple_room_count ?? 0,
+          quadruple: hotel.provisional_quad_room_count ?? 0,
+        },
+      },
+    };
   });
 }

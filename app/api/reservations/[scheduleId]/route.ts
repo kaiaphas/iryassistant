@@ -144,7 +144,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   const hasHotelData =
     Boolean(cleanText(hotel.name))
     || Boolean(cleanText(hotel.phone))
+    || hotel.provisionalStatus !== "예약전"
     || hotel.status !== "예약전"
+    || hotel.provisionalRooms.double > 0
+    || hotel.provisionalRooms.triple > 0
+    || hotel.provisionalRooms.quadruple > 0
     || hotel.rooms.double > 0
     || hotel.rooms.triple > 0
     || hotel.rooms.quadruple > 0;
@@ -177,27 +181,59 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     schedule_id: scheduleId,
     hotel_name: cleanText(hotel.name) ?? "",
     hotel_phone: cleanText(hotel.phone),
+    provisional_booking_status: toRestaurantStatus(hotel.provisionalStatus),
+    provisional_double_room_count: Math.max(0, Number(hotel.provisionalRooms.double) || 0),
+    provisional_triple_room_count: Math.max(0, Number(hotel.provisionalRooms.triple) || 0),
+    provisional_quad_room_count: Math.max(0, Number(hotel.provisionalRooms.quadruple) || 0),
     booking_status: toRestaurantStatus(hotel.status),
   };
 
   if (hotelBookingId) {
-    const { error: updateHotelError } = await supabase
+    let { error: updateHotelError } = await supabase
       .from("schedule_hotel_bookings")
       .update(hotelPayload)
       .eq("id", hotelBookingId);
+
+    if (updateHotelError?.message.includes("provisional_")) {
+      const fallbackPayload = { ...hotelPayload } as Partial<typeof hotelPayload>;
+      delete fallbackPayload.provisional_booking_status;
+      delete fallbackPayload.provisional_double_room_count;
+      delete fallbackPayload.provisional_triple_room_count;
+      delete fallbackPayload.provisional_quad_room_count;
+      const fallback = await supabase
+        .from("schedule_hotel_bookings")
+        .update(fallbackPayload)
+        .eq("id", hotelBookingId);
+      updateHotelError = fallback.error;
+    }
 
     if (updateHotelError) {
       return NextResponse.json({ message: `숙소 예약현황 저장 실패: ${updateHotelError.message}` }, { status: 500 });
     }
   } else {
-    const { data: insertedHotel, error: insertHotelError } = await supabase
+    let { data: insertedHotel, error: insertHotelError } = await supabase
       .from("schedule_hotel_bookings")
       .insert(hotelPayload)
       .select("id")
       .single();
 
-    if (insertHotelError) {
-      return NextResponse.json({ message: `숙소 예약현황 저장 실패: ${insertHotelError.message}` }, { status: 500 });
+    if (insertHotelError?.message.includes("provisional_")) {
+      const fallbackPayload = { ...hotelPayload } as Partial<typeof hotelPayload>;
+      delete fallbackPayload.provisional_booking_status;
+      delete fallbackPayload.provisional_double_room_count;
+      delete fallbackPayload.provisional_triple_room_count;
+      delete fallbackPayload.provisional_quad_room_count;
+      const fallback = await supabase
+        .from("schedule_hotel_bookings")
+        .insert(fallbackPayload)
+        .select("id")
+        .single();
+      insertedHotel = fallback.data;
+      insertHotelError = fallback.error;
+    }
+
+    if (insertHotelError || !insertedHotel) {
+      return NextResponse.json({ message: `숙소 예약현황 저장 실패: ${insertHotelError?.message ?? "저장 결과가 없습니다."}` }, { status: 500 });
     }
 
     hotelBookingId = insertedHotel.id as string;

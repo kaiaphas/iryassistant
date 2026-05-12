@@ -43,6 +43,7 @@ export type MySqlScheduleRow = {
   progress_status?: string | null;
   schedule_memo?: string | null;
   notice_memo?: string | null;
+  reservation_count?: number | string | null;
 
   restaurant_bookings_json?: string | null;
   meal_type?: string | null;
@@ -105,6 +106,7 @@ export type NormalizedSchedule = {
   progress_status: ScheduleProgressStatus;
   memo: string | null;
   notice_memo: string | null;
+  reservation_count: number;
   sort_order: number;
   is_active: boolean;
   restaurants: NormalizedRestaurantBooking[];
@@ -157,4 +159,5 @@ export type ScheduleOverviewRow = {
   room_assignments: string | null;
   progress_status_label: string;
   notice_memo: string | null;
+  reservation_count: number | null;
 };

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { upsertHotelToSupabase } from "@/repositories/supabase/master-repository";
+import { deleteHotelFromSupabase, upsertHotelToSupabase } from "@/repositories/supabase/master-repository";
 import type { Hotel, RoomRate } from "@/lib/types";
 
 function cleanRate(rate: RoomRate): RoomRate {
@@ -10,6 +10,19 @@ function cleanRate(rate: RoomRate): RoomRate {
     peak: Number(rate.peak) || 0,
     breakfast: Number(rate.breakfast) || 0,
   };
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const id = request.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ message: "삭제할 호텔을 선택해주세요." }, { status: 400 });
+
+    await deleteHotelFromSupabase(id);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "호텔 삭제 중 알 수 없는 오류가 발생했습니다.";
+    return NextResponse.json({ message }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {

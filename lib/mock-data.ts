@@ -176,6 +176,7 @@ export const scheduleGroups: ScheduleGroup[] = [
     dayLabel: "일",
     productCode: "JEJU-2N3D",
     productName: "부산 속초 1박2일",
+    reservationCount: 7,
     departureTime: "05:00",
     returnTime: "20:10",
     busNo: "3호차",
@@ -185,7 +186,7 @@ export const scheduleGroups: ScheduleGroup[] = [
     restaurant: { id: "R001", name: "바다향기" },
     hotel: { id: "H001", name: "푸른바다 호텔" },
     restaurantBookings: [{ id: "RB-001", name: "바다향기", phone: "051-111-2233", memo: "", mealType: "중식", status: "예약전" }],
-    hotelBooking: { name: "푸른바다 호텔", phone: "051-222-3344", rooms: { double: 6, triple: 0, quadruple: 2 }, status: "예약완료" },
+    hotelBooking: { name: "푸른바다 호텔", phone: "051-222-3344", provisionalRooms: { double: 6, triple: 0, quadruple: 2 }, rooms: { double: 6, triple: 0, quadruple: 2 }, provisionalStatus: "예약완료", status: "예약완료" },
     progressStatus: "확정",
     reservations: [
       { ...reservations[1], orderId: "ORD-260501-001", productName: "제주도 2박3일", tourDate: "2026-05-01", departureTime: "08:30", returnTime: "19:20", busNo: "2호차", totalPeople: 4, adult: 4, child: 0, price: 800000, customerName: "강민석", phone: "010-5411-4745", station: "주안시민공원", reservationStatus: "예약완료", paymentType: "카드결제", progressStatus: "출발완료" },
@@ -199,6 +200,7 @@ export const scheduleGroups: ScheduleGroup[] = [
     dayLabel: "금",
     productCode: "GANGWON-DAY",
     productName: "강원 자연휴양 1박2일",
+    reservationCount: 9,
     departureTime: "07:30",
     returnTime: "18:30",
     busNo: "2호차",
@@ -207,7 +209,7 @@ export const scheduleGroups: ScheduleGroup[] = [
     driver: { id: "D002", name: "김철수", phone: "010-2222-2222" },
     restaurant: { id: "R002", name: "산들애" },
     restaurantBookings: [{ id: "RB-002", name: "산들애", phone: "033-441-1234", memo: "", mealType: "석식", status: "예약취소" }],
-    hotelBooking: { name: "숲속의 아침", phone: "033-445-7788", rooms: { double: 0, triple: 0, quadruple: 0 }, status: "예약전" },
+    hotelBooking: { name: "숲속의 아침", phone: "033-445-7788", provisionalRooms: { double: 0, triple: 0, quadruple: 0 }, rooms: { double: 0, triple: 0, quadruple: 0 }, provisionalStatus: "예약전", status: "예약전" },
     progressStatus: "대기",
     reservations: [
       { ...reservations[2], orderId: "ORD-260502-010", productName: "아름다운 강원도 당일", tourDate: "2026-05-02", departureTime: "07:00", returnTime: "18:10", busNo: "1호차", totalPeople: 3, adult: 2, child: 1, price: 420000, customerName: "정다은", phone: "010-3333-1111", station: "부평역", reservationStatus: "진행중", paymentType: "카드결제", progressStatus: "진행중" },
@@ -221,6 +223,7 @@ export const scheduleGroups: ScheduleGroup[] = [
     dayLabel: "토",
     productCode: "NAMDO-1N2D",
     productName: "남도체험 1박2일",
+    reservationCount: 16,
     departureTime: "05:20",
     returnTime: "19:40",
     busNo: "5호차",
@@ -233,7 +236,7 @@ export const scheduleGroups: ScheduleGroup[] = [
       { id: "RB-003", name: "해안횟집", phone: "061-123-4567", memo: "단체 특식 요청 (장어구이)", mealType: "중식", status: "예약완료" },
       { id: "RB-004", name: "자연밥상", phone: "061-987-1000", memo: "저녁 백반 16명", mealType: "석식", status: "예약전" },
     ],
-    hotelBooking: { name: "배란다 호텔", phone: "061-987-6543", rooms: { double: 4, triple: 2, quadruple: 1 }, status: "예약완료" },
+    hotelBooking: { name: "배란다 호텔", phone: "061-987-6543", provisionalRooms: { double: 4, triple: 2, quadruple: 1 }, rooms: { double: 4, triple: 2, quadruple: 1 }, provisionalStatus: "예약완료", status: "예약완료" },
     progressStatus: "진행중",
     dispatchMemo: "3열 창가 좌석 배정 예정",
     reservations: [
@@ -253,6 +256,7 @@ export const scheduleGroups: ScheduleGroup[] = [
     dayLabel: "토",
     productCode: "BUSAN-1N2D",
     productName: "전주 문화체험 1박2일",
+    reservationCount: 5,
     departureTime: "07:00",
     returnTime: "19:10",
     busNo: "1호차",
@@ -262,7 +266,7 @@ export const scheduleGroups: ScheduleGroup[] = [
     restaurant: { id: "R004", name: "전주 한옥 밥상" },
     hotel: { id: "H004", name: "전주 한옥 스테이" },
     restaurantBookings: [{ id: "RB-005", name: "전주 한옥 밥상", phone: "063-772-1234", memo: "", mealType: "중식", status: "예약완료" }],
-    hotelBooking: { name: "전주 한옥 스테이", phone: "063-773-5678", rooms: { double: 8, triple: 0, quadruple: 0 }, status: "예약완료" },
+    hotelBooking: { name: "전주 한옥 스테이", phone: "063-773-5678", provisionalRooms: { double: 8, triple: 0, quadruple: 0 }, rooms: { double: 8, triple: 0, quadruple: 0 }, provisionalStatus: "예약완료", status: "예약완료" },
     progressStatus: "확정",
     reservations: [
       { ...reservations[1], orderId: "ORD-260503-001", productName: "부산/울산 1박2일", tourDate: "2026-05-03", departureTime: "06:00", returnTime: "20:00", busNo: "3호차", totalPeople: 5, adult: 5, child: 0, price: 1500000, customerName: "윤하나", phone: "010-3333-7777", station: "인천터미널", reservationStatus: "입금대기", paymentType: "무통장입금", progressStatus: "입금대기" },
@@ -278,9 +282,9 @@ export const drivers: Driver[] = [
 ];
 
 export const restaurants: Restaurant[] = [
-  { id: "R001", productName: "남도체험 1박2일", regionName: "전라남도", shopName: "해안횟집", menu: "한정식", retailPrice: 22000, depositPrice: 17000, serviceType: "기사+가이드", phone: "061-123-4567", address: "전남 보성군 벌교읍", note: "장어구이 가능" },
-  { id: "R002", productName: "강원 역사문화 당일", regionName: "인천 강화", shopName: "강화밥상", menu: "한정식", retailPrice: 18000, depositPrice: 13000, serviceType: "가이드", phone: "032-987-6543", address: "인천 강화군", note: "" },
-  { id: "R003", productName: "영동 투어 1일", regionName: "인천 중구", shopName: "바다향기", menu: "해물정식", retailPrice: 20000, depositPrice: 15000, serviceType: "기사", phone: "032-765-4321", address: "인천 중구", note: "단체석 보유" },
+  { id: "R001", tourType: "숙박", productName: "남도체험 1박2일", regionName: "전라남도", shopName: "해안횟집", menu: "한정식", retailPrice: 22000, depositPrice: 17000, serviceType: "기사+가이드", phone: "061-123-4567", address: "전남 보성군 벌교읍", note: "장어구이 가능" },
+  { id: "R002", tourType: "당일", productName: "강원 역사문화 당일", regionName: "인천 강화", shopName: "강화밥상", menu: "한정식", retailPrice: 18000, depositPrice: 13000, serviceType: "가이드", phone: "032-987-6543", address: "인천 강화군", note: "" },
+  { id: "R003", tourType: "당일", productName: "영동 투어 1일", regionName: "인천 중구", shopName: "바다향기", menu: "해물정식", retailPrice: 20000, depositPrice: 15000, serviceType: "기사", phone: "032-765-4321", address: "인천 중구", note: "단체석 보유" },
 ];
 
 export const hotels: Hotel[] = [
@@ -328,9 +332,9 @@ export const adminUsers: AdminUser[] = [
 ];
 
 export const refundItems: RefundItem[] = [
-  { id: "REF-20260504-001", no: 1, customerName: "허정숙", departureDate: "2026-05-30", peopleCount: 2, phone: "010-9998-7114", paymentMethod: "홈페이지결제", depositDate: "2026-04-17", productAmount: 490000, depositAmount: 490000, refundRequestAmount: 490000, depositor: "허정숙", registeredBy: "윤혜원", status: "환불완료", bankAccount: "승인 번호 : 30212149" },
-  { id: "REF-20260504-002", no: 2, customerName: "김선옥", departureDate: "2026-05-09", peopleCount: 1, phone: "010-5496-0213", paymentMethod: "홈페이지결제", depositDate: "2026-04-13", productAmount: 87000, depositAmount: 87000, refundRequestAmount: 87000, depositor: "김선옥", registeredBy: "윤혜원", status: "환불완료", bankAccount: "승인 번호 : 30044162" },
-  { id: "REF-20260504-003", no: 3, customerName: "정원자", departureDate: "2026-06-20", peopleCount: 4, phone: "010-7568-6769", paymentMethod: "홈페이지결제", depositDate: "2026-04-20", productAmount: 372000, depositAmount: 388000, refundRequestAmount: 16000, depositor: "정원자", balanceAmount: 372000, registeredBy: "윤혜원", status: "환불완료", bankAccount: "승인 번호 : 00272718", memo: "전산오류가격차액발생 환불" },
-  { id: "REF-20260504-005", no: 5, customerName: "박귀숙", departureDate: "2026-05-24", peopleCount: 2, phone: "010-4075-5180", paymentMethod: "계좌이체", depositDate: "2026-05-24", productAmount: 194000, depositAmount: 194000, refundRequestAmount: 194000, depositor: "박귀숙", registeredBy: "윤혜원", status: "환불완료", bankAccount: "기업은행 10810186501015 박귀숙" },
-  { id: "REF-20260504-006", no: 6, customerName: "박순자", departureDate: "2026-05-09", peopleCount: 2, phone: "010-2506-5806", paymentMethod: "계좌이체", depositDate: "2026-04-05", productAmount: 194000, depositAmount: 100000, refundRequestAmount: 100000, depositor: "박순자", registeredBy: "윤혜원", status: "환불완료", bankAccount: "신한은행 110-410-489802 박순자" },
+  { id: "REF-20260504-001", no: 1, refundDate: "2026-05-04", customerName: "허정숙", departureDate: "2026-05-30", peopleCount: 2, phone: "010-9998-7114", paymentMethod: "홈페이지결제", depositDate: "2026-04-17", productAmount: 490000, depositAmount: 490000, refundRequestAmount: 490000, depositor: "허정숙", registeredBy: "윤혜원", status: "환불완료", bankAccount: "승인 번호 : 30212149" },
+  { id: "REF-20260504-002", no: 2, refundDate: "2026-05-04", customerName: "김선옥", departureDate: "2026-05-09", peopleCount: 1, phone: "010-5496-0213", paymentMethod: "홈페이지결제", depositDate: "2026-04-13", productAmount: 87000, depositAmount: 87000, refundRequestAmount: 87000, depositor: "김선옥", registeredBy: "윤혜원", status: "환불완료", bankAccount: "승인 번호 : 30044162" },
+  { id: "REF-20260504-003", no: 3, refundDate: "2026-05-04", customerName: "정원자", departureDate: "2026-06-20", peopleCount: 4, phone: "010-7568-6769", paymentMethod: "홈페이지결제", depositDate: "2026-04-20", productAmount: 372000, depositAmount: 388000, refundRequestAmount: 16000, depositor: "정원자", balanceAmount: 372000, registeredBy: "윤혜원", status: "환불완료", bankAccount: "승인 번호 : 00272718", memo: "전산오류가격차액발생 환불" },
+  { id: "REF-20260504-005", no: 5, refundDate: "2026-05-04", customerName: "박귀숙", departureDate: "2026-05-24", peopleCount: 2, phone: "010-4075-5180", paymentMethod: "계좌이체", depositDate: "2026-05-24", productAmount: 194000, depositAmount: 194000, refundRequestAmount: 194000, depositor: "박귀숙", registeredBy: "윤혜원", status: "환불완료", bankAccount: "기업은행 10810186501015 박귀숙" },
+  { id: "REF-20260504-006", no: 6, refundDate: "2026-05-04", customerName: "박순자", departureDate: "2026-05-09", peopleCount: 2, phone: "010-2506-5806", paymentMethod: "계좌이체", depositDate: "2026-04-05", productAmount: 194000, depositAmount: 100000, refundRequestAmount: 100000, depositor: "박순자", registeredBy: "윤혜원", status: "환불완료", bankAccount: "신한은행 110-410-489802 박순자" },
 ];

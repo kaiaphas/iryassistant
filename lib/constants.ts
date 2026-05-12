@@ -28,7 +28,7 @@ export const navItems = [
 
 export function getNavItemsByRole(role: "admin" | "staff") {
   if (role === "admin") return navItems;
-  return navItems.filter((item) => ["/", "/reservations", "/restaurants", "/hotels"].includes(item.href));
+  return navItems.filter((item) => ["/", "/reservations", "/restaurants", "/hotels", "/refunds"].includes(item.href));
 }
 
 export const codeCategories = [

@@ -53,7 +53,7 @@ export function ScheduleAccordionCards({
                     <TourTypeBadge value={schedule.tourType} />
                   </div>
                   <p className="mt-2 font-semibold">{schedule.productName}</p>
-                  <p className="mt-2 text-sm text-slate-600">출발 {schedule.departureTime}</p>
+                  <p className="mt-2 text-sm text-slate-600">출발 {schedule.departureTime} · 인원 {schedule.reservationCount}명</p>
                   <p className="text-sm text-slate-600">{schedule.busNo || "-"} · {schedule.vehicle.busCompany || "-"} · {schedule.vehicle.busType || "-"}</p>
                   <p className="mt-1 text-sm text-slate-600">가이드 {formatPersonWithPhone(schedule.guide)}</p>
                   <p className="text-sm text-slate-600">기사 {formatPersonWithPhone(schedule.driver)}</p>
@@ -70,7 +70,10 @@ export function ScheduleAccordionCards({
                   <div className="rounded-lg border bg-white p-2">
                     <p className="text-slate-500">숙소</p>
                     <p className="mt-1 font-semibold">{schedule.hotelBooking.name || "-"}</p>
-                    <div className="mt-1"><StatusBadge value={schedule.hotelBooking.status} /></div>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      <StatusBadge value={`가예약 ${schedule.hotelBooking.provisionalStatus}`} />
+                      <StatusBadge value={`실제 ${schedule.hotelBooking.status}`} />
+                    </div>
                   </div>
                 ) : null}
               </div>

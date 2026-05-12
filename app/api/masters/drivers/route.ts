@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { upsertDriverToSupabase } from "@/repositories/supabase/master-repository";
+import { deleteDriverFromSupabase, upsertDriverToSupabase } from "@/repositories/supabase/master-repository";
 import type { Driver } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
@@ -21,6 +21,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(saved);
   } catch (error) {
     const message = error instanceof Error ? error.message : "기사 저장 중 알 수 없는 오류가 발생했습니다.";
+    return NextResponse.json({ message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const id = request.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ message: "삭제할 기사를 선택해주세요." }, { status: 400 });
+
+    await deleteDriverFromSupabase(id);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "기사 삭제 중 알 수 없는 오류가 발생했습니다.";
     return NextResponse.json({ message }, { status: 500 });
   }
 }

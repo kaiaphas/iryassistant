@@ -9,6 +9,7 @@ export function TodayDepartureTable({ schedules }: { schedules: ScheduleGroup[] 
     { label: "출발일자", className: "w-[118px] px-2 text-center" },
     { label: "구분", className: "w-[64px] text-center" },
     { label: "출발시간", className: "w-[82px] text-center" },
+    { label: "인원", className: "w-[64px] text-center" },
     { label: "상품명", className: "w-[150px]" },
     { label: "호차", className: "w-[70px] text-center" },
     { label: "가이드", className: "w-[150px] text-center" },
@@ -38,6 +39,7 @@ export function TodayDepartureTable({ schedules }: { schedules: ScheduleGroup[] 
                   <TableCell className="w-[118px] px-2 text-center font-semibold whitespace-nowrap">{schedule.tourDate} ({schedule.dayLabel})</TableCell>
                   <TableCell className="text-center">{schedule.tourType}</TableCell>
                   <TableCell className="text-center font-semibold">{schedule.departureTime}</TableCell>
+                  <TableCell className="text-center font-semibold">{schedule.reservationCount}명</TableCell>
                   <TableCell className="font-medium text-slate-900">{schedule.productName}</TableCell>
                   <TableCell className="text-center">{schedule.busNo || "-"}</TableCell>
                   <TableCell className="text-center">{schedule.guide.name || "-"}</TableCell>
@@ -47,7 +49,7 @@ export function TodayDepartureTable({ schedules }: { schedules: ScheduleGroup[] 
                 </TableRow>
               )) : (
                 <TableRow>
-                  <TableCell colSpan={9} className="py-8 text-center text-slate-500">
+                  <TableCell colSpan={10} className="py-8 text-center text-slate-500">
                     금일 이후 7일 일정이 없습니다.
                   </TableCell>
                 </TableRow>

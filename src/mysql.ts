@@ -56,7 +56,15 @@ function buildScheduleConditionQuery(whereClause = "") {
       NULL AS room_double_count,
       NULL AS room_triple_count,
       NULL AS room_quad_count,
-      a.tour_date AS updated_at
+      a.tour_date AS updated_at,
+        (
+		  SELECT COALESCE(SUM(COALESCE(o.adult, 0) + COALESCE(o.child, 0)), 0)
+		  FROM ez_order o
+		  WHERE o.bit IN (1, 2)
+		    AND o.bus = a.bus
+		    AND o.tid = a.tid
+		    AND o.tour_date = a.tour_date
+	  ) AS reservation_count
     FROM ez_condition AS a
     LEFT JOIN ez_tour AS c
       ON a.tid = c.tid
@@ -64,6 +72,15 @@ function buildScheduleConditionQuery(whereClause = "") {
       ON d.info_code = CONCAT(a.tid, '_', REPLACE(a.tour_date, '/', ''))
     WHERE REPLACE(a.tour_date, '/', '') BETWEEN ? AND ?
     ${whereClause}
+    and a.status in ('출발확정','모객중')
+    and (
+		  SELECT COALESCE(SUM(COALESCE(o.adult, 0) + COALESCE(o.child, 0)), 0)
+		  FROM ez_order o
+		  WHERE o.bit IN (1, 2)
+		    AND o.bus = a.bus
+		    AND o.tid = a.tid
+		    AND o.tour_date = a.tour_date
+	  ) <> 0 
     ORDER BY a.tour_date ASC, c.tid ASC
   `;
 }

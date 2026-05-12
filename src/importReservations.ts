@@ -41,17 +41,10 @@ function normalizeDate(value: unknown) {
   return dateOnly;
 }
 
-function normalizeTime(value: unknown) {
+function normalizeTimeText(value: unknown) {
   const text = toNullableString(value);
   if (!text) return null;
-  const match = text.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-  if (!match) {
-    throw new Error(`시간 포맷 오류: ${text}`);
-  }
-  const hour = match[1].padStart(2, "0");
-  const minute = match[2];
-  const second = match[3] ?? "00";
-  return `${hour}:${minute}:${second}`;
+  return text;
 }
 
 function normalizeNumber(value: unknown, field: string) {
@@ -200,8 +193,8 @@ export function normalizeScheduleRow(row: MySqlScheduleRow, index: number): Norm
     tour_type: tourType,
     product_code: toNullableString(row.product_code),
     product_name: productName,
-    departure_time: normalizeTime(row.departure_time),
-    return_time: normalizeTime(row.return_time),
+    departure_time: normalizeTimeText(row.departure_time),
+    return_time: normalizeTimeText(row.return_time),
     vehicle_no: toNullableString(row.vehicle_no),
     bus_company: toNullableString(row.bus_company),
     vehicle_capacity: toNullableString(row.vehicle_capacity),
@@ -210,6 +203,7 @@ export function normalizeScheduleRow(row: MySqlScheduleRow, index: number): Norm
     progress_status: normalizeProgressStatus(row.progress_status),
     memo: toNullableString(row.schedule_memo),
     notice_memo: toNullableString(row.notice_memo),
+    reservation_count: normalizeNumber(row.reservation_count, "reservation_count"),
     sort_order: index + 1,
     is_active: true,
     restaurants,
@@ -290,6 +284,7 @@ async function upsertSourceSchedules(rows: NormalizedSchedule[]) {
     progress_status: row.progress_status,
     memo: row.memo,
     notice_memo: row.notice_memo,
+    reservation_count: row.reservation_count,
     sort_order: row.sort_order,
     is_active: row.is_active,
   }));

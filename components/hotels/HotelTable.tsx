@@ -20,6 +20,7 @@ export function HotelTable({ hotels }: { hotels: Hotel[] }) {
   const [selected, setSelected] = React.useState<Hotel | undefined>();
   const [open, setOpen] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [error, setError] = React.useState("");
   const filtered = items.filter((item) => (!region || item.regionName.includes(region)) && (!query || item.shopName.includes(query)));
 
@@ -58,6 +59,24 @@ export function HotelTable({ hotels }: { hotels: Hotel[] }) {
     setOpen(true);
   }
 
+  async function remove(hotel: Hotel) {
+    if (!window.confirm(`${hotel.shopName} 호텔을 삭제할까요?`)) return;
+
+    setDeletingId(hotel.id);
+    setError("");
+    try {
+      const response = await fetch(`/api/masters/hotels?id=${encodeURIComponent(hotel.id)}`, { method: "DELETE" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message ?? "호텔 삭제에 실패했습니다.");
+
+      setItems((current) => current.filter((item) => item.id !== hotel.id));
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "호텔 삭제에 실패했습니다.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
     <div className="space-y-4">
         <div className="grid gap-3 rounded-xl border bg-white p-4 shadow-soft md:grid-cols-[180px_1fr_auto_auto_auto]">
@@ -76,7 +95,7 @@ export function HotelTable({ hotels }: { hotels: Hotel[] }) {
               <TableHead className="min-w-[280px]">3인실 단가 요약</TableHead>
               <TableHead className="min-w-[280px]">4인실 단가 요약</TableHead>
               <TableHead className="w-[150px] text-center">연락처</TableHead>
-              <TableHead className="w-[90px] text-center">수정</TableHead>
+              <TableHead className="w-[150px] text-center">관리</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>{filtered.map((item) => <TableRow key={item.id}>
@@ -86,7 +105,10 @@ export function HotelTable({ hotels }: { hotels: Hotel[] }) {
             <TableCell className="max-w-[300px] truncate" title={rateSummary(item.roomRates.triple)}>{rateSummary(item.roomRates.triple)}</TableCell>
             <TableCell className="max-w-[300px] truncate" title={rateSummary(item.roomRates.quad)}>{rateSummary(item.roomRates.quad)}</TableCell>
             <TableCell className="whitespace-nowrap text-center">{item.phone}</TableCell>
-            <TableCell className="text-center"><Button size="sm" variant="outline" onClick={() => edit(item)}>수정</Button></TableCell>
+            <TableCell className="whitespace-nowrap text-center">
+              <Button size="sm" variant="outline" onClick={() => edit(item)} disabled={deletingId === item.id}>수정</Button>
+              <Button size="sm" variant="outline" className="ml-1 text-rose-700" onClick={() => remove(item)} disabled={deletingId === item.id}>{deletingId === item.id ? "삭제중" : "삭제"}</Button>
+            </TableCell>
           </TableRow>)}</TableBody>
         </Table></div></div>
       <HotelForm hotel={selected} open={open} saving={saving} onOpenChange={setOpen} onSave={save} onCancel={() => setOpen(false)} />

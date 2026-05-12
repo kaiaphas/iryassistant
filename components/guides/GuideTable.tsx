@@ -17,6 +17,7 @@ export function GuideTable({ guides }: { guides: Guide[] }) {
   const [selected, setSelected] = React.useState<Guide | undefined>();
   const [open, setOpen] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [error, setError] = React.useState("");
 
   const filtered = items.filter((guide) => {
@@ -54,6 +55,24 @@ export function GuideTable({ guides }: { guides: Guide[] }) {
     }
   }
 
+  async function remove(guide: Guide) {
+    if (!window.confirm(`${guide.name} 가이드를 삭제할까요?`)) return;
+
+    setDeletingId(guide.id);
+    setError("");
+    try {
+      const response = await fetch(`/api/masters/guides?id=${encodeURIComponent(guide.id)}`, { method: "DELETE" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message ?? "가이드 삭제에 실패했습니다.");
+
+      setItems((current) => current.filter((item) => item.id !== guide.id));
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "가이드 삭제에 실패했습니다.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="grid gap-3 rounded-xl border bg-white p-4 shadow-soft md:grid-cols-[1fr_180px_auto_auto]">
@@ -78,7 +97,7 @@ export function GuideTable({ guides }: { guides: Guide[] }) {
                 <TableHead className="w-[110px] text-center">배정가능</TableHead>
                 <TableHead className="w-[110px] text-center">사용여부</TableHead>
                 <TableHead>메모</TableHead>
-                <TableHead className="w-[90px] text-center">수정</TableHead>
+                <TableHead className="w-[150px] text-center">관리</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -89,7 +108,10 @@ export function GuideTable({ guides }: { guides: Guide[] }) {
                   <TableCell className="text-center"><StatusBadge value={guide.assignable ? "가능" : "불가"} /></TableCell>
                   <TableCell className="text-center"><Switch checked={guide.active} /></TableCell>
                   <TableCell className="max-w-[420px] truncate" title={guide.memo || ""}>{guide.memo || "-"}</TableCell>
-                  <TableCell className="text-center"><Button size="sm" variant="outline" onClick={() => edit(guide)}>수정</Button></TableCell>
+                  <TableCell className="whitespace-nowrap text-center">
+                    <Button size="sm" variant="outline" onClick={() => edit(guide)} disabled={deletingId === guide.id}>수정</Button>
+                    <Button size="sm" variant="outline" className="ml-1 text-rose-700" onClick={() => remove(guide)} disabled={deletingId === guide.id}>{deletingId === guide.id ? "삭제중" : "삭제"}</Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

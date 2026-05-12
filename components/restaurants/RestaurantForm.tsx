@@ -19,6 +19,7 @@ type RestaurantFormProps = {
 function createEmptyRestaurant(): Restaurant {
   return {
     id: "",
+    tourType: "숙박",
     productName: "",
     regionName: "",
     shopName: "",
@@ -46,8 +47,12 @@ export function RestaurantForm({ restaurant, open, saving = false, onOpenChange,
   return (
     <Sheet open={open} onOpenChange={onOpenChange} title={form.id ? "식당 수정" : "식당 등록"}>
       <div className="space-y-3">
-        <Input value={form.productName} onChange={(event) => update("productName", event.target.value)} placeholder="상품명" />
         <Input value={form.regionName} onChange={(event) => update("regionName", event.target.value)} placeholder="지역명" />
+        <Select value={form.tourType} onChange={(event) => update("tourType", event.target.value as Restaurant["tourType"])}>
+          <option>당일</option>
+          <option>숙박</option>
+        </Select>
+        <Input value={form.productName} onChange={(event) => update("productName", event.target.value)} placeholder="상품명" />
         <Input value={form.shopName} onChange={(event) => update("shopName", event.target.value)} placeholder="상호명" />
         <Input value={form.menu} onChange={(event) => update("menu", event.target.value)} placeholder="메뉴" />
         <div className="grid grid-cols-2 gap-2">

@@ -1,4 +1,4 @@
-import { Bus, CalendarCheck, Hotel, Soup, UserCheck } from "lucide-react";
+import { Bus, CalendarCheck, Hotel, Soup, UserCheck, UsersRound } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { TodayDepartureTable } from "@/components/dashboard/TodayDepartureTable";
@@ -29,11 +29,13 @@ export default async function DashboardPage() {
   const guideUnassigned = futureSchedules.filter((schedule) => !schedule.guide.name || schedule.guide.name === "-").length;
   const hotelNeedsCheck = futureSchedules.filter((schedule) => schedule.tourType === "숙박" && schedule.hotelBooking.status === "예약전").length;
   const restaurantNeedsCheck = futureSchedules.filter((schedule) => getRestaurantAggregateStatus(schedule.restaurantBookings) === "예약전").length;
+  const todayReservationCount = todaySchedules.reduce((total, schedule) => total + schedule.reservationCount, 0);
 
   return (
     <PageContainer title="대시보드" description="금일 일정과 향후 운영 준비 상태를 확인합니다.">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
         <StatCard title="금일 일정" value={`${todaySchedules.length}건`} icon={CalendarCheck} />
+        <StatCard title="금일 인원" value={`${todayReservationCount}명`} icon={UsersRound} />
         <StatCard title="차량 미배정" value={`${vehicleUnassigned}건`} icon={Bus} />
         <StatCard title="가이드 미배정" value={`${guideUnassigned}건`} icon={UserCheck} />
         <StatCard title="숙소 확인 필요" value={`${hotelNeedsCheck}건`} icon={Hotel} />

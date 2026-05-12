@@ -50,11 +50,17 @@ export type RestaurantBooking = {
 export type HotelBooking = {
   name: string;
   phone?: string;
+  provisionalRooms: {
+    double: number;
+    triple: number;
+    quadruple: number;
+  };
   rooms: {
     double: number;
     triple: number;
     quadruple: number;
   };
+  provisionalStatus: FacilityBookingStatus;
   status: FacilityBookingStatus;
 };
 
@@ -66,6 +72,7 @@ export type ScheduleGroup = {
   dayLabel: string;
   productCode: string;
   productName: string;
+  reservationCount: number;
   departureTime: string;
   returnTime: string;
   busNo: string;
@@ -115,6 +122,7 @@ export type Driver = {
 
 export type Restaurant = {
   id: string;
+  tourType: "당일" | "숙박";
   productName: string;
   regionName: string;
   shopName: string;
@@ -194,6 +202,7 @@ export type AdminUser = {
 export type RefundItem = {
   id: string;
   no: number;
+  refundDate: string;
   customerName: string;
   departureDate: string;
   peopleCount: number;
@@ -206,7 +215,7 @@ export type RefundItem = {
   depositor: string;
   balanceAmount?: number;
   registeredBy: string;
-  status: "환불요청" | "처리중" | "환불완료" | "취소";
+  status: "환불신청" | "환불완료";
   bankAccount: string;
   memo?: string;
 };

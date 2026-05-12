@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RestaurantForm } from "@/components/restaurants/RestaurantForm";
+import { TourTypeBadge } from "@/components/common/TourTypeBadge";
 
 export function RestaurantTable({ restaurants }: { restaurants: Restaurant[] }) {
   const [items, setItems] = React.useState(restaurants);
@@ -16,6 +17,7 @@ export function RestaurantTable({ restaurants }: { restaurants: Restaurant[] }) 
   const [selected, setSelected] = React.useState<Restaurant | undefined>();
   const [open, setOpen] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [error, setError] = React.useState("");
   const filtered = items.filter((item) => (!region || item.regionName.includes(region)) && (!query || item.shopName.includes(query) || item.productName.includes(query)));
 
@@ -54,6 +56,24 @@ export function RestaurantTable({ restaurants }: { restaurants: Restaurant[] }) 
     setOpen(true);
   }
 
+  async function remove(restaurant: Restaurant) {
+    if (!window.confirm(`${restaurant.shopName} 식당을 삭제할까요?`)) return;
+
+    setDeletingId(restaurant.id);
+    setError("");
+    try {
+      const response = await fetch(`/api/masters/restaurants?id=${encodeURIComponent(restaurant.id)}`, { method: "DELETE" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message ?? "식당 삭제에 실패했습니다.");
+
+      setItems((current) => current.filter((item) => item.id !== restaurant.id));
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "식당 삭제에 실패했습니다.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
     <div className="space-y-4">
         <div className="grid gap-3 rounded-xl border bg-white p-4 shadow-soft md:grid-cols-[180px_1fr_auto_auto_auto]">
@@ -67,6 +87,7 @@ export function RestaurantTable({ restaurants }: { restaurants: Restaurant[] }) 
           <TableHeader>
             <TableRow>
               <TableHead className="w-[130px] text-center">지역명</TableHead>
+              <TableHead className="w-[80px] text-center">구분</TableHead>
               <TableHead className="min-w-[200px]">상품명</TableHead>
               <TableHead className="min-w-[160px]">상호명</TableHead>
               <TableHead className="w-[130px] text-center">메뉴</TableHead>
@@ -74,11 +95,12 @@ export function RestaurantTable({ restaurants }: { restaurants: Restaurant[] }) 
               <TableHead className="w-[110px] text-right">입금가</TableHead>
               <TableHead className="w-[120px] text-center">서비스여부</TableHead>
               <TableHead className="w-[150px] text-center">연락처</TableHead>
-              <TableHead className="w-[90px] text-center">수정</TableHead>
+              <TableHead className="w-[150px] text-center">관리</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>{filtered.map((item) => <TableRow key={item.id}>
             <TableCell className="whitespace-nowrap text-center">{item.regionName}</TableCell>
+            <TableCell className="whitespace-nowrap text-center"><TourTypeBadge value={item.tourType} /></TableCell>
             <TableCell className="max-w-[240px] truncate" title={item.productName}>{item.productName}</TableCell>
             <TableCell className="max-w-[180px] truncate font-semibold" title={item.shopName}>{item.shopName}</TableCell>
             <TableCell className="max-w-[130px] truncate text-center" title={item.menu}>{item.menu}</TableCell>
@@ -86,7 +108,10 @@ export function RestaurantTable({ restaurants }: { restaurants: Restaurant[] }) 
             <TableCell className="whitespace-nowrap text-right">{formatCurrency(item.depositPrice)}</TableCell>
             <TableCell className="whitespace-nowrap text-center">{item.serviceType}</TableCell>
             <TableCell className="whitespace-nowrap text-center">{item.phone}</TableCell>
-            <TableCell className="text-center"><Button size="sm" variant="outline" onClick={() => edit(item)}>수정</Button></TableCell>
+            <TableCell className="whitespace-nowrap text-center">
+              <Button size="sm" variant="outline" onClick={() => edit(item)} disabled={deletingId === item.id}>수정</Button>
+              <Button size="sm" variant="outline" className="ml-1 text-rose-700" onClick={() => remove(item)} disabled={deletingId === item.id}>{deletingId === item.id ? "삭제중" : "삭제"}</Button>
+            </TableCell>
           </TableRow>)}</TableBody>
         </Table></div></div>
       <RestaurantForm restaurant={selected} open={open} saving={saving} onOpenChange={setOpen} onSave={save} onCancel={() => setOpen(false)} />

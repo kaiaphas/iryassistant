@@ -111,8 +111,9 @@ create table if not exists public.reservation_schedules (
   product_code text,
   product_name text not null,
 
-  departure_time time,
-  return_time time,
+  departure_time text,
+  return_time text,
+  reservation_count int not null default 0 check (reservation_count >= 0),
 
   vehicle_no text,
   bus_company text,
@@ -286,8 +287,9 @@ select
 
   s.product_code,
   s.product_name,
-  to_char(s.departure_time, 'HH24:MI') as departure_time,
-  to_char(s.return_time, 'HH24:MI') as return_time,
+  s.departure_time,
+  s.return_time,
+  s.reservation_count,
   s.vehicle_no,
   s.bus_company,
   s.vehicle_capacity,

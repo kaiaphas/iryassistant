@@ -53,6 +53,16 @@ export function ScheduleDetailPanel({
     });
   }
 
+  function patchProvisionalRooms(patch: Partial<ScheduleGroup["hotelBooking"]["provisionalRooms"]>) {
+    onChange({
+      ...currentSchedule,
+      hotelBooking: {
+        ...currentSchedule.hotelBooking,
+        provisionalRooms: { ...currentSchedule.hotelBooking.provisionalRooms, ...patch },
+      },
+    });
+  }
+
   return (
     <aside className="space-y-4 xl:sticky xl:top-20">
       <div className="overflow-hidden rounded-xl border bg-white shadow-soft">
@@ -100,48 +110,64 @@ export function ScheduleDetailPanel({
             onChange={(event) => patchHotel({ phone: event.target.value })}
             placeholder="연락처"
           />
-          <div className="grid grid-cols-3 gap-2">
-            <label className="text-xs font-medium text-slate-500">
-              2인실
-              <Input
-                className="mt-1"
-                type="number"
-                min={0}
-                value={schedule.hotelBooking.rooms.double}
-                onChange={(event) => patchRooms({ double: Number(event.target.value) })}
-              />
-            </label>
-            <label className="text-xs font-medium text-slate-500">
-              3인실
-              <Input
-                className="mt-1"
-                type="number"
-                min={0}
-                value={schedule.hotelBooking.rooms.triple}
-                onChange={(event) => patchRooms({ triple: Number(event.target.value) })}
-              />
-            </label>
-            <label className="text-xs font-medium text-slate-500">
-              4인실
-              <Input
-                className="mt-1"
-                type="number"
-                min={0}
-                value={schedule.hotelBooking.rooms.quadruple}
-                onChange={(event) => patchRooms({ quadruple: Number(event.target.value) })}
-              />
-            </label>
-          </div>
-          <div className="rounded-lg border bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">
-            총 {schedule.hotelBooking.rooms.double + schedule.hotelBooking.rooms.triple + schedule.hotelBooking.rooms.quadruple}실 / 배정인원 {totalPeople}명
-          </div>
-          <FacilityStatusSelector
-            value={schedule.hotelBooking.status}
-            onChange={(status) => patchHotel({ status })}
+          <DetailHotelRoomRow
+            label="가예약"
+            rooms={schedule.hotelBooking.provisionalRooms}
+            status={schedule.hotelBooking.provisionalStatus}
+            onChangeRooms={patchProvisionalRooms}
+            onChangeStatus={(provisionalStatus) => patchHotel({ provisionalStatus })}
+          />
+          <DetailHotelRoomRow
+            label="실제예약"
+            rooms={schedule.hotelBooking.rooms}
+            status={schedule.hotelBooking.status}
+            onChangeRooms={patchRooms}
+            onChangeStatus={(status) => patchHotel({ status })}
           />
           <Button className="w-full">저장하기</Button>
         </CardContent>
       </Card>
     </aside>
+  );
+}
+
+function DetailHotelRoomRow({
+  label,
+  rooms,
+  status,
+  onChangeRooms,
+  onChangeStatus,
+}: {
+  label: string;
+  rooms: { double: number; triple: number; quadruple: number };
+  status: ScheduleGroup["hotelBooking"]["status"];
+  onChangeRooms: (rooms: Partial<ScheduleGroup["hotelBooking"]["rooms"]>) => void;
+  onChangeStatus: (status: ScheduleGroup["hotelBooking"]["status"]) => void;
+}) {
+  const totalRooms = rooms.double + rooms.triple + rooms.quadruple;
+  const assignedPeople = rooms.double * 2 + rooms.triple * 3 + rooms.quadruple * 4;
+
+  return (
+    <div className="space-y-2 rounded-lg border bg-slate-50 p-3">
+      <p className="text-xs font-bold text-slate-700">{label}</p>
+      <div className="grid grid-cols-3 gap-2">
+        <label className="text-xs font-medium text-slate-500">
+          2인실
+          <Input className="mt-1" type="number" min={0} value={rooms.double} onChange={(event) => onChangeRooms({ double: Number(event.target.value) })} />
+        </label>
+        <label className="text-xs font-medium text-slate-500">
+          3인실
+          <Input className="mt-1" type="number" min={0} value={rooms.triple} onChange={(event) => onChangeRooms({ triple: Number(event.target.value) })} />
+        </label>
+        <label className="text-xs font-medium text-slate-500">
+          4인실
+          <Input className="mt-1" type="number" min={0} value={rooms.quadruple} onChange={(event) => onChangeRooms({ quadruple: Number(event.target.value) })} />
+        </label>
+      </div>
+      <div className="rounded-lg border bg-white px-3 py-2 text-sm font-semibold text-emerald-800">
+        총 {totalRooms}실 / 배정인원 {assignedPeople}명
+      </div>
+      <FacilityStatusSelector value={status} onChange={onChangeStatus} />
+    </div>
   );
 }
