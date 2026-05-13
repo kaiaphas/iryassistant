@@ -83,7 +83,8 @@ export function RestaurantReservationSection({
               ) : null}
             </div>
             <div className="grid gap-2 xl:grid-cols-[92px_1fr_150px_1.2fr_250px]">
-              <Select className="h-9 text-xs" value={booking.mealType} onChange={(event) => updateBooking(booking.id, { mealType: event.target.value as "중식" | "석식" })}>
+              <Select className="h-9 text-xs" value={booking.mealType} onChange={(event) => updateBooking(booking.id, { mealType: event.target.value as RestaurantBooking["mealType"] })}>
+                <option>조식</option>
                 <option>중식</option>
                 <option>석식</option>
               </Select>

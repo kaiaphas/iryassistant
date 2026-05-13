@@ -33,6 +33,10 @@ function createEmptyRestaurant(): Restaurant {
   };
 }
 
+function toMoneyNumber(value: string) {
+  return Number(value.replace(/\D/g, "")) || 0;
+}
+
 export function RestaurantForm({ restaurant, open, saving = false, onOpenChange, onSave, onCancel }: RestaurantFormProps) {
   const [form, setForm] = React.useState<Restaurant>(restaurant ?? createEmptyRestaurant());
 
@@ -56,8 +60,8 @@ export function RestaurantForm({ restaurant, open, saving = false, onOpenChange,
         <Input value={form.shopName} onChange={(event) => update("shopName", event.target.value)} placeholder="상호명" />
         <Input value={form.menu} onChange={(event) => update("menu", event.target.value)} placeholder="메뉴" />
         <div className="grid grid-cols-2 gap-2">
-          <Input value={form.retailPrice} onChange={(event) => update("retailPrice", Number(event.target.value) || 0)} type="number" placeholder="소비자가" />
-          <Input value={form.depositPrice} onChange={(event) => update("depositPrice", Number(event.target.value) || 0)} type="number" placeholder="입금가" />
+          <Input value={form.retailPrice || ""} onChange={(event) => update("retailPrice", toMoneyNumber(event.target.value))} type="text" inputMode="numeric" placeholder="소비자가" />
+          <Input value={form.depositPrice || ""} onChange={(event) => update("depositPrice", toMoneyNumber(event.target.value))} type="text" inputMode="numeric" placeholder="입금가" />
         </div>
         <Select value={form.serviceType} onChange={(event) => update("serviceType", event.target.value as Restaurant["serviceType"])}>
           <option>기사</option><option>가이드</option><option>기사+가이드</option><option>없음</option>

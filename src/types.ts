@@ -5,7 +5,7 @@ export type ImportBatchStatus = "PROCESSING" | "SUCCESS" | "FAILED" | "PARTIAL_F
 export type TourType = "DAY" | "STAY";
 export type ReservationWorkStatus = "BEFORE" | "COMPLETED" | "CANCELED";
 export type ScheduleProgressStatus = "IN_PROGRESS" | "COMPLETED" | "CANCELED";
-export type MealType = "LUNCH" | "DINNER";
+export type MealType = "BREAKFAST" | "LUNCH" | "DINNER";
 export type RoomType = "DOUBLE" | "TRIPLE" | "QUAD";
 
 export type MySqlScheduleRow = {

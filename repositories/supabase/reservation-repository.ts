@@ -35,7 +35,7 @@ type ReservationScheduleOverviewRow = {
 type RestaurantBookingRow = {
   id: string;
   schedule_id: string;
-  meal_type: "LUNCH" | "DINNER";
+  meal_type: "BREAKFAST" | "LUNCH" | "DINNER";
   restaurant_name: string;
   restaurant_phone: string | null;
   restaurant_memo: string | null;
@@ -117,10 +117,11 @@ function parseRestaurantBookings(row: ReservationScheduleOverviewRow): Restauran
   const statuses = row.restaurant_status_labels ?? [];
   return row.restaurant_names.split(" / ").map((item, index) => {
     const [mealType, name] = item.split(" · ");
+    const normalizedMealType = mealType?.trim();
     return {
       id: `${row.id}-restaurant-${index + 1}`,
       name: name?.trim() || item.trim(),
-      mealType: mealType?.trim() === "석식" ? "석식" : "중식",
+      mealType: normalizedMealType === "조식" || normalizedMealType === "BREAKFAST" ? "조식" : normalizedMealType === "석식" || normalizedMealType === "DINNER" ? "석식" : "중식",
       status: normalizeFacilityStatus(statuses[index]),
       phone: "",
       memo: "",
@@ -134,7 +135,7 @@ function mapRestaurantRow(row: RestaurantBookingRow): RestaurantBooking {
     name: row.restaurant_name,
     phone: row.restaurant_phone ?? "",
     memo: row.restaurant_memo ?? "",
-    mealType: row.meal_type === "DINNER" ? "석식" : "중식",
+    mealType: row.meal_type === "BREAKFAST" ? "조식" : row.meal_type === "DINNER" ? "석식" : "중식",
     status: normalizeFacilityStatus(row.booking_status),
   };
 }

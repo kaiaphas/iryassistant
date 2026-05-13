@@ -15,7 +15,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <AppSidebar />
-      <div className="min-h-screen pb-16 lg:pb-0 lg:pl-64">{children}</div>
+      <div className="min-h-screen pb-16 lg:pb-0 lg:pl-16">{children}</div>
       <MobileBottomTabs />
     </>
   );

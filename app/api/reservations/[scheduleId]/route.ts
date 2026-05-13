@@ -17,6 +17,7 @@ function toRestaurantStatus(status: FacilityBookingStatus) {
 }
 
 function toMealType(mealType: RestaurantBooking["mealType"]) {
+  if (mealType === "조식") return "BREAKFAST";
   return mealType === "석식" ? "DINNER" : "LUNCH";
 }
 

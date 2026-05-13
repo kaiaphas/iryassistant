@@ -111,6 +111,7 @@ left join lateral (
     string_agg(
       concat(
         case meal_type
+          when 'BREAKFAST' then '조식'
           when 'LUNCH' then '중식'
           when 'DINNER' then '석식'
           else meal_type::text

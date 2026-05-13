@@ -48,19 +48,18 @@ export function ScheduleAccordionTable({
     { label: "인승", className: "w-[74px] text-center" },
     { label: "가이드", className: "w-[150px] text-center" },
     { label: "기사", className: "w-[150px] text-center" },
-    { label: "식사", className: "w-[64px] text-center" },
     { label: "식당명", className: "min-w-[180px]" },
-    { label: "식당상태", className: "w-[112px] text-center" },
     { label: "숙소명", className: "min-w-[130px]" },
-    { label: "가예약", className: "w-[92px] text-center" },
-    { label: "숙소상태", className: "w-[112px] text-center" },
+    { label: "식당예약", className: "w-[112px] text-center" },
+    { label: "임시예약", className: "w-[92px] text-center" },
+    { label: "숙소예약", className: "w-[112px] text-center" },
     { label: "진행상태", className: "w-[112px] text-center" },
   ];
 
   return (
     <div className="hidden overflow-hidden rounded-xl border bg-white shadow-soft lg:block">
       <div className="overflow-x-auto scrollbar-thin">
-        <Table className="min-w-[1430px] text-xs">
+        <Table className="min-w-[1370px] text-xs">
           <TableHeader>
             <TableRow>
               {headers.map((head) => (
@@ -71,7 +70,6 @@ export function ScheduleAccordionTable({
           <TableBody>
             {schedules.map((schedule) => {
               const open = openIds.includes(schedule.id);
-              const mainRestaurant = schedule.restaurantBookings[0];
               const restaurantStatus = getRestaurantAggregateStatus(schedule.restaurantBookings);
               const progressStatus = getScheduleProgressStatus(schedule);
               return (
@@ -95,19 +93,18 @@ export function ScheduleAccordionTable({
                     <TableCell className="whitespace-nowrap px-2 py-2 text-center font-semibold text-emerald-800">{schedule.vehicle.busType || "-"}</TableCell>
                     <TableCell className="max-w-[150px] truncate px-2 py-2 text-center" title={formatPersonWithPhone(schedule.guide)}>{formatPersonWithPhone(schedule.guide)}</TableCell>
                     <TableCell className="max-w-[150px] truncate px-2 py-2 text-center" title={formatPersonWithPhone(schedule.driver)}>{formatPersonWithPhone(schedule.driver)}</TableCell>
-                    <TableCell className="whitespace-nowrap px-2 py-2 text-center">{mainRestaurant?.mealType || "-"}</TableCell>
                     <TableCell className="max-w-[230px] truncate px-2 py-2 font-medium" title={schedule.restaurantBookings.map((booking) => `${booking.mealType} · ${booking.name}`).join(" / ")}>
                       {schedule.restaurantBookings.map((booking) => `${booking.mealType} · ${booking.name}`).join(" / ") || "-"}
                     </TableCell>
-                    <TableCell className="w-[112px] px-2 py-2 text-center"><StatusBadge value={restaurantStatus} /></TableCell>
                     <TableCell className="max-w-[140px] truncate px-2 py-2" title={schedule.hotelBooking.name}>{schedule.tourType === "숙박" ? schedule.hotelBooking.name || "-" : "-"}</TableCell>
+                    <TableCell className="w-[112px] px-2 py-2 text-center"><StatusBadge value={restaurantStatus} /></TableCell>
                     <TableCell className="w-[92px] px-2 py-2 text-center">{schedule.tourType === "숙박" ? <StatusBadge value={schedule.hotelBooking.provisionalStatus} /> : "-"}</TableCell>
                     <TableCell className="w-[112px] px-2 py-2 text-center">{schedule.tourType === "숙박" ? <StatusBadge value={schedule.hotelBooking.status} /> : "-"}</TableCell>
                     <TableCell className="w-[112px] px-2 py-2 text-center"><StatusBadge value={progressStatus} /></TableCell>
                   </TableRow>
                   {open ? (
                     <TableRow className="bg-emerald-50/40 hover:bg-emerald-50/40">
-                      <TableCell colSpan={17} className="p-3">
+                      <TableCell colSpan={16} className="p-3">
                         <div className="ml-3 space-y-2 border-l-2 border-emerald-200 pl-3">
                           <ScheduleOperationSection schedule={schedule} guides={guides} drivers={drivers} onChange={onChangeSchedule} />
                           <RestaurantReservationSection schedule={schedule} restaurants={restaurants} onChange={onChangeSchedule} />
@@ -139,7 +136,6 @@ export function ScheduleAccordionTable({
       </div>
       <div className="flex items-center justify-between border-t px-5 py-3 text-sm font-semibold">
         <span>총 {schedules.length}개의 일정</span>
-        <span>20개씩 보기</span>
       </div>
     </div>
   );

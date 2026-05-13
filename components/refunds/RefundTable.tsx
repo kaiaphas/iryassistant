@@ -60,6 +60,12 @@ function parseDateText(value: string) {
   return `${year}-${month}-${day}`;
 }
 
+function addDays(dateText: string, days: number) {
+  const [year, month, day] = dateText.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + days));
+  return date.toISOString().slice(0, 10);
+}
+
 function newDraft(nextNo: number, refundDate: string, registeredBy: string): RefundItem {
   return {
     ...emptyRefund,
@@ -116,6 +122,12 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
 
   function removeDraft(id: string) {
     setDrafts((current) => current.filter((item) => item.id !== id));
+  }
+
+  function setRelativeRange(days: number) {
+    const today = getKstDateInput();
+    setStartDate(addDays(today, -days));
+    setEndDate(today);
   }
 
   function updateDraft<K extends keyof RefundItem>(key: K, value: RefundItem[K]) {
@@ -238,11 +250,18 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
   return (
     <div className="space-y-4">
       <div className="rounded-lg border bg-white p-4 shadow-soft">
-        <div className="grid gap-3 xl:grid-cols-[420px_1fr_180px_auto]">
-          <div className="grid gap-2 sm:grid-cols-[1fr_auto_1fr]">
-            <DateFilterInput label="환불일자 시작일" value={startDate} onChange={setStartDate} />
-            <span className="hidden items-center justify-center text-sm text-slate-500 sm:flex">~</span>
-            <DateFilterInput label="환불일자 종료일" value={endDate} onChange={setEndDate} />
+        <div className="grid gap-3 xl:grid-cols-[560px_1fr_180px_auto]">
+          <div className="space-y-2">
+            <div className="grid gap-2 sm:grid-cols-[1fr_auto_1fr]">
+              <DateFilterInput label="환불일자 시작일" value={startDate} onChange={setStartDate} />
+              <span className="hidden items-center justify-center text-sm text-slate-500 sm:flex">~</span>
+              <DateFilterInput label="환불일자 종료일" value={endDate} onChange={setEndDate} />
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <Button size="sm" variant="outline" onClick={() => setRelativeRange(1)}>하루전</Button>
+              <Button size="sm" variant="outline" onClick={() => setRelativeRange(7)}>일주전</Button>
+              <Button size="sm" variant="outline" onClick={() => setRelativeRange(30)}>한달전</Button>
+            </div>
           </div>
           <SearchInput placeholder="고객명, 전화번호, 입금자, 계좌, 메모 검색" value={query} onChange={(event) => setQuery(event.target.value)} />
           <Select value={status} onChange={(event) => setStatus(event.target.value)}>

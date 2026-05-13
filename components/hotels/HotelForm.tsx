@@ -39,6 +39,10 @@ function createEmptyHotel(): Hotel {
   };
 }
 
+function toMoneyNumber(value: string) {
+  return Number(value.replace(/\D/g, "")) || 0;
+}
+
 export function HotelForm({ hotel, open, saving = false, onOpenChange, onSave, onCancel }: HotelFormProps) {
   const [form, setForm] = React.useState<Hotel>(hotel ?? createEmptyHotel());
 
@@ -79,7 +83,7 @@ export function HotelForm({ hotel, open, saving = false, onOpenChange, onSave, o
                   <td className="p-2 font-semibold">{label}</td>
                   {fields.map(([field]) => (
                     <td key={field} className="p-2">
-                      <Input type="number" value={form.roomRates[key][field]} onChange={(event) => updateRate(key, field, Number(event.target.value) || 0)} />
+                      <Input type="text" inputMode="numeric" value={form.roomRates[key][field] || ""} onChange={(event) => updateRate(key, field, toMoneyNumber(event.target.value))} />
                     </td>
                   ))}
                 </tr>

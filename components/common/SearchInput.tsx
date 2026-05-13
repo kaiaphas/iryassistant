@@ -4,8 +4,10 @@ import { Input } from "@/components/ui/input";
 export function SearchInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <div className="relative">
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-      <Input className="pl-9" {...props} />
+      <span className="pointer-events-none absolute left-0 top-0 flex h-10 w-10 items-center justify-center text-slate-400">
+        <Search className="h-4 w-4" aria-hidden="true" />
+      </span>
+      <Input className="pl-10" {...props} />
     </div>
   );
 }

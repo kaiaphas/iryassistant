@@ -43,7 +43,7 @@ export type RestaurantBooking = {
   name: string;
   phone?: string;
   memo?: string;
-  mealType: "중식" | "석식";
+  mealType: "조식" | "중식" | "석식";
   status: FacilityBookingStatus;
 };
 

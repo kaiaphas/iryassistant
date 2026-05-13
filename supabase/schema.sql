@@ -89,7 +89,7 @@ begin
   end if;
 
   if not exists (select 1 from pg_type where typname = 'meal_type') then
-    create type public.meal_type as enum ('LUNCH', 'DINNER');
+    create type public.meal_type as enum ('BREAKFAST', 'LUNCH', 'DINNER');
   end if;
 
   if not exists (select 1 from pg_type where typname = 'room_type') then
@@ -180,7 +180,7 @@ create table if not exists public.schedule_restaurant_bookings (
 );
 
 comment on table public.schedule_restaurant_bookings is '일정별 식당 예약현황. 숙박 일정은 여러 식당을 등록할 수 있음';
-comment on column public.schedule_restaurant_bookings.meal_type is 'LUNCH=중식, DINNER=석식';
+comment on column public.schedule_restaurant_bookings.meal_type is 'BREAKFAST=조식, LUNCH=중식, DINNER=석식';
 
 create index if not exists idx_schedule_restaurant_bookings_schedule
   on public.schedule_restaurant_bookings (schedule_id);
@@ -337,6 +337,7 @@ left join lateral (
     string_agg(
       concat(
         case rb.meal_type
+          when 'BREAKFAST' then '조식'
           when 'LUNCH' then '중식'
           when 'DINNER' then '석식'
         end,
