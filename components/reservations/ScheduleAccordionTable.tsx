@@ -57,7 +57,7 @@ export function ScheduleAccordionTable({
   ];
 
   return (
-    <div className="hidden overflow-hidden rounded-xl border bg-white shadow-soft lg:block">
+    <div className="hidden overflow-hidden rounded-lg border bg-white shadow-soft lg:block">
       <div className="overflow-x-auto scrollbar-thin">
         <Table className="min-w-[1370px] text-xs">
           <TableHeader>
@@ -104,8 +104,8 @@ export function ScheduleAccordionTable({
                   </TableRow>
                   {open ? (
                     <TableRow className="bg-emerald-50/40 hover:bg-emerald-50/40">
-                      <TableCell colSpan={16} className="p-3">
-                        <div className="ml-3 space-y-2 border-l-2 border-emerald-200 pl-3">
+                      <TableCell colSpan={16} className="p-2">
+                        <div className="ml-2 space-y-2 border-l-2 border-emerald-200 pl-2">
                           <ScheduleOperationSection schedule={schedule} guides={guides} drivers={drivers} onChange={onChangeSchedule} />
                           <RestaurantReservationSection schedule={schedule} restaurants={restaurants} onChange={onChangeSchedule} />
                           {schedule.tourType === "숙박" ? <HotelReservationSection schedule={schedule} hotels={hotels} onChange={onChangeSchedule} /> : null}

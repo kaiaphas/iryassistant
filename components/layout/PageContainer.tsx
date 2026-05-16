@@ -13,7 +13,7 @@ export function PageContainer({
   return (
     <>
       <AppHeader title={title} description={description} />
-      <main className="px-4 py-5 sm:px-6 lg:px-8">{children}</main>
+      <main className="px-3 py-3 sm:px-4 lg:px-5">{children}</main>
     </>
   );
 }

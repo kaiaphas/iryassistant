@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isCurrentAdmin } from "@/lib/auth";
 import { updateAdminMember } from "@/repositories/supabase/master-repository";
 import type { AdminUser } from "@/lib/types";
 
@@ -10,6 +11,10 @@ type RouteContext = {
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
+    if (!(await isCurrentAdmin())) {
+      return NextResponse.json({ message: "관리자 권한이 필요합니다." }, { status: 403 });
+    }
+
     const { memberId } = await context.params;
     const payload = (await request.json()) as Partial<AdminUser>;
 

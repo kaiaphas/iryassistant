@@ -142,11 +142,11 @@ export function ReservationsClient({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-1">
         <Card>
-          <CardContent className="flex items-center justify-between p-4">
-            <div><p className="text-sm text-slate-500">전체 일정 / 인원</p><p className="mt-1 text-2xl font-bold">{filtered.length}건 · {filteredReservationCount}명</p></div>
+          <CardContent className="flex items-center justify-between p-3">
+            <div><p className="text-xs text-slate-500">전체 일정 / 인원</p><p className="mt-0.5 text-xl font-bold">{filtered.length}건 · {filteredReservationCount}명</p></div>
             <CalendarDays className="h-6 w-6 text-emerald-700" />
           </CardContent>
         </Card>

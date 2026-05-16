@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isCurrentAdmin } from "@/lib/auth";
 import { updateAdminMemberStatus } from "@/repositories/supabase/master-repository";
 import type { AdminUser } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
   try {
+    if (!(await isCurrentAdmin())) {
+      return NextResponse.json({ message: "관리자 권한이 필요합니다." }, { status: 403 });
+    }
+
     const { id, role = "담당자" } = (await request.json()) as { id?: string; role?: string };
     if (!id) {
       return NextResponse.json({ message: "회원 ID가 없습니다." }, { status: 400 });

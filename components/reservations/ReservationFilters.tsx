@@ -32,21 +32,21 @@ export function ReservationFilters({
     .sort((left, right) => left.localeCompare(right, "ko"));
 
   return (
-    <div className="rounded-xl border bg-white p-4 shadow-soft">
-      <div className="grid gap-3 xl:grid-cols-12">
+    <div className="rounded-lg border bg-white p-3 shadow-soft">
+      <div className="grid gap-2 xl:grid-cols-12">
         <label className="space-y-1 text-xs font-medium text-slate-600 xl:col-span-3">
           여행일자
           <div className="grid gap-2 sm:grid-cols-2">
             <input
               aria-label="여행일자 시작일"
-              className="h-10 min-w-[150px] rounded-md border bg-white px-3 text-sm font-semibold tracking-wide text-slate-800 outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
+              className="h-9 min-w-[150px] rounded-md border bg-white px-3 text-sm font-semibold tracking-wide text-slate-800 outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
               type="date"
               value={value.startDate}
               onChange={(event) => onChange({ ...value, startDate: event.target.value })}
             />
             <input
               aria-label="여행일자 종료일"
-              className="h-10 min-w-[150px] rounded-md border bg-white px-3 text-sm font-semibold tracking-wide text-slate-800 outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
+              className="h-9 min-w-[150px] rounded-md border bg-white px-3 text-sm font-semibold tracking-wide text-slate-800 outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
               type="date"
               value={value.endDate}
               onChange={(event) => onChange({ ...value, endDate: event.target.value })}
@@ -100,7 +100,7 @@ export function ReservationFilters({
           </label>
         ) : null}
       </div>
-      <div className="mt-3 grid items-end gap-3 lg:grid-cols-[1fr_auto_auto_auto]">
+      <div className="mt-2 grid items-end gap-2 lg:grid-cols-[1fr_auto_auto_auto]">
         <SearchInput
           placeholder="상품명, 식당, 숙소, 가이드, 기사 검색"
           value={value.query}

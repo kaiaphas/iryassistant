@@ -1,8 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/repositories/supabase/reservation-repository";
 
+const signupAttempts = new Map<string, { count: number; resetAt: number }>();
+const signupWindowMs = 10 * 60 * 1000;
+const signupLimit = 5;
+
+function getClientIp(request: NextRequest) {
+  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+}
+
+function isRateLimited(key: string) {
+  const now = Date.now();
+  const current = signupAttempts.get(key);
+  if (!current || current.resetAt <= now) {
+    signupAttempts.set(key, { count: 1, resetAt: now + signupWindowMs });
+    return false;
+  }
+
+  current.count += 1;
+  return current.count > signupLimit;
+}
+
 export async function POST(request: NextRequest) {
   try {
+    if (isRateLimited(getClientIp(request))) {
+      return NextResponse.json({ message: "잠시 후 다시 시도해주세요." }, { status: 429 });
+    }
+
     const { name, email, password } = (await request.json()) as {
       name?: string;
       email?: string;

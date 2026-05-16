@@ -48,8 +48,8 @@ export function MemberTable({ members }: { members: AdminUser[] }) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-3 rounded-xl border bg-white p-4 shadow-soft md:grid-cols-[1fr_180px_180px_auto]">
+    <div className="space-y-3">
+      <div className="grid gap-2 rounded-lg border bg-white p-3 shadow-soft md:grid-cols-[1fr_180px_180px_auto]">
         <SearchInput placeholder="이름, 아이디, 연락처 검색" value={query} onChange={(event) => setQuery(event.target.value)} />
         <Select value={role} onChange={(event) => setRole(event.target.value)}>
           <option value="">권한 전체</option>

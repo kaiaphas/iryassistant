@@ -69,8 +69,8 @@ export function DriverTable({ drivers }: { drivers: Driver[] }) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-3 rounded-xl border bg-white p-4 shadow-soft md:grid-cols-[1fr_180px_auto_auto]">
+    <div className="space-y-3">
+      <div className="grid gap-2 rounded-lg border bg-white p-3 shadow-soft md:grid-cols-[1fr_180px_auto_auto]">
         <SearchInput placeholder="검색어를 입력하세요." value={query} onChange={(event) => setQuery(event.target.value)} />
         <Select value={assignable} onChange={(event) => setAssignable(event.target.value)}>
           <option value="">배정가능 전체</option><option>가능</option><option>불가</option>

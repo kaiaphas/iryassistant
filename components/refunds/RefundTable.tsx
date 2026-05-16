@@ -248,8 +248,8 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
   }
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-lg border bg-white p-4 shadow-soft">
+    <div className="space-y-3">
+      <div className="rounded-lg border bg-white p-3 shadow-soft">
         <div className="grid gap-3 xl:grid-cols-[560px_1fr_180px_auto]">
           <div className="space-y-2">
             <div className="grid gap-2 sm:grid-cols-[1fr_auto_1fr]">
@@ -283,7 +283,7 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
         {message ? <p className="mt-3 text-sm text-slate-600">{message}</p> : null}
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-2 md:grid-cols-3">
         <SummaryCard label="총 건수" value={`${filtered.length}건`} />
         <SummaryCard label="환불요청금액 합계" value={formatCurrency(totalRefund)} strong />
         <SummaryCard label="환불완료" value={`${filtered.filter((item) => item.status === "환불완료").length}건`} />

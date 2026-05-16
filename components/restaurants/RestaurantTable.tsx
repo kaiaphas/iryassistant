@@ -75,8 +75,8 @@ export function RestaurantTable({ restaurants }: { restaurants: Restaurant[] }) 
   }
 
   return (
-    <div className="space-y-4">
-        <div className="grid gap-3 rounded-xl border bg-white p-4 shadow-soft md:grid-cols-[180px_1fr_auto_auto_auto]">
+    <div className="space-y-3">
+        <div className="grid gap-2 rounded-lg border bg-white p-3 shadow-soft md:grid-cols-[180px_1fr_auto_auto_auto]">
           <Input placeholder="지역명" value={region} onChange={(event) => setRegion(event.target.value)} />
           <SearchInput placeholder="상호명" value={query} onChange={(event) => setQuery(event.target.value)} />
           <Button>검색</Button><Button variant="outline" onClick={() => { setRegion(""); setQuery(""); }}>초기화</Button>

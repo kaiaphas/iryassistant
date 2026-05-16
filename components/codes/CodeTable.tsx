@@ -23,10 +23,10 @@ export function CodeTable({ codes }: { codes: CodeItem[] }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row">
+    <div className="flex flex-col gap-3 lg:flex-row">
       <CodeCategoryTabs value={group} onChange={setGroup} />
-      <div className="min-w-0 flex-1 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-white p-4 shadow-soft">
+      <div className="min-w-0 flex-1 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-white p-3 shadow-soft">
           <div>
             <p className="font-semibold">{currentLabel}</p>
             <p className="text-sm text-slate-500">문자열 기준정보를 코드화해 API 연동이 쉬운 구조로 관리합니다.</p>

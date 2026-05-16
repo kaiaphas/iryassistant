@@ -13,9 +13,9 @@ const buttonVariants = cva(
         secondary: "bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200 hover:bg-emerald-200 hover:shadow-md",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-8 px-3 text-xs",
-        icon: "h-10 w-10",
+        default: "h-9 px-3.5 py-1.5",
+        sm: "h-7 px-2.5 text-xs",
+        icon: "h-9 w-9",
       },
     },
     defaultVariants: {
