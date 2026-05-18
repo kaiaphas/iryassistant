@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { deleteDriverFromSupabase, upsertDriverToSupabase } from "@/repositories/supabase/master-repository";
 import type { Driver } from "@/lib/types";
+import { isValidPartialBirthDate } from "@/lib/birth-date";
 
 export async function POST(request: NextRequest) {
   try {
     const driver = (await request.json()) as Driver;
     if (!driver.name?.trim()) {
       return NextResponse.json({ message: "기사명을 입력해주세요." }, { status: 400 });
+    }
+    if (!isValidPartialBirthDate(driver.birthDate?.trim() ?? "")) {
+      return NextResponse.json({ message: "생년월일은 연도, 연월, 연월일 형식으로 입력해주세요." }, { status: 400 });
     }
 
     const saved = await upsertDriverToSupabase({

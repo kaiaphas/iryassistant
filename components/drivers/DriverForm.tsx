@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Sheet } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { Select } from "@/components/ui/select";
+import { formatBirthDateInput } from "@/lib/birth-date";
 
 type DriverFormProps = {
   driver?: Driver;
@@ -49,7 +50,14 @@ export function DriverForm({ driver, open, saving = false, onOpenChange, onSave 
         <Input value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="이름" />
         <Input value={form.capacity} onChange={(event) => update("capacity", event.target.value)} placeholder="인승" />
         <Input value={form.phone} onChange={(event) => update("phone", event.target.value)} placeholder="전화번호" />
-        <Input type="date" value={form.birthDate ?? ""} onChange={(event) => update("birthDate", event.target.value)} aria-label="생년월일" />
+        <Input
+          value={form.birthDate ?? ""}
+          onChange={(event) => update("birthDate", formatBirthDateInput(event.target.value))}
+          placeholder="생년월일 (예: 1988 / 198807 / 19880702)"
+          inputMode="numeric"
+          maxLength={10}
+          aria-label="생년월일"
+        />
         <Input value={form.bankAccount ?? ""} onChange={(event) => update("bankAccount", event.target.value)} placeholder="계좌번호" />
         <Input value={form.company} onChange={(event) => update("company", event.target.value)} placeholder="회사" />
         <Select value={form.driverType} onChange={(event) => update("driverType", event.target.value as Driver["driverType"])}>

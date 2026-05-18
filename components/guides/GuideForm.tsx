@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
+import { formatBirthDateInput } from "@/lib/birth-date";
 
 type GuideFormProps = {
   guide?: Guide;
@@ -51,7 +52,14 @@ export function GuideForm({ guide, open, saving = false, onOpenChange, onSave }:
       <div className="space-y-3">
         <Input value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="이름" />
         <Input value={form.phone} onChange={(event) => update("phone", event.target.value)} placeholder="전화번호" />
-        <Input type="date" value={form.birthDate ?? ""} onChange={(event) => update("birthDate", event.target.value)} aria-label="생년월일" />
+        <Input
+          value={form.birthDate ?? ""}
+          onChange={(event) => update("birthDate", formatBirthDateInput(event.target.value))}
+          placeholder="생년월일 (예: 1988 / 198807 / 19880702)"
+          inputMode="numeric"
+          maxLength={10}
+          aria-label="생년월일"
+        />
         <Input value={form.bankAccount ?? ""} onChange={(event) => update("bankAccount", event.target.value)} placeholder="계좌번호" />
         <div className="flex gap-4 rounded-md border px-3 py-2 text-sm">
           <label className="flex items-center gap-2">
