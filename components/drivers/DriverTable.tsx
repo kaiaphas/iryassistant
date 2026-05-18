@@ -26,18 +26,21 @@ export function DriverTable({ drivers }: { drivers: Driver[] }) {
   const filtered = items.filter((driver) => {
     const q = query.toLowerCase();
     const assignableMatch = !assignable || (assignable === "가능" ? driver.assignable : !driver.assignable);
-    return (!q || [driver.name, driver.phone, driver.company, driver.memo].some((value) => value?.toLowerCase().includes(q))) && assignableMatch;
+    return (!q || [driver.name, driver.phone, driver.birthDate, driver.bankAccount, driver.company, driver.driverType, driver.memo].some((value) => value?.toLowerCase().includes(q))) && assignableMatch;
   });
-  const getSortValue = React.useCallback((driver: Driver, key: "name" | "capacity" | "phone" | "company" | "assignable" | "active" | "memo") => ({
+  const getSortValue = React.useCallback((driver: Driver, key: "name" | "capacity" | "phone" | "birthDate" | "bankAccount" | "company" | "driverType" | "assignable" | "active" | "memo") => ({
     name: driver.name,
     capacity: driver.capacity,
     phone: driver.phone,
+    birthDate: driver.birthDate,
+    bankAccount: driver.bankAccount,
     company: driver.company,
+    driverType: driver.driverType,
     assignable: driver.assignable,
     active: driver.active,
     memo: driver.memo,
   }[key]), []);
-  const { sortedItems, sortKey, sortDirection, toggleSort } = useTableSort<Driver, "name" | "capacity" | "phone" | "company" | "assignable" | "active" | "memo">(filtered, "name", getSortValue);
+  const { sortedItems, sortKey, sortDirection, toggleSort } = useTableSort<Driver, "name" | "capacity" | "phone" | "birthDate" | "bankAccount" | "company" | "driverType" | "assignable" | "active" | "memo">(filtered, "name", getSortValue);
   const totalPages = Math.max(1, Math.ceil(filtered.length / tablePageSize));
   const visibleItems = sortedItems.slice((page - 1) * tablePageSize, page * tablePageSize);
   React.useEffect(() => { setPage(1); }, [query, assignable]);
@@ -98,13 +101,16 @@ export function DriverTable({ drivers }: { drivers: Driver[] }) {
       {error ? <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
       <div className="overflow-hidden rounded-xl border bg-white shadow-soft">
         <div className="overflow-x-auto">
-          <Table className="min-w-[1040px]">
+          <Table className="min-w-[1450px]">
             <TableHeader>
               <TableRow>
                 <SortableTableHead label="이름" className="w-[120px] text-center" active={sortKey === "name"} direction={sortDirection} onClick={() => toggleSort("name")} />
                 <SortableTableHead label="인승" className="w-[90px] text-center" active={sortKey === "capacity"} direction={sortDirection} onClick={() => toggleSort("capacity")} />
                 <SortableTableHead label="전화번호" className="w-[150px] text-center" active={sortKey === "phone"} direction={sortDirection} onClick={() => toggleSort("phone")} />
+                <SortableTableHead label="생년월일" className="w-[120px] text-center" active={sortKey === "birthDate"} direction={sortDirection} onClick={() => toggleSort("birthDate")} />
+                <SortableTableHead label="계좌번호" className="w-[180px] text-center" active={sortKey === "bankAccount"} direction={sortDirection} onClick={() => toggleSort("bankAccount")} />
                 <SortableTableHead label="회사" className="w-[160px] text-center" active={sortKey === "company"} direction={sortDirection} onClick={() => toggleSort("company")} />
+                <SortableTableHead label="구분" className="w-[90px] text-center" active={sortKey === "driverType"} direction={sortDirection} onClick={() => toggleSort("driverType")} />
                 <SortableTableHead label="배정가능" className="w-[110px] text-center" active={sortKey === "assignable"} direction={sortDirection} onClick={() => toggleSort("assignable")} />
                 <SortableTableHead label="사용여부" className="w-[110px] text-center" active={sortKey === "active"} direction={sortDirection} onClick={() => toggleSort("active")} />
                 <SortableTableHead label="메모" active={sortKey === "memo"} direction={sortDirection} onClick={() => toggleSort("memo")} />
@@ -117,7 +123,10 @@ export function DriverTable({ drivers }: { drivers: Driver[] }) {
                   <TableCell className="whitespace-nowrap text-center font-semibold">{driver.name}</TableCell>
                   <TableCell className="whitespace-nowrap text-center">{driver.capacity}</TableCell>
                   <TableCell className="whitespace-nowrap text-center">{driver.phone}</TableCell>
+                  <TableCell className="whitespace-nowrap text-center">{driver.birthDate || "-"}</TableCell>
+                  <TableCell className="whitespace-nowrap text-center">{driver.bankAccount || "-"}</TableCell>
                   <TableCell className="max-w-[160px] truncate text-center" title={driver.company}>{driver.company}</TableCell>
+                  <TableCell className="whitespace-nowrap text-center">{driver.driverType}</TableCell>
                   <TableCell className="text-center"><StatusBadge value={driver.assignable ? "가능" : "불가"} /></TableCell>
                   <TableCell className="text-center"><Switch checked={driver.active} /></TableCell>
                   <TableCell className="max-w-[360px] truncate" title={driver.memo || ""}>{driver.memo || "-"}</TableCell>

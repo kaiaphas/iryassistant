@@ -98,6 +98,8 @@ export type Guide = {
   id: string;
   name: string;
   phone: string;
+  birthDate?: string;
+  bankAccount?: string;
   email?: string;
   languages: string[];
   regions: string[];
@@ -106,6 +108,8 @@ export type Guide = {
   licenseStatus: string;
   assignable: boolean;
   active: boolean;
+  availableWeekday: boolean;
+  availableWeekend: boolean;
   memo?: string;
 };
 
@@ -114,7 +118,10 @@ export type Driver = {
   name: string;
   capacity: string;
   phone: string;
+  birthDate?: string;
+  bankAccount?: string;
   company: string;
+  driverType: "직영" | "자차";
   assignable: boolean;
   active: boolean;
   memo?: string;

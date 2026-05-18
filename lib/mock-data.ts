@@ -275,10 +275,10 @@ export const scheduleGroups: ScheduleGroup[] = [
 ];
 
 export const drivers: Driver[] = [
-  { id: "D001", name: "김영수", capacity: "28인승", phone: "010-1111-2222", company: "인천소속관광", assignable: true, active: true, memo: "10년 이상 경력" },
-  { id: "D002", name: "최민수", capacity: "15인승", phone: "010-2222-3333", company: "영동관광여행사", assignable: true, active: true, memo: "친절 우수" },
-  { id: "D003", name: "박준범", capacity: "44인승", phone: "010-3333-4444", company: "동인버스", assignable: true, active: true, memo: "야간 운행 가능" },
-  { id: "D004", name: "윤태서", capacity: "28인승", phone: "010-4444-5555", company: "인천고속관광", assignable: false, active: true, memo: "정비 일정 확인 필요" },
+  { id: "D001", name: "김영수", capacity: "28인승", phone: "010-1111-2222", company: "인천소속관광", driverType: "직영", assignable: true, active: true, memo: "10년 이상 경력" },
+  { id: "D002", name: "최민수", capacity: "15인승", phone: "010-2222-3333", company: "영동관광여행사", driverType: "자차", assignable: true, active: true, memo: "친절 우수" },
+  { id: "D003", name: "박준범", capacity: "44인승", phone: "010-3333-4444", company: "동인버스", driverType: "자차", assignable: true, active: true, memo: "야간 운행 가능" },
+  { id: "D004", name: "윤태서", capacity: "28인승", phone: "010-4444-5555", company: "인천고속관광", driverType: "직영", assignable: false, active: true, memo: "정비 일정 확인 필요" },
 ];
 
 export const restaurants: Restaurant[] = [
@@ -293,11 +293,11 @@ export const hotels: Hotel[] = [
 ];
 
 export const guides: Guide[] = [
-  { id: "G001", name: "김미정", phone: "010-7165-7909", email: "mj@irytour.com", languages: ["한국어", "영어"], regions: ["인천", "서울"], mainCourses: ["남도비경", "시티투어"], careerYears: 8, licenseStatus: "유효", assignable: true, active: true, memo: "친절하고 설명이 풍부한 가이드" },
-  { id: "G002", name: "안소라", phone: "010-4115-5118", email: "sr@irytour.com", languages: ["한국어", "일본어"], regions: ["서울", "경기도"], mainCourses: ["서울 시티투어"], careerYears: 5, licenseStatus: "유효", assignable: true, active: true },
-  { id: "G003", name: "박영희", phone: "010-3764-4584", languages: ["한국어", "중국어"], regions: ["강원도", "충청도"], mainCourses: ["역사탐방"], careerYears: 11, licenseStatus: "유효", assignable: false, active: true },
-  { id: "G004", name: "전혜린", phone: "010-8212-8907", languages: ["한국어", "영어"], regions: ["강원도"], mainCourses: ["영월 동강"], careerYears: 4, licenseStatus: "갱신필요", assignable: true, active: true },
-  { id: "G005", name: "이서윤", phone: "010-4226-4520", languages: ["한국어"], regions: ["인천"], mainCourses: ["차이나타운"], careerYears: 2, licenseStatus: "유효", assignable: true, active: false },
+  { id: "G001", name: "김미정", phone: "010-7165-7909", email: "mj@irytour.com", languages: ["한국어", "영어"], regions: ["인천", "서울"], mainCourses: ["남도비경", "시티투어"], careerYears: 8, licenseStatus: "유효", assignable: true, active: true, availableWeekday: true, availableWeekend: true, memo: "친절하고 설명이 풍부한 가이드" },
+  { id: "G002", name: "안소라", phone: "010-4115-5118", email: "sr@irytour.com", languages: ["한국어", "일본어"], regions: ["서울", "경기도"], mainCourses: ["서울 시티투어"], careerYears: 5, licenseStatus: "유효", assignable: true, active: true, availableWeekday: true, availableWeekend: true },
+  { id: "G003", name: "박영희", phone: "010-3764-4584", languages: ["한국어", "중국어"], regions: ["강원도", "충청도"], mainCourses: ["역사탐방"], careerYears: 11, licenseStatus: "유효", assignable: false, active: true, availableWeekday: true, availableWeekend: false },
+  { id: "G004", name: "전혜린", phone: "010-8212-8907", languages: ["한국어", "영어"], regions: ["강원도"], mainCourses: ["영월 동강"], careerYears: 4, licenseStatus: "갱신필요", assignable: true, active: true, availableWeekday: true, availableWeekend: true },
+  { id: "G005", name: "이서윤", phone: "010-4226-4520", languages: ["한국어"], regions: ["인천"], mainCourses: ["차이나타운"], careerYears: 2, licenseStatus: "유효", assignable: true, active: false, availableWeekday: false, availableWeekend: true },
 ];
 
 export const vehicles: Vehicle[] = [

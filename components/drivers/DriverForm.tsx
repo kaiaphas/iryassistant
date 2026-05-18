@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
+import { Select } from "@/components/ui/select";
 
 type DriverFormProps = {
   driver?: Driver;
@@ -21,7 +22,10 @@ function createEmptyDriver(): Driver {
     name: "",
     capacity: "",
     phone: "",
+    birthDate: "",
+    bankAccount: "",
     company: "",
+    driverType: "직영",
     assignable: true,
     active: true,
     memo: "",
@@ -45,7 +49,13 @@ export function DriverForm({ driver, open, saving = false, onOpenChange, onSave 
         <Input value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="이름" />
         <Input value={form.capacity} onChange={(event) => update("capacity", event.target.value)} placeholder="인승" />
         <Input value={form.phone} onChange={(event) => update("phone", event.target.value)} placeholder="전화번호" />
+        <Input type="date" value={form.birthDate ?? ""} onChange={(event) => update("birthDate", event.target.value)} aria-label="생년월일" />
+        <Input value={form.bankAccount ?? ""} onChange={(event) => update("bankAccount", event.target.value)} placeholder="계좌번호" />
         <Input value={form.company} onChange={(event) => update("company", event.target.value)} placeholder="회사" />
+        <Select value={form.driverType} onChange={(event) => update("driverType", event.target.value as Driver["driverType"])}>
+          <option>직영</option>
+          <option>자차</option>
+        </Select>
         <Switch checked={form.assignable} onCheckedChange={(checked) => update("assignable", checked)} label="배정가능" />
         <Switch checked={form.active} onCheckedChange={(checked) => update("active", checked)} label="사용여부" />
         <textarea

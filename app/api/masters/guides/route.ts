@@ -13,6 +13,8 @@ export async function POST(request: NextRequest) {
       ...guide,
       name: guide.name.trim(),
       phone: guide.phone?.trim() ?? "",
+      birthDate: guide.birthDate?.trim() ?? "",
+      bankAccount: guide.bankAccount?.trim() ?? "",
       memo: guide.memo?.trim() ?? "",
     });
 

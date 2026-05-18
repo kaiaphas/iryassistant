@@ -27,16 +27,20 @@ export function GuideTable({ guides }: { guides: Guide[] }) {
   const filtered = items.filter((guide) => {
     const q = query.toLowerCase();
     const assignableMatch = !assignable || (assignable === "가능" ? guide.assignable : !guide.assignable);
-    return (!q || [guide.name, guide.phone, guide.memo].some((value) => value?.toLowerCase().includes(q))) && assignableMatch;
+    return (!q || [guide.name, guide.phone, guide.birthDate, guide.bankAccount, guide.memo].some((value) => value?.toLowerCase().includes(q))) && assignableMatch;
   });
-  const getSortValue = React.useCallback((guide: Guide, key: "name" | "phone" | "assignable" | "active" | "memo") => ({
+  const getSortValue = React.useCallback((guide: Guide, key: "name" | "phone" | "birthDate" | "bankAccount" | "availableWeekday" | "availableWeekend" | "assignable" | "active" | "memo") => ({
     name: guide.name,
     phone: guide.phone,
+    birthDate: guide.birthDate,
+    bankAccount: guide.bankAccount,
+    availableWeekday: guide.availableWeekday,
+    availableWeekend: guide.availableWeekend,
     assignable: guide.assignable,
     active: guide.active,
     memo: guide.memo,
   }[key]), []);
-  const { sortedItems, sortKey, sortDirection, toggleSort } = useTableSort<Guide, "name" | "phone" | "assignable" | "active" | "memo">(filtered, "name", getSortValue);
+  const { sortedItems, sortKey, sortDirection, toggleSort } = useTableSort<Guide, "name" | "phone" | "birthDate" | "bankAccount" | "availableWeekday" | "availableWeekend" | "assignable" | "active" | "memo">(filtered, "name", getSortValue);
   const totalPages = Math.max(1, Math.ceil(filtered.length / tablePageSize));
   const visibleItems = sortedItems.slice((page - 1) * tablePageSize, page * tablePageSize);
 
@@ -111,11 +115,15 @@ export function GuideTable({ guides }: { guides: Guide[] }) {
 
       <div className="overflow-hidden rounded-xl border bg-white shadow-soft">
         <div className="overflow-x-auto">
-          <Table className="min-w-[860px]">
+          <Table className="min-w-[1240px]">
             <TableHeader>
               <TableRow>
                 <SortableTableHead label="이름" className="w-[120px] text-center" active={sortKey === "name"} direction={sortDirection} onClick={() => toggleSort("name")} />
                 <SortableTableHead label="전화번호" className="w-[150px] text-center" active={sortKey === "phone"} direction={sortDirection} onClick={() => toggleSort("phone")} />
+                <SortableTableHead label="생년월일" className="w-[120px] text-center" active={sortKey === "birthDate"} direction={sortDirection} onClick={() => toggleSort("birthDate")} />
+                <SortableTableHead label="계좌번호" className="w-[180px] text-center" active={sortKey === "bankAccount"} direction={sortDirection} onClick={() => toggleSort("bankAccount")} />
+                <SortableTableHead label="주중" className="w-[80px] text-center" active={sortKey === "availableWeekday"} direction={sortDirection} onClick={() => toggleSort("availableWeekday")} />
+                <SortableTableHead label="주말" className="w-[80px] text-center" active={sortKey === "availableWeekend"} direction={sortDirection} onClick={() => toggleSort("availableWeekend")} />
                 <SortableTableHead label="배정가능" className="w-[110px] text-center" active={sortKey === "assignable"} direction={sortDirection} onClick={() => toggleSort("assignable")} />
                 <SortableTableHead label="사용여부" className="w-[110px] text-center" active={sortKey === "active"} direction={sortDirection} onClick={() => toggleSort("active")} />
                 <SortableTableHead label="메모" active={sortKey === "memo"} direction={sortDirection} onClick={() => toggleSort("memo")} />
@@ -127,6 +135,10 @@ export function GuideTable({ guides }: { guides: Guide[] }) {
                 <TableRow key={guide.id}>
                   <TableCell className="whitespace-nowrap text-center font-semibold">{guide.name}</TableCell>
                   <TableCell className="whitespace-nowrap text-center">{guide.phone}</TableCell>
+                  <TableCell className="whitespace-nowrap text-center">{guide.birthDate || "-"}</TableCell>
+                  <TableCell className="whitespace-nowrap text-center">{guide.bankAccount || "-"}</TableCell>
+                  <TableCell className="text-center">{guide.availableWeekday ? "가능" : "-"}</TableCell>
+                  <TableCell className="text-center">{guide.availableWeekend ? "가능" : "-"}</TableCell>
                   <TableCell className="text-center"><StatusBadge value={guide.assignable ? "가능" : "불가"} /></TableCell>
                   <TableCell className="text-center"><Switch checked={guide.active} /></TableCell>
                   <TableCell className="max-w-[420px] truncate" title={guide.memo || ""}>{guide.memo || "-"}</TableCell>

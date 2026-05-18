@@ -6,14 +6,19 @@ type GuideRow = {
   id: string;
   name: string;
   phone: string | null;
+  birth_date: string | null;
+  bank_account: string | null;
   assignable: boolean;
   active: boolean;
+  available_weekday: boolean;
+  available_weekend: boolean;
   memo: string | null;
 };
 
 type DriverRow = GuideRow & {
   capacity: string | null;
   company: string | null;
+  driver_type: Driver["driverType"] | null;
 };
 
 type RestaurantRow = {
@@ -89,6 +94,8 @@ function mapGuide(row: GuideRow): Guide {
     id: row.id,
     name: row.name,
     phone: textValue(row.phone),
+    birthDate: textValue(row.birth_date),
+    bankAccount: textValue(row.bank_account),
     languages: [],
     regions: [],
     mainCourses: [],
@@ -96,6 +103,8 @@ function mapGuide(row: GuideRow): Guide {
     licenseStatus: "사용",
     assignable: row.assignable,
     active: row.active,
+    availableWeekday: row.available_weekday,
+    availableWeekend: row.available_weekend,
     memo: textValue(row.memo),
   };
 }
@@ -106,7 +115,10 @@ function mapDriver(row: DriverRow): Driver {
     name: row.name,
     capacity: textValue(row.capacity),
     phone: textValue(row.phone),
+    birthDate: textValue(row.birth_date),
+    bankAccount: textValue(row.bank_account),
     company: textValue(row.company),
+    driverType: row.driver_type ?? "직영",
     assignable: row.assignable,
     active: row.active,
     memo: textValue(row.memo),
@@ -230,7 +242,7 @@ export async function findGuidesFromSupabase() {
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from("master_guides")
-    .select("id,name,phone,assignable,active,memo")
+    .select("id,name,phone,birth_date,bank_account,assignable,active,available_weekday,available_weekend,memo")
     .order("name", { ascending: true });
 
   if (isMissingTable(error)) return guides;
@@ -243,7 +255,7 @@ export async function findDriversFromSupabase() {
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from("master_drivers")
-    .select("id,name,capacity,phone,company,assignable,active,memo")
+    .select("id,name,capacity,phone,birth_date,bank_account,company,driver_type,assignable,active,memo")
     .order("name", { ascending: true });
 
   if (isMissingTable(error)) return drivers;
@@ -296,12 +308,16 @@ export async function upsertGuideToSupabase(guide: Guide) {
     ...(guide.id ? { id: guide.id } : {}),
     name: guide.name,
     phone: guide.phone || null,
+    birth_date: guide.birthDate || null,
+    bank_account: guide.bankAccount || null,
     assignable: guide.assignable,
     active: guide.active,
+    available_weekday: guide.availableWeekday,
+    available_weekend: guide.availableWeekend,
     memo: guide.memo || null,
   };
 
-  const { data, error } = await supabase.from("master_guides").upsert(payload).select("id,name,phone,assignable,active,memo").single();
+  const { data, error } = await supabase.from("master_guides").upsert(payload).select("id,name,phone,birth_date,bank_account,assignable,active,available_weekday,available_weekend,memo").single();
   if (error) throw new Error(`가이드 저장 실패: ${error.message}`);
   return mapGuide(data as GuideRow);
 }
@@ -319,7 +335,10 @@ export async function upsertDriverToSupabase(driver: Driver) {
     name: driver.name,
     capacity: driver.capacity || null,
     phone: driver.phone || null,
+    birth_date: driver.birthDate || null,
+    bank_account: driver.bankAccount || null,
     company: driver.company || null,
+    driver_type: driver.driverType,
     assignable: driver.assignable,
     active: driver.active,
     memo: driver.memo || null,
@@ -328,7 +347,7 @@ export async function upsertDriverToSupabase(driver: Driver) {
   const { data, error } = await supabase
     .from("master_drivers")
     .upsert(payload)
-    .select("id,name,capacity,phone,company,assignable,active,memo")
+    .select("id,name,capacity,phone,birth_date,bank_account,company,driver_type,assignable,active,memo")
     .single();
   if (error) throw new Error(`기사 저장 실패: ${error.message}`);
   return mapDriver(data as DriverRow);

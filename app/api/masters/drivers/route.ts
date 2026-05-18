@@ -14,7 +14,10 @@ export async function POST(request: NextRequest) {
       name: driver.name.trim(),
       capacity: driver.capacity?.trim() ?? "",
       phone: driver.phone?.trim() ?? "",
+      birthDate: driver.birthDate?.trim() ?? "",
+      bankAccount: driver.bankAccount?.trim() ?? "",
       company: driver.company?.trim() ?? "",
+      driverType: driver.driverType === "자차" ? "자차" : "직영",
       memo: driver.memo?.trim() ?? "",
     });
 

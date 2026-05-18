@@ -20,6 +20,8 @@ function createEmptyGuide(): Guide {
     id: "",
     name: "",
     phone: "",
+    birthDate: "",
+    bankAccount: "",
     languages: [],
     regions: [],
     mainCourses: [],
@@ -27,6 +29,8 @@ function createEmptyGuide(): Guide {
     licenseStatus: "사용",
     assignable: true,
     active: true,
+    availableWeekday: true,
+    availableWeekend: true,
     memo: "",
   };
 }
@@ -47,6 +51,18 @@ export function GuideForm({ guide, open, saving = false, onOpenChange, onSave }:
       <div className="space-y-3">
         <Input value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="이름" />
         <Input value={form.phone} onChange={(event) => update("phone", event.target.value)} placeholder="전화번호" />
+        <Input type="date" value={form.birthDate ?? ""} onChange={(event) => update("birthDate", event.target.value)} aria-label="생년월일" />
+        <Input value={form.bankAccount ?? ""} onChange={(event) => update("bankAccount", event.target.value)} placeholder="계좌번호" />
+        <div className="flex gap-4 rounded-md border px-3 py-2 text-sm">
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={form.availableWeekday} onChange={(event) => update("availableWeekday", event.target.checked)} />
+            주중
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={form.availableWeekend} onChange={(event) => update("availableWeekend", event.target.checked)} />
+            주말
+          </label>
+        </div>
         <Switch checked={form.assignable} onCheckedChange={(checked) => update("assignable", checked)} label="배정가능" />
         <Switch checked={form.active} onCheckedChange={(checked) => update("active", checked)} label="사용여부" />
         <textarea
