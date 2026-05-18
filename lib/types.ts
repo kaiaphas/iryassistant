@@ -225,6 +225,16 @@ export type RefundItem = {
   status: "환불신청" | "환불완료";
   bankAccount: string;
   memo?: string;
+  payments: RefundPayment[];
+};
+
+export type RefundPayment = {
+  id: string;
+  refundId: string;
+  depositDate: string;
+  depositAmount: number;
+  depositor: string;
+  memo?: string;
 };
 
 export type NavItem = {

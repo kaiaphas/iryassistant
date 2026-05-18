@@ -40,7 +40,7 @@ export function GuideTable({ guides }: { guides: Guide[] }) {
     active: guide.active,
     memo: guide.memo,
   }[key]), []);
-  const { sortedItems, sortKey, sortDirection, toggleSort } = useTableSort<Guide, "name" | "phone" | "birthDate" | "bankAccount" | "availableWeekday" | "availableWeekend" | "assignable" | "active" | "memo">(filtered, "name", getSortValue);
+  const { sortedItems, sortKey, sortDirection, sortApplied, toggleSort } = useTableSort<Guide, "name" | "phone" | "birthDate" | "bankAccount" | "availableWeekday" | "availableWeekend" | "assignable" | "active" | "memo">(filtered, "name", getSortValue);
   const totalPages = Math.max(1, Math.ceil(filtered.length / tablePageSize));
   const visibleItems = sortedItems.slice((page - 1) * tablePageSize, page * tablePageSize);
 
@@ -118,15 +118,15 @@ export function GuideTable({ guides }: { guides: Guide[] }) {
           <Table className="min-w-[1240px]">
             <TableHeader>
               <TableRow>
-                <SortableTableHead label="이름" className="w-[120px] text-center" active={sortKey === "name"} direction={sortDirection} onClick={() => toggleSort("name")} />
-                <SortableTableHead label="전화번호" className="w-[150px] text-center" active={sortKey === "phone"} direction={sortDirection} onClick={() => toggleSort("phone")} />
-                <SortableTableHead label="생년월일" className="w-[120px] text-center" active={sortKey === "birthDate"} direction={sortDirection} onClick={() => toggleSort("birthDate")} />
-                <SortableTableHead label="계좌번호" className="w-[180px] text-center" active={sortKey === "bankAccount"} direction={sortDirection} onClick={() => toggleSort("bankAccount")} />
-                <SortableTableHead label="주중" className="w-[80px] text-center" active={sortKey === "availableWeekday"} direction={sortDirection} onClick={() => toggleSort("availableWeekday")} />
-                <SortableTableHead label="주말" className="w-[80px] text-center" active={sortKey === "availableWeekend"} direction={sortDirection} onClick={() => toggleSort("availableWeekend")} />
-                <SortableTableHead label="배정가능" className="w-[110px] text-center" active={sortKey === "assignable"} direction={sortDirection} onClick={() => toggleSort("assignable")} />
-                <SortableTableHead label="사용여부" className="w-[110px] text-center" active={sortKey === "active"} direction={sortDirection} onClick={() => toggleSort("active")} />
-                <SortableTableHead label="메모" active={sortKey === "memo"} direction={sortDirection} onClick={() => toggleSort("memo")} />
+                <SortableTableHead label="이름" className="w-[120px] text-center" active={sortApplied && sortKey === "name"} direction={sortDirection} onClick={() => toggleSort("name")} />
+                <SortableTableHead label="전화번호" className="w-[150px] text-center" active={sortApplied && sortKey === "phone"} direction={sortDirection} onClick={() => toggleSort("phone")} />
+                <SortableTableHead label="생년월일" className="w-[120px] text-center" active={sortApplied && sortKey === "birthDate"} direction={sortDirection} onClick={() => toggleSort("birthDate")} />
+                <SortableTableHead label="계좌번호" className="w-[180px] text-center" active={sortApplied && sortKey === "bankAccount"} direction={sortDirection} onClick={() => toggleSort("bankAccount")} />
+                <SortableTableHead label="주중" className="w-[80px] text-center" active={sortApplied && sortKey === "availableWeekday"} direction={sortDirection} onClick={() => toggleSort("availableWeekday")} />
+                <SortableTableHead label="주말" className="w-[80px] text-center" active={sortApplied && sortKey === "availableWeekend"} direction={sortDirection} onClick={() => toggleSort("availableWeekend")} />
+                <SortableTableHead label="배정가능" className="w-[110px] text-center" active={sortApplied && sortKey === "assignable"} direction={sortDirection} onClick={() => toggleSort("assignable")} />
+                <SortableTableHead label="사용여부" className="w-[110px] text-center" active={sortApplied && sortKey === "active"} direction={sortDirection} onClick={() => toggleSort("active")} />
+                <SortableTableHead label="메모" active={sortApplied && sortKey === "memo"} direction={sortDirection} onClick={() => toggleSort("memo")} />
                 <TableHead className="w-[150px] text-center">관리</TableHead>
               </TableRow>
             </TableHeader>

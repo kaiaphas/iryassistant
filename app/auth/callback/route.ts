@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { EmailOtpType, Session, User } from "@supabase/supabase-js";
-import { authCookieNames, createSupabaseAuthClient } from "@/lib/auth";
+import { authCookieNames, authSessionMaxAge, createSupabaseAuthClient } from "@/lib/auth";
 import { normalizeAppRole } from "@/lib/access-control";
 import { createSupabaseServerClient } from "@/repositories/supabase/reservation-repository";
 
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
   const role = normalizeAppRole(member.role);
   const response = NextResponse.redirect(new URL(next, request.url));
   const secure = process.env.NODE_ENV === "production";
-  const maxAge = 60 * 60 * 24 * 7;
+  const maxAge = authSessionMaxAge;
 
   response.cookies.set(authCookieNames.accessToken, session.access_token, {
     httpOnly: true,

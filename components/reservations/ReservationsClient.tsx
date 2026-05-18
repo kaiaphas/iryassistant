@@ -109,7 +109,7 @@ export function ReservationsClient({
     hotelStatus: schedule.hotelBooking.status,
     progressStatus: getScheduleProgressStatus(schedule),
   }[key]), []);
-  const { sortedItems, sortKey, sortDirection, toggleSort } = useTableSort<ScheduleGroup, "tourDate" | "tourType" | "productName" | "busNo" | "departureTime" | "reservationCount" | "busCompany" | "busType" | "guide" | "driver" | "restaurant" | "hotel" | "restaurantStatus" | "provisionalStatus" | "hotelStatus" | "progressStatus">(filtered, "tourDate", getSortValue);
+  const { sortedItems, sortKey, sortDirection, sortApplied, toggleSort } = useTableSort<ScheduleGroup, "tourDate" | "tourType" | "productName" | "busNo" | "departureTime" | "reservationCount" | "busCompany" | "busType" | "guide" | "driver" | "restaurant" | "hotel" | "restaurantStatus" | "provisionalStatus" | "hotelStatus" | "progressStatus">(filtered, "tourDate", getSortValue);
   const filteredReservationCount = filtered.reduce((total, schedule) => total + schedule.reservationCount, 0);
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const visibleSchedules = sortedItems.slice((page - 1) * pageSize, page * pageSize);
@@ -188,6 +188,7 @@ export function ReservationsClient({
           hotels={hotels}
           sortKey={sortKey}
           sortDirection={sortDirection}
+          sortApplied={sortApplied}
           onSort={toggleSort}
         />
         <ScheduleAccordionCards

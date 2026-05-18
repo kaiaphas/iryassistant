@@ -4,3 +4,5 @@ export const authCookieNames = {
   role: "iry_role",
   email: "iry_email",
 };
+
+export const authSessionMaxAge = 60 * 60 * 12;

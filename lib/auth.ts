@@ -1,10 +1,10 @@
 import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import { normalizeAppRole, type AppRole } from "@/lib/access-control";
-import { authCookieNames } from "@/lib/auth-constants";
+import { authCookieNames, authSessionMaxAge } from "@/lib/auth-constants";
 import { createSupabaseServerClient } from "@/repositories/supabase/reservation-repository";
 
-export { authCookieNames };
+export { authCookieNames, authSessionMaxAge };
 
 export function createSupabaseAuthClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;

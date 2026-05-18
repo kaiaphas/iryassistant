@@ -19,22 +19,32 @@ export function useTableSort<T, K extends string>(
 ) {
   const [sortKey, setSortKey] = React.useState<K>(defaultKey);
   const [sortDirection, setSortDirection] = React.useState<SortDirection>(defaultDirection);
+  const [sortApplied, setSortApplied] = React.useState(false);
 
   const sortedItems = React.useMemo(() => {
+    if (!sortApplied) return items;
     return [...items].sort((left, right) => {
       const result = compareValues(getValue(left, sortKey), getValue(right, sortKey));
       return sortDirection === "asc" ? result : -result;
     });
-  }, [items, sortDirection, sortKey, getValue]);
+  }, [items, sortApplied, sortDirection, sortKey, getValue]);
 
   function toggleSort(nextKey: K) {
     if (nextKey === sortKey) {
+      if (sortApplied && sortDirection === "desc") {
+        setSortApplied(false);
+        setSortKey(defaultKey);
+        setSortDirection(defaultDirection);
+        return;
+      }
+      setSortApplied(true);
       setSortDirection((current) => current === "asc" ? "desc" : "asc");
       return;
     }
+    setSortApplied(true);
     setSortKey(nextKey);
     setSortDirection("asc");
   }
 
-  return { sortedItems, sortKey, sortDirection, toggleSort };
+  return { sortedItems, sortKey, sortDirection, sortApplied, toggleSort };
 }

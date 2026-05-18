@@ -30,6 +30,7 @@ export function ScheduleAccordionTable({
   hotels,
   sortKey,
   sortDirection,
+  sortApplied,
   onSort,
 }: {
   schedules: ScheduleGroup[];
@@ -44,6 +45,7 @@ export function ScheduleAccordionTable({
   hotels: Hotel[];
   sortKey: ScheduleSortKey;
   sortDirection: SortDirection;
+  sortApplied: boolean;
   onSort: (key: ScheduleSortKey) => void;
 }) {
   const headers: Array<{ label: string; key: ScheduleSortKey; className: string }> = [
@@ -72,7 +74,7 @@ export function ScheduleAccordionTable({
           <TableHeader>
             <TableRow>
               {headers.map((head) => (
-                <SortableTableHead key={head.label} label={head.label} className={head.className} active={sortKey === head.key} direction={sortDirection} onClick={() => onSort(head.key)} />
+                <SortableTableHead key={head.label} label={head.label} className={head.className} active={sortApplied && sortKey === head.key} direction={sortDirection} onClick={() => onSort(head.key)} />
               ))}
             </TableRow>
           </TableHeader>

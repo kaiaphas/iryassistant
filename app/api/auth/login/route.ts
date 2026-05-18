@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authCookieNames, createSupabaseAuthClient } from "@/lib/auth";
+import { authCookieNames, authSessionMaxAge, createSupabaseAuthClient } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/repositories/supabase/reservation-repository";
 import { normalizeAppRole } from "@/lib/access-control";
 
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json({ ok: true });
     const secure = process.env.NODE_ENV === "production";
-    const maxAge = 60 * 60 * 24 * 7;
+    const maxAge = authSessionMaxAge;
     const role = normalizeAppRole(member.role);
 
     response.cookies.set(authCookieNames.accessToken, authData.session.access_token, { httpOnly: true, sameSite: "lax", secure, path: "/", maxAge });

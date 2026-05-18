@@ -1,0 +1,3 @@
+-- refunds.memo는 유지한다.
+-- 마스터 테이블 화면에서는 메모 컬럼을 제거하지만,
+-- 상세 아코디언에서 refunds.memo와 refund_payments.memo를 함께 표시한다.

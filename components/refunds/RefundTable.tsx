@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { CalendarDays, Plus } from "lucide-react";
-import type { AdminUser, RefundItem } from "@/lib/types";
+import type { AdminUser, RefundItem, RefundPayment } from "@/lib/types";
 import { getKstDateInput } from "@/lib/date";
 import { formatCurrency } from "@/lib/format";
 import { SearchInput } from "@/components/common/SearchInput";
@@ -10,6 +10,7 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TablePagination, tablePageSize } from "@/components/common/TablePagination";
 import { SortableTableHead } from "@/components/common/SortableTableHead";
@@ -33,6 +34,7 @@ const emptyRefund: RefundItem = {
   status: "환불신청",
   bankAccount: "",
   memo: "",
+  payments: [],
 };
 
 function numberValue(value: string) {
@@ -92,17 +94,26 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [message, setMessage] = React.useState("");
   const [page, setPage] = React.useState(1);
+  const [openIds, setOpenIds] = React.useState<string[]>([]);
+  const [paymentDrafts, setPaymentDrafts] = React.useState<Record<string, Omit<RefundPayment, "id">>>({});
+  const [editingPayment, setEditingPayment] = React.useState<RefundPayment | null>(null);
 
   const filtered = items.filter((item) => {
     const q = query.trim().toLowerCase();
     return (
       (!startDate || item.refundDate >= startDate)
       && (!endDate || item.refundDate <= endDate)
-      && (!q || [item.customerName, item.phone, item.depositor, item.bankAccount, item.memo].some((value) => value?.toLowerCase().includes(q)))
+      && (!q || [
+        item.customerName,
+        item.phone,
+        item.bankAccount,
+        item.memo,
+        ...item.payments.flatMap((payment) => [payment.depositor, payment.memo]),
+      ].some((value) => value?.toLowerCase().includes(q)))
       && (!status || item.status === status)
     );
   });
-  const getSortValue = React.useCallback((item: RefundItem, key: "no" | "refundDate" | "customerName" | "departureDate" | "peopleCount" | "phone" | "paymentMethod" | "depositDate" | "productAmount" | "depositAmount" | "refundRequestAmount" | "depositor" | "balanceAmount" | "registeredBy" | "status" | "bankAccount" | "memo") => ({
+  const getSortValue = React.useCallback((item: RefundItem, key: "no" | "refundDate" | "customerName" | "departureDate" | "peopleCount" | "phone" | "paymentMethod" | "productAmount" | "depositAmount" | "refundRequestAmount" | "registeredBy" | "status" | "bankAccount") => ({
     no: item.no,
     refundDate: item.refundDate,
     customerName: item.customerName,
@@ -110,18 +121,14 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
     peopleCount: item.peopleCount,
     phone: item.phone,
     paymentMethod: item.paymentMethod,
-    depositDate: item.depositDate,
     productAmount: item.productAmount,
     depositAmount: item.depositAmount,
     refundRequestAmount: item.refundRequestAmount,
-    depositor: item.depositor,
-    balanceAmount: item.balanceAmount,
     registeredBy: item.registeredBy,
     status: item.status,
     bankAccount: item.bankAccount,
-    memo: item.memo,
   }[key]), []);
-  const { sortedItems, sortKey, sortDirection, toggleSort } = useTableSort<RefundItem, "no" | "refundDate" | "customerName" | "departureDate" | "peopleCount" | "phone" | "paymentMethod" | "depositDate" | "productAmount" | "depositAmount" | "refundRequestAmount" | "depositor" | "balanceAmount" | "registeredBy" | "status" | "bankAccount" | "memo">(filtered, "refundDate", getSortValue, "desc");
+  const { sortedItems, sortKey, sortDirection, sortApplied, toggleSort } = useTableSort<RefundItem, "no" | "refundDate" | "customerName" | "departureDate" | "peopleCount" | "phone" | "paymentMethod" | "productAmount" | "depositAmount" | "refundRequestAmount" | "registeredBy" | "status" | "bankAccount">(filtered, "refundDate", getSortValue, "desc");
   const totalPages = Math.max(1, Math.ceil(filtered.length / tablePageSize));
   const visibleItems = sortedItems.slice((page - 1) * tablePageSize, page * tablePageSize);
   const totalRefund = filtered.reduce((sum, item) => sum + item.refundRequestAmount, 0);
@@ -162,6 +169,135 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
     const today = getKstDateInput();
     setStartDate(addDays(today, -days));
     setEndDate(today);
+  }
+
+  function toggleOpen(id: string) {
+    setOpenIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  }
+
+  function startPaymentDraft(item: RefundItem) {
+    setOpenIds((current) => current.includes(item.id) ? current : [...current, item.id]);
+    setPaymentDrafts((current) => ({
+      ...current,
+      [item.id]: {
+        refundId: item.id,
+        depositDate: getKstDateInput(),
+        depositAmount: 0,
+        depositor: item.customerName,
+        memo: "",
+      },
+    }));
+  }
+
+  function updatePaymentDraft<K extends keyof Omit<RefundPayment, "id">>(refundId: string, key: K, value: Omit<RefundPayment, "id">[K]) {
+    setPaymentDrafts((current) => ({
+      ...current,
+      [refundId]: { ...current[refundId], [key]: value },
+    }));
+  }
+
+  async function savePayment(refundId: string) {
+    const draftPayment = paymentDrafts[refundId];
+    if (!draftPayment) return;
+
+    setSaving(true);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/refunds/${refundId}/payments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(draftPayment),
+      });
+      const saved = await response.json();
+      if (!response.ok) throw new Error(saved.message ?? "입금내역 저장에 실패했습니다.");
+
+      setItems((current) => current.map((item) => {
+        if (item.id !== refundId) return item;
+        const payments = [...item.payments, saved as RefundPayment];
+        return {
+          ...item,
+          payments,
+          depositAmount: payments.reduce((sum, payment) => sum + payment.depositAmount, 0),
+        };
+      }));
+      setPaymentDrafts((current) => {
+        const next = { ...current };
+        delete next[refundId];
+        return next;
+      });
+      setMessage("입금내역이 저장되었습니다.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "입금내역 저장 중 오류가 발생했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removePayment(refundId: string, paymentId: string) {
+    if (!window.confirm("입금내역을 삭제할까요?")) return;
+
+    setSaving(true);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/refund-payments?id=${encodeURIComponent(paymentId)}`, { method: "DELETE" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message ?? "입금내역 삭제에 실패했습니다.");
+
+      setItems((current) => current.map((item) => {
+        if (item.id !== refundId) return item;
+        const payments = item.payments.filter((payment) => payment.id !== paymentId);
+        return {
+          ...item,
+          payments,
+          depositAmount: payments.reduce((sum, payment) => sum + payment.depositAmount, 0),
+        };
+      }));
+      setMessage("입금내역이 삭제되었습니다.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "입금내역 삭제 중 오류가 발생했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function startEditPayment(payment: RefundPayment) {
+    setEditingPayment({ ...payment });
+  }
+
+  function updateEditingPayment<K extends keyof RefundPayment>(key: K, value: RefundPayment[K]) {
+    setEditingPayment((current) => current ? { ...current, [key]: value } : current);
+  }
+
+  async function saveEditingPayment() {
+    if (!editingPayment) return;
+
+    setSaving(true);
+    setMessage("");
+    try {
+      const response = await fetch("/api/refund-payments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editingPayment),
+      });
+      const saved = await response.json();
+      if (!response.ok) throw new Error(saved.message ?? "입금내역 수정에 실패했습니다.");
+
+      setItems((current) => current.map((item) => {
+        if (item.id !== saved.refundId) return item;
+        const payments = item.payments.map((payment) => payment.id === saved.id ? saved as RefundPayment : payment);
+        return {
+          ...item,
+          payments,
+          depositAmount: payments.reduce((sum, payment) => sum + payment.depositAmount, 0),
+        };
+      }));
+      setEditingPayment(null);
+      setMessage("입금내역이 수정되었습니다.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "입금내역 수정 중 오류가 발생했습니다.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function updateDraft<K extends keyof RefundItem>(key: K, value: RefundItem[K]) {
@@ -292,6 +428,11 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
               <DateFilterInput label="환불일자 종료일" value={endDate} onChange={setEndDate} />
             </div>
             <div className="flex flex-wrap gap-1.5">
+              <Button size="sm" variant="outline" onClick={() => {
+                const today = getKstDateInput();
+                setStartDate(today);
+                setEndDate(today);
+              }}>당일</Button>
               <Button size="sm" variant="outline" onClick={() => setRelativeRange(1)}>하루전</Button>
               <Button size="sm" variant="outline" onClick={() => setRelativeRange(7)}>일주전</Button>
               <Button size="sm" variant="outline" onClick={() => setRelativeRange(30)}>한달전</Button>
@@ -328,27 +469,23 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
           <p className="text-sm font-semibold text-slate-900">환불 내역</p>
         </div>
         <div className="overflow-x-auto scrollbar-thin">
-          <Table className="min-w-[1840px]">
+          <Table className="min-w-[1620px]">
             <TableHeader>
               <TableRow className="bg-slate-50">
                 <TableHead className="w-[112px] whitespace-nowrap text-center">관리</TableHead>
-                <SortableTableHead label="no." className="w-[54px] whitespace-nowrap text-center" active={sortKey === "no"} direction={sortDirection} onClick={() => toggleSort("no")} />
-                <SortableTableHead label="환불일자" className="w-[112px] whitespace-nowrap text-center" active={sortKey === "refundDate"} direction={sortDirection} onClick={() => toggleSort("refundDate")} />
-                <SortableTableHead label="고객명" className="w-[84px] whitespace-nowrap text-center" active={sortKey === "customerName"} direction={sortDirection} onClick={() => toggleSort("customerName")} />
-                <SortableTableHead label="출발일" className="w-[112px] whitespace-nowrap text-center" active={sortKey === "departureDate"} direction={sortDirection} onClick={() => toggleSort("departureDate")} />
-                <SortableTableHead label="인원" className="w-[58px] whitespace-nowrap text-center" active={sortKey === "peopleCount"} direction={sortDirection} onClick={() => toggleSort("peopleCount")} />
-                <SortableTableHead label="전화번호" className="w-[132px] whitespace-nowrap text-center" active={sortKey === "phone"} direction={sortDirection} onClick={() => toggleSort("phone")} />
-                <SortableTableHead label="결제방식" className="w-[98px] whitespace-nowrap text-center" active={sortKey === "paymentMethod"} direction={sortDirection} onClick={() => toggleSort("paymentMethod")} />
-                <SortableTableHead label="입금일" className="w-[132px] whitespace-nowrap text-center" active={sortKey === "depositDate"} direction={sortDirection} onClick={() => toggleSort("depositDate")} />
-                <SortableTableHead label="상품총액" className="w-[90px] whitespace-nowrap text-center" active={sortKey === "productAmount"} direction={sortDirection} onClick={() => toggleSort("productAmount")} />
-                <SortableTableHead label="입금액" className="w-[90px] whitespace-nowrap text-center" active={sortKey === "depositAmount"} direction={sortDirection} onClick={() => toggleSort("depositAmount")} />
-                <SortableTableHead label="환불요청금액" className="w-[108px] whitespace-nowrap text-center" active={sortKey === "refundRequestAmount"} direction={sortDirection} onClick={() => toggleSort("refundRequestAmount")} />
-                <SortableTableHead label="입금자" className="w-[90px] whitespace-nowrap text-center" active={sortKey === "depositor"} direction={sortDirection} onClick={() => toggleSort("depositor")} />
-                <SortableTableHead label="잔금" className="w-[90px] whitespace-nowrap text-center" active={sortKey === "balanceAmount"} direction={sortDirection} onClick={() => toggleSort("balanceAmount")} />
-                <SortableTableHead label="등록자" className="w-[96px] whitespace-nowrap text-center" active={sortKey === "registeredBy"} direction={sortDirection} onClick={() => toggleSort("registeredBy")} />
-                <SortableTableHead label="상태" className="w-[100px] whitespace-nowrap text-center" active={sortKey === "status"} direction={sortDirection} onClick={() => toggleSort("status")} />
-                <SortableTableHead label="은행 / 계좌번호 / 예금주" className="min-w-[220px] whitespace-nowrap text-center" active={sortKey === "bankAccount"} direction={sortDirection} onClick={() => toggleSort("bankAccount")} />
-                <SortableTableHead label="메모" className="min-w-[170px] whitespace-nowrap text-center" active={sortKey === "memo"} direction={sortDirection} onClick={() => toggleSort("memo")} />
+                <SortableTableHead label="no." className="w-[54px] whitespace-nowrap text-center" active={sortApplied && sortKey === "no"} direction={sortDirection} onClick={() => toggleSort("no")} />
+                <SortableTableHead label="환불일자" className="w-[112px] whitespace-nowrap text-center" active={sortApplied && sortKey === "refundDate"} direction={sortDirection} onClick={() => toggleSort("refundDate")} />
+                <SortableTableHead label="고객명" className="w-[84px] whitespace-nowrap text-center" active={sortApplied && sortKey === "customerName"} direction={sortDirection} onClick={() => toggleSort("customerName")} />
+                <SortableTableHead label="출발일" className="w-[112px] whitespace-nowrap text-center" active={sortApplied && sortKey === "departureDate"} direction={sortDirection} onClick={() => toggleSort("departureDate")} />
+                <SortableTableHead label="인원" className="w-[58px] whitespace-nowrap text-center" active={sortApplied && sortKey === "peopleCount"} direction={sortDirection} onClick={() => toggleSort("peopleCount")} />
+                <SortableTableHead label="전화번호" className="w-[132px] whitespace-nowrap text-center" active={sortApplied && sortKey === "phone"} direction={sortDirection} onClick={() => toggleSort("phone")} />
+                <SortableTableHead label="결제방식" className="w-[98px] whitespace-nowrap text-center" active={sortApplied && sortKey === "paymentMethod"} direction={sortDirection} onClick={() => toggleSort("paymentMethod")} />
+                <SortableTableHead label="상품총액" className="w-[90px] whitespace-nowrap text-center" active={sortApplied && sortKey === "productAmount"} direction={sortDirection} onClick={() => toggleSort("productAmount")} />
+                <SortableTableHead label="입금액" className="w-[90px] whitespace-nowrap text-center" active={sortApplied && sortKey === "depositAmount"} direction={sortDirection} onClick={() => toggleSort("depositAmount")} />
+                <SortableTableHead label="환불요청금액" className="w-[108px] whitespace-nowrap text-center" active={sortApplied && sortKey === "refundRequestAmount"} direction={sortDirection} onClick={() => toggleSort("refundRequestAmount")} />
+                <SortableTableHead label="등록자" className="w-[96px] whitespace-nowrap text-center" active={sortApplied && sortKey === "registeredBy"} direction={sortDirection} onClick={() => toggleSort("registeredBy")} />
+                <SortableTableHead label="상태" className="w-[100px] whitespace-nowrap text-center" active={sortApplied && sortKey === "status"} direction={sortDirection} onClick={() => toggleSort("status")} />
+                <SortableTableHead label="은행 / 계좌번호 / 예금주" className="min-w-[220px] whitespace-nowrap text-center" active={sortApplied && sortKey === "bankAccount"} direction={sortDirection} onClick={() => toggleSort("bankAccount")} />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -367,18 +504,49 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
                 editingId === item.id && draft ? (
                   <RefundEditRow key={item.id} item={draft} activeAdminUsers={activeAdminUsers} saving={saving} onChange={updateDraft} onSave={saveDraft} onCancel={cancelEdit} />
                 ) : (
-                  <RefundReadRow key={item.id} item={item} deleting={deletingId === item.id} onEdit={editRow} onDelete={removeRefund} disabled={Boolean(editingId)} />
+                  <React.Fragment key={item.id}>
+                    <RefundReadRow
+                      item={item}
+                      open={openIds.includes(item.id)}
+                      deleting={deletingId === item.id}
+                      onToggle={toggleOpen}
+                      onEdit={editRow}
+                      onDelete={removeRefund}
+                      disabled={Boolean(editingId)}
+                    />
+                    {openIds.includes(item.id) ? (
+                      <RefundPaymentDetailRow
+                        item={item}
+                        draft={paymentDrafts[item.id]}
+                        saving={saving}
+                        onAdd={startPaymentDraft}
+                        onDraftChange={updatePaymentDraft}
+                        onSave={savePayment}
+                        onCancelDraft={(refundId) => setPaymentDrafts((current) => {
+                          const next = { ...current };
+                          delete next[refundId];
+                          return next;
+                        })}
+                        onDelete={removePayment}
+                        editingPayment={editingPayment}
+                        onEdit={startEditPayment}
+                        onEditChange={updateEditingPayment}
+                        onEditSave={saveEditingPayment}
+                        onEditCancel={() => setEditingPayment(null)}
+                      />
+                    ) : null}
+                  </React.Fragment>
                 )
               ))}
               {filtered.length === 0 && drafts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={18} className="h-32 text-center text-slate-500">선택한 기간의 환불 내역이 없습니다.</TableCell>
+                  <TableCell colSpan={14} className="h-32 text-center text-slate-500">선택한 기간의 환불 내역이 없습니다.</TableCell>
                 </TableRow>
               ) : null}
               <TableRow className="bg-emerald-50/70 font-bold hover:bg-emerald-50/70">
-                <TableCell colSpan={11} className="text-center">합계</TableCell>
+                <TableCell colSpan={10} className="text-center">합계</TableCell>
                 <TableCell className="text-right text-rose-700">{formatCurrency(totalRefund)}</TableCell>
-                <TableCell colSpan={6} />
+                <TableCell colSpan={3} />
               </TableRow>
             </TableBody>
           </Table>
@@ -409,22 +577,26 @@ function SummaryCard({ label, value, strong = false }: { label: string; value: s
 
 function RefundReadRow({
   item,
+  open,
   deleting,
+  onToggle,
   onEdit,
   onDelete,
   disabled,
 }: {
   item: RefundItem;
+  open: boolean;
   deleting: boolean;
+  onToggle: (id: string) => void;
   onEdit: (item: RefundItem) => void;
   onDelete: (item: RefundItem) => void;
   disabled: boolean;
 }) {
   return (
-    <TableRow className="odd:bg-white even:bg-slate-50/40">
+    <TableRow className={`cursor-pointer odd:bg-white even:bg-slate-50/40 ${open ? "bg-emerald-50/60" : ""}`} onClick={() => onToggle(item.id)}>
       <TableCell className="whitespace-nowrap px-2 text-center">
-        <Button size="sm" variant="outline" onClick={() => onEdit(item)} disabled={disabled || deleting}>수정</Button>
-        <Button size="sm" variant="outline" className="ml-1 text-rose-700" onClick={() => onDelete(item)} disabled={disabled || deleting}>{deleting ? "삭제중" : "삭제"}</Button>
+        <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); onEdit(item); }} disabled={disabled || deleting}>수정</Button>
+        <Button size="sm" variant="outline" className="ml-1 text-rose-700" onClick={(event) => { event.stopPropagation(); onDelete(item); }} disabled={disabled || deleting}>{deleting ? "삭제중" : "삭제"}</Button>
       </TableCell>
       <TableCell className="whitespace-nowrap px-2 text-center text-slate-500">{item.no}</TableCell>
       <TableCell className="whitespace-nowrap px-2 text-center">{item.refundDate}</TableCell>
@@ -432,19 +604,137 @@ function RefundReadRow({
       <TableCell className="whitespace-nowrap px-2 text-center">{item.departureDate || "-"}</TableCell>
       <TableCell className="whitespace-nowrap px-2 text-center">{item.peopleCount}</TableCell>
       <TableCell className="whitespace-nowrap px-2 text-center">{item.phone || "-"}</TableCell>
-      <TableCell className="whitespace-nowrap px-2 text-center">{item.paymentMethod}</TableCell>
-      <TableCell className="whitespace-nowrap px-2 text-center">{item.depositDate || "-"}</TableCell>
+      <TableCell className="whitespace-nowrap px-2 text-center"><PaymentMethodBadge value={item.paymentMethod} /></TableCell>
       <TableCell className="whitespace-nowrap px-2 text-right">{formatCurrency(item.productAmount)}</TableCell>
       <TableCell className="whitespace-nowrap px-2 text-right">{formatCurrency(item.depositAmount)}</TableCell>
       <TableCell className="whitespace-nowrap px-2 text-right font-semibold text-rose-700">{formatCurrency(item.refundRequestAmount)}</TableCell>
-      <TableCell className="whitespace-nowrap px-2 text-center">{item.depositor || "-"}</TableCell>
-      <TableCell className="whitespace-nowrap px-2 text-right">{item.balanceAmount ? formatCurrency(item.balanceAmount) : "-"}</TableCell>
       <TableCell className="whitespace-nowrap px-2 text-center">{item.registeredBy || "-"}</TableCell>
       <TableCell className="px-2 text-center"><StatusBadge value={item.status} /></TableCell>
       <TableCell className="max-w-[260px] truncate px-2" title={item.bankAccount}>{item.bankAccount || "-"}</TableCell>
-      <TableCell className="max-w-[240px] truncate px-2" title={item.memo}>{item.memo || "-"}</TableCell>
     </TableRow>
   );
+}
+
+function RefundPaymentDetailRow({
+  item,
+  draft,
+  saving,
+  onAdd,
+  onDraftChange,
+  onSave,
+  onCancelDraft,
+  onDelete,
+  editingPayment,
+  onEdit,
+  onEditChange,
+  onEditSave,
+  onEditCancel,
+}: {
+  item: RefundItem;
+  draft?: Omit<RefundPayment, "id">;
+  saving: boolean;
+  onAdd: (item: RefundItem) => void;
+  onDraftChange: <K extends keyof Omit<RefundPayment, "id">>(refundId: string, key: K, value: Omit<RefundPayment, "id">[K]) => void;
+  onSave: (refundId: string) => void;
+  onCancelDraft: (refundId: string) => void;
+  onDelete: (refundId: string, paymentId: string) => void;
+  editingPayment: RefundPayment | null;
+  onEdit: (payment: RefundPayment) => void;
+  onEditChange: <K extends keyof RefundPayment>(key: K, value: RefundPayment[K]) => void;
+  onEditSave: () => void;
+  onEditCancel: () => void;
+}) {
+  const inputClass = "h-8 min-w-0 px-2 text-xs";
+
+  return (
+    <TableRow className="bg-emerald-50/30 hover:bg-emerald-50/30">
+      <TableCell colSpan={14} className="p-3">
+        <div className="rounded-lg border border-emerald-100 bg-white p-3">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <Button size="sm" onClick={() => onAdd(item)} disabled={Boolean(draft)}>
+              <Plus className="h-3.5 w-3.5" />
+              입금 추가
+            </Button>
+            <div>
+              <p className="font-semibold">입금내역</p>
+              <p className="text-sm text-slate-500">상세 입금액의 합계가 마스터 행의 입금액으로 표시됩니다.</p>
+            </div>
+          </div>
+
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[120px] text-center">관리</TableHead>
+                <TableHead className="w-[140px] text-center">입금일</TableHead>
+                <TableHead className="w-[140px] text-right">입금액</TableHead>
+                <TableHead className="w-[140px] text-center">입금자</TableHead>
+                <TableHead>메모</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {draft ? (
+                <TableRow className="bg-emerald-50/80 hover:bg-emerald-50/80">
+                  <TableCell className="px-1 text-center">
+                    <Button size="sm" onClick={() => onSave(item.id)} disabled={saving || !draft.depositDate || !draft.depositAmount}>저장</Button>
+                    <Button size="sm" variant="outline" className="ml-1" onClick={() => onCancelDraft(item.id)} disabled={saving}>취소</Button>
+                  </TableCell>
+                  <TableCell className="px-1"><DateCellInput className={inputClass} value={draft.depositDate} onChange={(value) => onDraftChange(item.id, "depositDate", value)} /></TableCell>
+                  <TableCell className="px-1"><MoneyCellInput className={inputClass} value={draft.depositAmount} onChange={(value) => onDraftChange(item.id, "depositAmount", value)} /></TableCell>
+                  <TableCell className="px-1"><Input className={`${inputClass} w-[130px]`} value={draft.depositor} onChange={(event) => onDraftChange(item.id, "depositor", event.target.value)} /></TableCell>
+                  <TableCell className="px-1"><Input className={`${inputClass} w-full`} value={draft.memo ?? ""} onChange={(event) => onDraftChange(item.id, "memo", event.target.value)} /></TableCell>
+                </TableRow>
+              ) : null}
+              {item.payments.map((payment) => (
+                editingPayment?.id === payment.id ? (
+                  <TableRow key={payment.id} className="bg-amber-50/70 hover:bg-amber-50/70">
+                    <TableCell className="px-1 text-center">
+                      <Button size="sm" onClick={onEditSave} disabled={saving || !editingPayment.depositDate || !editingPayment.depositAmount}>저장</Button>
+                      <Button size="sm" variant="outline" className="ml-1" onClick={onEditCancel} disabled={saving}>취소</Button>
+                    </TableCell>
+                    <TableCell className="px-1"><DateCellInput className={inputClass} value={editingPayment.depositDate} onChange={(value) => onEditChange("depositDate", value)} /></TableCell>
+                    <TableCell className="px-1"><MoneyCellInput className={inputClass} value={editingPayment.depositAmount} onChange={(value) => onEditChange("depositAmount", value)} /></TableCell>
+                    <TableCell className="px-1"><Input className={`${inputClass} w-[130px]`} value={editingPayment.depositor} onChange={(event) => onEditChange("depositor", event.target.value)} /></TableCell>
+                    <TableCell className="px-1"><Input className={`${inputClass} w-full`} value={editingPayment.memo ?? ""} onChange={(event) => onEditChange("memo", event.target.value)} /></TableCell>
+                  </TableRow>
+                ) : (
+                  <TableRow key={payment.id}>
+                    <TableCell className="text-center">
+                      <Button size="sm" variant="outline" onClick={() => onEdit(payment)} disabled={saving || Boolean(editingPayment)}>수정</Button>
+                      <Button size="sm" variant="outline" className="ml-1 text-rose-700" onClick={() => onDelete(item.id, payment.id)} disabled={saving || Boolean(editingPayment)}>삭제</Button>
+                    </TableCell>
+                    <TableCell className="text-center">{payment.depositDate}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(payment.depositAmount)}</TableCell>
+                    <TableCell className="text-center">{payment.depositor || "-"}</TableCell>
+                    <TableCell>{[item.memo, payment.memo].filter(Boolean).join(" / ") || "-"}</TableCell>
+                  </TableRow>
+                )
+              ))}
+              {!draft && item.payments.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-5 text-center text-slate-500">등록된 입금내역이 없습니다.</TableCell>
+                </TableRow>
+              ) : null}
+            </TableBody>
+          </Table>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+function PaymentMethodBadge({ value }: { value: string }) {
+  const variant =
+    value === "계좌이체"
+      ? "default"
+      : value === "홈페이지결제"
+        ? "blue"
+        : value === "사무실단말기"
+          ? "warning"
+          : value === "위약금"
+            ? "danger"
+            : "secondary";
+
+  return <Badge variant={variant} className="whitespace-nowrap">{value}</Badge>;
 }
 
 function RefundEditRow({
@@ -486,12 +776,9 @@ function RefundEditRow({
           <option>위약금</option>
         </Select>
       </TableCell>
-      <TableCell className="px-1"><DateCellInput className={inputClass} value={item.depositDate} onChange={(value) => onChange("depositDate", value)} /></TableCell>
       <TableCell className="px-1"><MoneyCellInput className={inputClass} value={item.productAmount} onChange={(value) => onChange("productAmount", value)} /></TableCell>
-      <TableCell className="px-1"><MoneyCellInput className={inputClass} value={item.depositAmount} onChange={(value) => onChange("depositAmount", value)} /></TableCell>
+      <TableCell className="px-2 text-right text-slate-500">{formatCurrency(item.depositAmount)}</TableCell>
       <TableCell className="px-1"><MoneyCellInput className={`${inputClass} font-semibold text-rose-700`} width="w-[104px]" value={item.refundRequestAmount} onChange={(value) => onChange("refundRequestAmount", value)} /></TableCell>
-      <TableCell className="px-1"><Input className={`${inputClass} w-[86px]`} value={item.depositor} onChange={(event) => onChange("depositor", event.target.value)} /></TableCell>
-      <TableCell className="px-1"><MoneyCellInput className={inputClass} value={item.balanceAmount ?? 0} onChange={(value) => onChange("balanceAmount", value)} /></TableCell>
       <TableCell className="px-1">
         <Select className="h-8 w-[92px] text-xs" value={item.registeredBy} onChange={(event) => onChange("registeredBy", event.target.value)}>
           <option value="">선택</option>
@@ -508,7 +795,6 @@ function RefundEditRow({
         </Select>
       </TableCell>
       <TableCell className="px-1"><Input className={`${inputClass} w-[210px]`} value={item.bankAccount} onChange={(event) => onChange("bankAccount", event.target.value)} /></TableCell>
-      <TableCell className="px-1"><Input className={`${inputClass} w-[160px]`} value={item.memo ?? ""} onChange={(event) => onChange("memo", event.target.value)} /></TableCell>
     </TableRow>
   );
 }
