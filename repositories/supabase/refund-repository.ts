@@ -91,7 +91,6 @@ export async function upsertRefundToSupabase(refund: RefundItem) {
   const payload = {
     ...(isUuid(refund.id) ? { id: refund.id } : {}),
     refund_date: refund.refundDate,
-    no: refund.no,
     customer_name: refund.customerName,
     departure_date: refund.departureDate || null,
     people_count: Number(refund.peopleCount) || 0,
@@ -109,12 +108,7 @@ export async function upsertRefundToSupabase(refund: RefundItem) {
     memo: refund.memo || null,
   };
 
-  const { data, error } = await supabase
-    .from("refunds")
-    .upsert(payload)
-    .select(refundSelect)
-    .single();
-
+  const { data, error } = await supabase.rpc("save_refund_atomic", { p_refund: payload }).single();
   if (error) throw new Error(`환불명단 저장 실패: ${error.message}`);
   return mapRefund(data as RefundRow);
 }

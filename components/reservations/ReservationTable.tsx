@@ -6,6 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ReservationStatusBadge } from "@/components/reservations/ReservationStatusBadge";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { formatCurrency } from "@/lib/format";
+import { TablePagination, tablePageSize } from "@/components/common/TablePagination";
+import * as React from "react";
 
 export function ReservationTable({
   items,
@@ -14,6 +16,14 @@ export function ReservationTable({
   items: Reservation[];
   onSelect: (item: Reservation) => void;
 }) {
+  const [page, setPage] = React.useState(1);
+  const totalPages = Math.max(1, Math.ceil(items.length / tablePageSize));
+  const visibleItems = items.slice((page - 1) * tablePageSize, page * tablePageSize);
+
+  React.useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
+
   return (
     <div className="hidden overflow-hidden rounded-xl border bg-white shadow-soft lg:block">
       <div className="overflow-x-auto scrollbar-thin">
@@ -26,7 +36,7 @@ export function ReservationTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.map((item) => (
+            {visibleItems.map((item) => (
               <TableRow key={item.orderId}>
                 <TableCell className="font-semibold">{item.orderId}</TableCell>
                 <TableCell>{item.tourDate}</TableCell>
@@ -51,8 +61,9 @@ export function ReservationTable({
               </TableRow>
             ))}
           </TableBody>
-        </Table>
+          </Table>
+        </div>
+        <TablePagination totalCount={items.length} page={page} onPageChange={setPage} />
       </div>
-    </div>
   );
 }

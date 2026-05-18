@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TablePagination, tablePageSize } from "@/components/common/TablePagination";
+import { SortableTableHead } from "@/components/common/SortableTableHead";
+import { useTableSort } from "@/lib/table-sort";
 
 const emptyRefund: RefundItem = {
   id: "",
@@ -88,6 +91,7 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
   const [saving, setSaving] = React.useState(false);
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [message, setMessage] = React.useState("");
+  const [page, setPage] = React.useState(1);
 
   const filtered = items.filter((item) => {
     const q = query.trim().toLowerCase();
@@ -98,7 +102,37 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
       && (!status || item.status === status)
     );
   });
+  const getSortValue = React.useCallback((item: RefundItem, key: "no" | "refundDate" | "customerName" | "departureDate" | "peopleCount" | "phone" | "paymentMethod" | "depositDate" | "productAmount" | "depositAmount" | "refundRequestAmount" | "depositor" | "balanceAmount" | "registeredBy" | "status" | "bankAccount" | "memo") => ({
+    no: item.no,
+    refundDate: item.refundDate,
+    customerName: item.customerName,
+    departureDate: item.departureDate,
+    peopleCount: item.peopleCount,
+    phone: item.phone,
+    paymentMethod: item.paymentMethod,
+    depositDate: item.depositDate,
+    productAmount: item.productAmount,
+    depositAmount: item.depositAmount,
+    refundRequestAmount: item.refundRequestAmount,
+    depositor: item.depositor,
+    balanceAmount: item.balanceAmount,
+    registeredBy: item.registeredBy,
+    status: item.status,
+    bankAccount: item.bankAccount,
+    memo: item.memo,
+  }[key]), []);
+  const { sortedItems, sortKey, sortDirection, toggleSort } = useTableSort<RefundItem, "no" | "refundDate" | "customerName" | "departureDate" | "peopleCount" | "phone" | "paymentMethod" | "depositDate" | "productAmount" | "depositAmount" | "refundRequestAmount" | "depositor" | "balanceAmount" | "registeredBy" | "status" | "bankAccount" | "memo">(filtered, "refundDate", getSortValue, "desc");
+  const totalPages = Math.max(1, Math.ceil(filtered.length / tablePageSize));
+  const visibleItems = sortedItems.slice((page - 1) * tablePageSize, page * tablePageSize);
   const totalRefund = filtered.reduce((sum, item) => sum + item.refundRequestAmount, 0);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [startDate, endDate, query, status]);
+
+  React.useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
 
   function addRow() {
     const defaultRefundDate = startDate || getKstDateInput();
@@ -294,27 +328,27 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
           <p className="text-sm font-semibold text-slate-900">환불 내역</p>
         </div>
         <div className="overflow-x-auto scrollbar-thin">
-          <Table className="min-w-[1840px] text-xs">
+          <Table className="min-w-[1840px]">
             <TableHeader>
               <TableRow className="bg-slate-50">
-                <TableHead className="h-9 w-[112px] whitespace-nowrap px-2 text-center text-[11px]">관리</TableHead>
-                <TableHead className="h-9 w-[54px] whitespace-nowrap px-2 text-center text-[11px]">no.</TableHead>
-                <TableHead className="w-[112px] whitespace-nowrap px-2 text-center text-[11px]">환불일자</TableHead>
-                <TableHead className="w-[84px] whitespace-nowrap px-2 text-center text-[11px]">고객명</TableHead>
-                <TableHead className="w-[112px] whitespace-nowrap px-2 text-center text-[11px]">출발일</TableHead>
-                <TableHead className="w-[58px] whitespace-nowrap px-2 text-center text-[11px]">인원</TableHead>
-                <TableHead className="w-[132px] whitespace-nowrap px-2 text-center text-[11px]">전화번호</TableHead>
-                <TableHead className="w-[98px] whitespace-nowrap px-2 text-center text-[11px]">결제방식</TableHead>
-                <TableHead className="w-[132px] whitespace-nowrap px-2 text-center text-[11px]">입금일</TableHead>
-                <TableHead className="w-[90px] whitespace-nowrap px-2 text-center text-[11px]">상품총액</TableHead>
-                <TableHead className="w-[90px] whitespace-nowrap px-2 text-center text-[11px]">입금액</TableHead>
-                <TableHead className="w-[108px] whitespace-nowrap px-2 text-center text-[11px]">환불요청금액</TableHead>
-                <TableHead className="w-[90px] whitespace-nowrap px-2 text-center text-[11px]">입금자</TableHead>
-                <TableHead className="w-[90px] whitespace-nowrap px-2 text-center text-[11px]">잔금</TableHead>
-                <TableHead className="w-[96px] whitespace-nowrap px-2 text-center text-[11px]">등록자</TableHead>
-                <TableHead className="w-[100px] whitespace-nowrap px-2 text-center text-[11px]">상태</TableHead>
-                <TableHead className="min-w-[220px] whitespace-nowrap px-2 text-center text-[11px]">은행 / 계좌번호 / 예금주</TableHead>
-                <TableHead className="min-w-[170px] whitespace-nowrap px-2 text-center text-[11px]">메모</TableHead>
+                <TableHead className="w-[112px] whitespace-nowrap text-center">관리</TableHead>
+                <SortableTableHead label="no." className="w-[54px] whitespace-nowrap text-center" active={sortKey === "no"} direction={sortDirection} onClick={() => toggleSort("no")} />
+                <SortableTableHead label="환불일자" className="w-[112px] whitespace-nowrap text-center" active={sortKey === "refundDate"} direction={sortDirection} onClick={() => toggleSort("refundDate")} />
+                <SortableTableHead label="고객명" className="w-[84px] whitespace-nowrap text-center" active={sortKey === "customerName"} direction={sortDirection} onClick={() => toggleSort("customerName")} />
+                <SortableTableHead label="출발일" className="w-[112px] whitespace-nowrap text-center" active={sortKey === "departureDate"} direction={sortDirection} onClick={() => toggleSort("departureDate")} />
+                <SortableTableHead label="인원" className="w-[58px] whitespace-nowrap text-center" active={sortKey === "peopleCount"} direction={sortDirection} onClick={() => toggleSort("peopleCount")} />
+                <SortableTableHead label="전화번호" className="w-[132px] whitespace-nowrap text-center" active={sortKey === "phone"} direction={sortDirection} onClick={() => toggleSort("phone")} />
+                <SortableTableHead label="결제방식" className="w-[98px] whitespace-nowrap text-center" active={sortKey === "paymentMethod"} direction={sortDirection} onClick={() => toggleSort("paymentMethod")} />
+                <SortableTableHead label="입금일" className="w-[132px] whitespace-nowrap text-center" active={sortKey === "depositDate"} direction={sortDirection} onClick={() => toggleSort("depositDate")} />
+                <SortableTableHead label="상품총액" className="w-[90px] whitespace-nowrap text-center" active={sortKey === "productAmount"} direction={sortDirection} onClick={() => toggleSort("productAmount")} />
+                <SortableTableHead label="입금액" className="w-[90px] whitespace-nowrap text-center" active={sortKey === "depositAmount"} direction={sortDirection} onClick={() => toggleSort("depositAmount")} />
+                <SortableTableHead label="환불요청금액" className="w-[108px] whitespace-nowrap text-center" active={sortKey === "refundRequestAmount"} direction={sortDirection} onClick={() => toggleSort("refundRequestAmount")} />
+                <SortableTableHead label="입금자" className="w-[90px] whitespace-nowrap text-center" active={sortKey === "depositor"} direction={sortDirection} onClick={() => toggleSort("depositor")} />
+                <SortableTableHead label="잔금" className="w-[90px] whitespace-nowrap text-center" active={sortKey === "balanceAmount"} direction={sortDirection} onClick={() => toggleSort("balanceAmount")} />
+                <SortableTableHead label="등록자" className="w-[96px] whitespace-nowrap text-center" active={sortKey === "registeredBy"} direction={sortDirection} onClick={() => toggleSort("registeredBy")} />
+                <SortableTableHead label="상태" className="w-[100px] whitespace-nowrap text-center" active={sortKey === "status"} direction={sortDirection} onClick={() => toggleSort("status")} />
+                <SortableTableHead label="은행 / 계좌번호 / 예금주" className="min-w-[220px] whitespace-nowrap text-center" active={sortKey === "bankAccount"} direction={sortDirection} onClick={() => toggleSort("bankAccount")} />
+                <SortableTableHead label="메모" className="min-w-[170px] whitespace-nowrap text-center" active={sortKey === "memo"} direction={sortDirection} onClick={() => toggleSort("memo")} />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -329,7 +363,7 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
                   onCancel={() => removeDraft(item.id)}
                 />
               ))}
-              {filtered.map((item) => (
+              {visibleItems.map((item) => (
                 editingId === item.id && draft ? (
                   <RefundEditRow key={item.id} item={draft} activeAdminUsers={activeAdminUsers} saving={saving} onChange={updateDraft} onSave={saveDraft} onCancel={cancelEdit} />
                 ) : (
@@ -349,6 +383,7 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
             </TableBody>
           </Table>
         </div>
+        <TablePagination totalCount={filtered.length} page={page} onPageChange={setPage} />
       </div>
     </div>
   );

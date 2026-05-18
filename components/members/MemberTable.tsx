@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MemberForm } from "@/components/members/MemberForm";
+import { TablePagination, tablePageSize } from "@/components/common/TablePagination";
 
 export function MemberTable({ members }: { members: AdminUser[] }) {
   const [items, setItems] = React.useState(members);
@@ -16,6 +17,7 @@ export function MemberTable({ members }: { members: AdminUser[] }) {
   const [status, setStatus] = React.useState("");
   const [selected, setSelected] = React.useState<AdminUser | undefined>();
   const [open, setOpen] = React.useState(false);
+  const [page, setPage] = React.useState(1);
 
   const filtered = items.filter((member) => {
     const q = query.toLowerCase();
@@ -23,6 +25,11 @@ export function MemberTable({ members }: { members: AdminUser[] }) {
       && (!role || member.role === role)
       && (!status || member.status === status);
   });
+  const totalPages = Math.max(1, Math.ceil(filtered.length / tablePageSize));
+  const visibleItems = filtered.slice((page - 1) * tablePageSize, page * tablePageSize);
+
+  React.useEffect(() => { setPage(1); }, [query, role, status]);
+  React.useEffect(() => { setPage((current) => Math.min(current, totalPages)); }, [totalPages]);
 
   function edit(member?: AdminUser) {
     setSelected(member);
@@ -78,7 +85,7 @@ export function MemberTable({ members }: { members: AdminUser[] }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((member) => (
+              {visibleItems.map((member) => (
                 <TableRow key={member.id}>
                   <TableCell>{member.id}</TableCell>
                   <TableCell className="font-semibold">{member.name}</TableCell>
@@ -99,6 +106,7 @@ export function MemberTable({ members }: { members: AdminUser[] }) {
             </TableBody>
           </Table>
         </div>
+        <TablePagination totalCount={filtered.length} page={page} onPageChange={setPage} />
       </div>
       <MemberForm member={selected} open={open} onOpenChange={setOpen} onSaved={handleSaved} />
     </div>

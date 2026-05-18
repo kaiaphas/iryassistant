@@ -9,6 +9,9 @@ import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DriverForm } from "@/components/drivers/DriverForm";
+import { TablePagination, tablePageSize } from "@/components/common/TablePagination";
+import { SortableTableHead } from "@/components/common/SortableTableHead";
+import { useTableSort } from "@/lib/table-sort";
 
 export function DriverTable({ drivers }: { drivers: Driver[] }) {
   const [items, setItems] = React.useState(drivers);
@@ -19,11 +22,26 @@ export function DriverTable({ drivers }: { drivers: Driver[] }) {
   const [saving, setSaving] = React.useState(false);
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [error, setError] = React.useState("");
+  const [page, setPage] = React.useState(1);
   const filtered = items.filter((driver) => {
     const q = query.toLowerCase();
     const assignableMatch = !assignable || (assignable === "가능" ? driver.assignable : !driver.assignable);
     return (!q || [driver.name, driver.phone, driver.company, driver.memo].some((value) => value?.toLowerCase().includes(q))) && assignableMatch;
   });
+  const getSortValue = React.useCallback((driver: Driver, key: "name" | "capacity" | "phone" | "company" | "assignable" | "active" | "memo") => ({
+    name: driver.name,
+    capacity: driver.capacity,
+    phone: driver.phone,
+    company: driver.company,
+    assignable: driver.assignable,
+    active: driver.active,
+    memo: driver.memo,
+  }[key]), []);
+  const { sortedItems, sortKey, sortDirection, toggleSort } = useTableSort<Driver, "name" | "capacity" | "phone" | "company" | "assignable" | "active" | "memo">(filtered, "name", getSortValue);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / tablePageSize));
+  const visibleItems = sortedItems.slice((page - 1) * tablePageSize, page * tablePageSize);
+  React.useEffect(() => { setPage(1); }, [query, assignable]);
+  React.useEffect(() => { setPage((current) => Math.min(current, totalPages)); }, [totalPages]);
   const edit = (driver?: Driver) => { setSelected(driver); setOpen(true); };
 
   async function save(driver: Driver) {
@@ -80,21 +98,21 @@ export function DriverTable({ drivers }: { drivers: Driver[] }) {
       {error ? <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
       <div className="overflow-hidden rounded-xl border bg-white shadow-soft">
         <div className="overflow-x-auto">
-          <Table className="min-w-[1040px] text-sm">
+          <Table className="min-w-[1040px]">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[120px] text-center">이름</TableHead>
-                <TableHead className="w-[90px] text-center">인승</TableHead>
-                <TableHead className="w-[150px] text-center">전화번호</TableHead>
-                <TableHead className="w-[160px] text-center">회사</TableHead>
-                <TableHead className="w-[110px] text-center">배정가능</TableHead>
-                <TableHead className="w-[110px] text-center">사용여부</TableHead>
-                <TableHead>메모</TableHead>
+                <SortableTableHead label="이름" className="w-[120px] text-center" active={sortKey === "name"} direction={sortDirection} onClick={() => toggleSort("name")} />
+                <SortableTableHead label="인승" className="w-[90px] text-center" active={sortKey === "capacity"} direction={sortDirection} onClick={() => toggleSort("capacity")} />
+                <SortableTableHead label="전화번호" className="w-[150px] text-center" active={sortKey === "phone"} direction={sortDirection} onClick={() => toggleSort("phone")} />
+                <SortableTableHead label="회사" className="w-[160px] text-center" active={sortKey === "company"} direction={sortDirection} onClick={() => toggleSort("company")} />
+                <SortableTableHead label="배정가능" className="w-[110px] text-center" active={sortKey === "assignable"} direction={sortDirection} onClick={() => toggleSort("assignable")} />
+                <SortableTableHead label="사용여부" className="w-[110px] text-center" active={sortKey === "active"} direction={sortDirection} onClick={() => toggleSort("active")} />
+                <SortableTableHead label="메모" active={sortKey === "memo"} direction={sortDirection} onClick={() => toggleSort("memo")} />
                 <TableHead className="w-[150px] text-center">관리</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((driver) => (
+              {visibleItems.map((driver) => (
                 <TableRow key={driver.id}>
                   <TableCell className="whitespace-nowrap text-center font-semibold">{driver.name}</TableCell>
                   <TableCell className="whitespace-nowrap text-center">{driver.capacity}</TableCell>
@@ -112,6 +130,7 @@ export function DriverTable({ drivers }: { drivers: Driver[] }) {
             </TableBody>
           </Table>
         </div>
+        <TablePagination totalCount={filtered.length} page={page} onPageChange={setPage} />
       </div>
       <DriverForm driver={selected} open={open} saving={saving} onOpenChange={setOpen} onSave={save} />
     </div>

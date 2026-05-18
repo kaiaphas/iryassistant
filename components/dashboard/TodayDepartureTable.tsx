@@ -1,10 +1,22 @@
+"use client";
+
+import * as React from "react";
 import type { ScheduleGroup } from "@/lib/types";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getScheduleProgressStatus } from "@/lib/reservation-status";
+import { TablePagination, tablePageSize } from "@/components/common/TablePagination";
 
 export function TodayDepartureTable({ schedules }: { schedules: ScheduleGroup[] }) {
+  const [page, setPage] = React.useState(1);
+  const totalPages = Math.max(1, Math.ceil(schedules.length / tablePageSize));
+  const visibleSchedules = schedules.slice((page - 1) * tablePageSize, page * tablePageSize);
+
+  React.useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
+
   const headers = [
     { label: "출발일자", className: "w-[118px] px-2 text-center" },
     { label: "구분", className: "w-[64px] text-center" },
@@ -34,7 +46,7 @@ export function TodayDepartureTable({ schedules }: { schedules: ScheduleGroup[] 
               </TableRow>
             </TableHeader>
             <TableBody>
-              {schedules.length > 0 ? schedules.map((schedule) => (
+              {visibleSchedules.length > 0 ? visibleSchedules.map((schedule) => (
                 <TableRow key={schedule.id}>
                   <TableCell className="w-[118px] px-2 text-center font-semibold whitespace-nowrap">{schedule.tourDate} ({schedule.dayLabel})</TableCell>
                   <TableCell className="text-center">{schedule.tourType}</TableCell>
@@ -57,6 +69,7 @@ export function TodayDepartureTable({ schedules }: { schedules: ScheduleGroup[] 
             </TableBody>
           </Table>
         </div>
+        <TablePagination totalCount={schedules.length} page={page} onPageChange={setPage} unit="개" />
       </CardContent>
     </Card>
   );

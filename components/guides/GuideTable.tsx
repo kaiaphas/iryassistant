@@ -9,6 +9,9 @@ import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { GuideForm } from "@/components/guides/GuideForm";
+import { TablePagination, tablePageSize } from "@/components/common/TablePagination";
+import { SortableTableHead } from "@/components/common/SortableTableHead";
+import { useTableSort } from "@/lib/table-sort";
 
 export function GuideTable({ guides }: { guides: Guide[] }) {
   const [items, setItems] = React.useState(guides);
@@ -19,12 +22,31 @@ export function GuideTable({ guides }: { guides: Guide[] }) {
   const [saving, setSaving] = React.useState(false);
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [error, setError] = React.useState("");
+  const [page, setPage] = React.useState(1);
 
   const filtered = items.filter((guide) => {
     const q = query.toLowerCase();
     const assignableMatch = !assignable || (assignable === "가능" ? guide.assignable : !guide.assignable);
     return (!q || [guide.name, guide.phone, guide.memo].some((value) => value?.toLowerCase().includes(q))) && assignableMatch;
   });
+  const getSortValue = React.useCallback((guide: Guide, key: "name" | "phone" | "assignable" | "active" | "memo") => ({
+    name: guide.name,
+    phone: guide.phone,
+    assignable: guide.assignable,
+    active: guide.active,
+    memo: guide.memo,
+  }[key]), []);
+  const { sortedItems, sortKey, sortDirection, toggleSort } = useTableSort<Guide, "name" | "phone" | "assignable" | "active" | "memo">(filtered, "name", getSortValue);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / tablePageSize));
+  const visibleItems = sortedItems.slice((page - 1) * tablePageSize, page * tablePageSize);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [query, assignable]);
+
+  React.useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
 
   function edit(guide?: Guide) {
     setSelected(guide);
@@ -89,19 +111,19 @@ export function GuideTable({ guides }: { guides: Guide[] }) {
 
       <div className="overflow-hidden rounded-xl border bg-white shadow-soft">
         <div className="overflow-x-auto">
-          <Table className="min-w-[860px] text-sm">
+          <Table className="min-w-[860px]">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[120px] text-center">이름</TableHead>
-                <TableHead className="w-[150px] text-center">전화번호</TableHead>
-                <TableHead className="w-[110px] text-center">배정가능</TableHead>
-                <TableHead className="w-[110px] text-center">사용여부</TableHead>
-                <TableHead>메모</TableHead>
+                <SortableTableHead label="이름" className="w-[120px] text-center" active={sortKey === "name"} direction={sortDirection} onClick={() => toggleSort("name")} />
+                <SortableTableHead label="전화번호" className="w-[150px] text-center" active={sortKey === "phone"} direction={sortDirection} onClick={() => toggleSort("phone")} />
+                <SortableTableHead label="배정가능" className="w-[110px] text-center" active={sortKey === "assignable"} direction={sortDirection} onClick={() => toggleSort("assignable")} />
+                <SortableTableHead label="사용여부" className="w-[110px] text-center" active={sortKey === "active"} direction={sortDirection} onClick={() => toggleSort("active")} />
+                <SortableTableHead label="메모" active={sortKey === "memo"} direction={sortDirection} onClick={() => toggleSort("memo")} />
                 <TableHead className="w-[150px] text-center">관리</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((guide) => (
+              {visibleItems.map((guide) => (
                 <TableRow key={guide.id}>
                   <TableCell className="whitespace-nowrap text-center font-semibold">{guide.name}</TableCell>
                   <TableCell className="whitespace-nowrap text-center">{guide.phone}</TableCell>
@@ -117,6 +139,7 @@ export function GuideTable({ guides }: { guides: Guide[] }) {
             </TableBody>
           </Table>
         </div>
+        <TablePagination totalCount={filtered.length} page={page} onPageChange={setPage} />
       </div>
       <GuideForm guide={selected} open={open} saving={saving} onOpenChange={setOpen} onSave={save} />
     </div>

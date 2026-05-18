@@ -4,12 +4,13 @@ import * as React from "react";
 import type { Driver, Guide, Hotel, Restaurant, ScheduleGroup } from "@/lib/types";
 import { CalendarDays } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { ReservationFilters, type ReservationFilterState } from "@/components/reservations/ReservationFilters";
 import { ScheduleAccordionCards } from "@/components/reservations/ScheduleAccordionCards";
 import { ScheduleAccordionTable } from "@/components/reservations/ScheduleAccordionTable";
 import { getRestaurantAggregateStatus, getScheduleProgressStatus } from "@/lib/reservation-status";
 import { getKstDateInput } from "@/lib/date";
+import { TablePagination } from "@/components/common/TablePagination";
+import { useTableSort } from "@/lib/table-sort";
 
 function getDefaultDateRange() {
   return {
@@ -90,11 +91,28 @@ export function ReservationsClient({
       && (!filters.restaurantStatus || getRestaurantAggregateStatus(schedule.restaurantBookings) === filters.restaurantStatus)
       && (!filters.hotelStatus || schedule.tourType === "당일" || schedule.hotelBooking.status === filters.hotelStatus);
   }).sort(sortSchedules);
+  const getSortValue = React.useCallback((schedule: ScheduleGroup, key: "tourDate" | "tourType" | "productName" | "busNo" | "departureTime" | "reservationCount" | "busCompany" | "busType" | "guide" | "driver" | "restaurant" | "hotel" | "restaurantStatus" | "provisionalStatus" | "hotelStatus" | "progressStatus") => ({
+    tourDate: schedule.tourDate,
+    tourType: schedule.tourType,
+    productName: schedule.productName,
+    busNo: getBusNoSortValue(schedule.busNo),
+    departureTime: schedule.departureTime,
+    reservationCount: schedule.reservationCount,
+    busCompany: schedule.vehicle.busCompany,
+    busType: schedule.vehicle.busType,
+    guide: schedule.guide.name,
+    driver: schedule.driver.name,
+    restaurant: schedule.restaurantBookings.map((booking) => `${booking.mealType} ${booking.name}`).join(" / "),
+    hotel: schedule.hotelBooking.name,
+    restaurantStatus: getRestaurantAggregateStatus(schedule.restaurantBookings),
+    provisionalStatus: schedule.hotelBooking.provisionalStatus,
+    hotelStatus: schedule.hotelBooking.status,
+    progressStatus: getScheduleProgressStatus(schedule),
+  }[key]), []);
+  const { sortedItems, sortKey, sortDirection, toggleSort } = useTableSort<ScheduleGroup, "tourDate" | "tourType" | "productName" | "busNo" | "departureTime" | "reservationCount" | "busCompany" | "busType" | "guide" | "driver" | "restaurant" | "hotel" | "restaurantStatus" | "provisionalStatus" | "hotelStatus" | "progressStatus">(filtered, "tourDate", getSortValue);
   const filteredReservationCount = filtered.reduce((total, schedule) => total + schedule.reservationCount, 0);
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const visibleSchedules = filtered.slice((page - 1) * pageSize, page * pageSize);
-  const visibleStart = filtered.length === 0 ? 0 : (page - 1) * pageSize + 1;
-  const visibleEnd = Math.min(page * pageSize, filtered.length);
+  const visibleSchedules = sortedItems.slice((page - 1) * pageSize, page * pageSize);
 
   React.useEffect(() => {
     setPage(1);
@@ -168,6 +186,9 @@ export function ReservationsClient({
           drivers={drivers}
           restaurants={restaurants}
           hotels={hotels}
+          sortKey={sortKey}
+          sortDirection={sortDirection}
+          onSort={toggleSort}
         />
         <ScheduleAccordionCards
           schedules={visibleSchedules}
@@ -181,19 +202,8 @@ export function ReservationsClient({
           restaurants={restaurants}
           hotels={hotels}
         />
-        <div className="flex flex-col gap-2 rounded-lg border bg-white px-4 py-3 text-sm font-semibold text-slate-700 sm:flex-row sm:items-center sm:justify-between">
-          <span>
-            총 {filtered.length}개의 일정 중 {visibleStart}-{visibleEnd} 표시
-          </span>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page <= 1}>
-              이전
-            </Button>
-            <span className="min-w-16 text-center">{page} / {totalPages}</span>
-            <Button size="sm" variant="outline" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={page >= totalPages}>
-              다음
-            </Button>
-          </div>
+        <div className="overflow-hidden rounded-lg border bg-white">
+          <TablePagination totalCount={filtered.length} page={page} onPageChange={setPage} unit="개" />
         </div>
     </div>
   );

@@ -9,13 +9,25 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CodeCategoryTabs } from "@/components/codes/CodeCategoryTabs";
 import { CodeForm } from "@/components/codes/CodeForm";
+import { TablePagination, tablePageSize } from "@/components/common/TablePagination";
 
 export function CodeTable({ codes }: { codes: CodeItem[] }) {
   const [group, setGroup] = React.useState("PRODUCT_CODE");
   const [selected, setSelected] = React.useState<CodeItem | undefined>();
   const [open, setOpen] = React.useState(false);
+  const [page, setPage] = React.useState(1);
   const filtered = codes.filter((code) => code.group === group);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / tablePageSize));
+  const visibleItems = filtered.slice((page - 1) * tablePageSize, page * tablePageSize);
   const currentLabel = codeCategories.find((category) => category.group === group)?.label || group;
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [group]);
+
+  React.useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
 
   function edit(code?: CodeItem) {
     setSelected(code);
@@ -41,7 +53,7 @@ export function CodeTable({ codes }: { codes: CodeItem[] }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((code) => (
+              {visibleItems.map((code) => (
                 <TableRow key={code.id}>
                   <TableCell>{code.group}</TableCell>
                   <TableCell className="font-mono text-xs">{code.value}</TableCell>
@@ -56,9 +68,10 @@ export function CodeTable({ codes }: { codes: CodeItem[] }) {
               ))}
             </TableBody>
           </Table>
+          <TablePagination totalCount={filtered.length} page={page} onPageChange={setPage} />
         </div>
         <div className="space-y-3 lg:hidden">
-          {filtered.map((code) => (
+          {visibleItems.map((code) => (
             <Card key={code.id}>
               <CardContent className="p-4">
                 <div className="flex justify-between gap-3">
@@ -73,6 +86,9 @@ export function CodeTable({ codes }: { codes: CodeItem[] }) {
               </CardContent>
             </Card>
           ))}
+        </div>
+        <div className="lg:hidden">
+          <TablePagination totalCount={filtered.length} page={page} onPageChange={setPage} />
         </div>
       </div>
       <CodeForm code={selected} group={group} open={open} onOpenChange={setOpen} />

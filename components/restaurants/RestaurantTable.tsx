@@ -9,6 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RestaurantForm } from "@/components/restaurants/RestaurantForm";
 import { TourTypeBadge } from "@/components/common/TourTypeBadge";
+import { TablePagination, tablePageSize } from "@/components/common/TablePagination";
+import { SortableTableHead } from "@/components/common/SortableTableHead";
+import { useTableSort } from "@/lib/table-sort";
 
 export function RestaurantTable({ restaurants }: { restaurants: Restaurant[] }) {
   const [items, setItems] = React.useState(restaurants);
@@ -19,7 +22,25 @@ export function RestaurantTable({ restaurants }: { restaurants: Restaurant[] }) 
   const [saving, setSaving] = React.useState(false);
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [error, setError] = React.useState("");
+  const [page, setPage] = React.useState(1);
   const filtered = items.filter((item) => (!region || item.regionName.includes(region)) && (!query || item.shopName.includes(query) || item.productName.includes(query)));
+  const getSortValue = React.useCallback((item: Restaurant, key: "regionName" | "tourType" | "productName" | "shopName" | "menu" | "retailPrice" | "depositPrice" | "serviceType" | "phone") => ({
+    regionName: item.regionName,
+    tourType: item.tourType,
+    productName: item.productName,
+    shopName: item.shopName,
+    menu: item.menu,
+    retailPrice: item.retailPrice,
+    depositPrice: item.depositPrice,
+    serviceType: item.serviceType,
+    phone: item.phone,
+  }[key]), []);
+  const { sortedItems, sortKey, sortDirection, toggleSort } = useTableSort<Restaurant, "regionName" | "tourType" | "productName" | "shopName" | "menu" | "retailPrice" | "depositPrice" | "serviceType" | "phone">(filtered, "regionName", getSortValue);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / tablePageSize));
+  const visibleItems = sortedItems.slice((page - 1) * tablePageSize, page * tablePageSize);
+
+  React.useEffect(() => { setPage(1); }, [region, query]);
+  React.useEffect(() => { setPage((current) => Math.min(current, totalPages)); }, [totalPages]);
 
   async function save(restaurant: Restaurant) {
     setSaving(true);
@@ -83,22 +104,22 @@ export function RestaurantTable({ restaurants }: { restaurants: Restaurant[] }) 
           <Button onClick={add}>+ 등록</Button>
         </div>
         {error ? <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
-        <div className="overflow-hidden rounded-xl border bg-white shadow-soft"><div className="overflow-x-auto"><Table className="min-w-[1120px] text-sm">
+        <div className="overflow-hidden rounded-xl border bg-white shadow-soft"><div className="overflow-x-auto"><Table className="min-w-[1120px]">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[130px] text-center">지역명</TableHead>
-              <TableHead className="w-[80px] text-center">구분</TableHead>
-              <TableHead className="min-w-[200px]">상품명</TableHead>
-              <TableHead className="min-w-[160px]">상호명</TableHead>
-              <TableHead className="w-[130px] text-center">메뉴</TableHead>
-              <TableHead className="w-[110px] text-right">소비자가</TableHead>
-              <TableHead className="w-[110px] text-right">입금가</TableHead>
-              <TableHead className="w-[120px] text-center">서비스여부</TableHead>
-              <TableHead className="w-[150px] text-center">연락처</TableHead>
+              <SortableTableHead label="지역명" className="w-[130px] text-center" active={sortKey === "regionName"} direction={sortDirection} onClick={() => toggleSort("regionName")} />
+              <SortableTableHead label="구분" className="w-[80px] text-center" active={sortKey === "tourType"} direction={sortDirection} onClick={() => toggleSort("tourType")} />
+              <SortableTableHead label="상품명" className="min-w-[200px]" active={sortKey === "productName"} direction={sortDirection} onClick={() => toggleSort("productName")} />
+              <SortableTableHead label="상호명" className="min-w-[160px]" active={sortKey === "shopName"} direction={sortDirection} onClick={() => toggleSort("shopName")} />
+              <SortableTableHead label="메뉴" className="w-[130px] text-center" active={sortKey === "menu"} direction={sortDirection} onClick={() => toggleSort("menu")} />
+              <SortableTableHead label="소비자가" className="w-[110px] text-right" active={sortKey === "retailPrice"} direction={sortDirection} onClick={() => toggleSort("retailPrice")} />
+              <SortableTableHead label="입금가" className="w-[110px] text-right" active={sortKey === "depositPrice"} direction={sortDirection} onClick={() => toggleSort("depositPrice")} />
+              <SortableTableHead label="서비스여부" className="w-[120px] text-center" active={sortKey === "serviceType"} direction={sortDirection} onClick={() => toggleSort("serviceType")} />
+              <SortableTableHead label="연락처" className="w-[150px] text-center" active={sortKey === "phone"} direction={sortDirection} onClick={() => toggleSort("phone")} />
               <TableHead className="w-[150px] text-center">관리</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>{filtered.map((item) => <TableRow key={item.id}>
+          <TableBody>{visibleItems.map((item) => <TableRow key={item.id}>
             <TableCell className="whitespace-nowrap text-center">{item.regionName}</TableCell>
             <TableCell className="whitespace-nowrap text-center"><TourTypeBadge value={item.tourType} /></TableCell>
             <TableCell className="max-w-[240px] truncate" title={item.productName}>{item.productName}</TableCell>
@@ -113,7 +134,7 @@ export function RestaurantTable({ restaurants }: { restaurants: Restaurant[] }) 
               <Button size="sm" variant="outline" className="ml-1 text-rose-700" onClick={() => remove(item)} disabled={deletingId === item.id}>{deletingId === item.id ? "삭제중" : "삭제"}</Button>
             </TableCell>
           </TableRow>)}</TableBody>
-        </Table></div></div>
+        </Table></div><TablePagination totalCount={filtered.length} page={page} onPageChange={setPage} /></div>
       <RestaurantForm restaurant={selected} open={open} saving={saving} onOpenChange={setOpen} onSave={save} onCancel={() => setOpen(false)} />
     </div>
   );
