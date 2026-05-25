@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 export function LoginForm() {
   const [email, setEmail] = React.useState("");
@@ -62,7 +63,8 @@ export function LoginForm() {
           required
         />
       </label>
-      <Button type="submit" className="w-full" disabled={loading}>
+      <Button type="submit" className="w-full" disabled={loading} aria-busy={loading}>
+        {loading ? <LoadingSpinner /> : null}
         {loading ? "로그인 중" : "로그인"}
       </Button>
       {message ? <p className="rounded-lg border bg-slate-50 px-3 py-2 text-sm text-slate-700">{message}</p> : null}

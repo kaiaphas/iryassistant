@@ -48,6 +48,7 @@ export type RestaurantBooking = {
 };
 
 export type HotelBooking = {
+  id?: string;
   name: string;
   phone?: string;
   provisionalRooms: {
@@ -89,6 +90,7 @@ export type ScheduleGroup = {
   hotel?: ScheduleMasterRef;
   restaurantBookings: RestaurantBooking[];
   hotelBooking: HotelBooking;
+  hotelBookings?: HotelBooking[];
   progressStatus: string;
   reservations: Reservation[];
   dispatchMemo?: string;

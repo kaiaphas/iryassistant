@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Sheet } from "@/components/ui/sheet";
+import { useUnsavedForm } from "@/lib/unsaved-changes";
 
 type RestaurantFormProps = {
   restaurant?: Restaurant;
@@ -38,18 +39,30 @@ function toMoneyNumber(value: string) {
 }
 
 export function RestaurantForm({ restaurant, open, saving = false, onOpenChange, onSave, onCancel }: RestaurantFormProps) {
-  const [form, setForm] = React.useState<Restaurant>(restaurant ?? createEmptyRestaurant());
+  const initialForm = React.useMemo(() => restaurant ?? createEmptyRestaurant(), [restaurant]);
+  const [form, setForm] = React.useState<Restaurant>(initialForm);
+  const { confirmClose } = useUnsavedForm("restaurant-form", open, initialForm, form);
 
   React.useEffect(() => {
-    if (open) setForm(restaurant ?? createEmptyRestaurant());
-  }, [restaurant, open]);
+    if (open) setForm(initialForm);
+  }, [initialForm, open]);
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen && !confirmClose()) return;
+    onOpenChange(nextOpen);
+  }
+
+  function handleCancel() {
+    if (!confirmClose()) return;
+    onCancel();
+  }
 
   function update<K extends keyof Restaurant>(key: K, value: Restaurant[K]) {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} title={form.id ? "식당 수정" : "식당 등록"}>
+    <Sheet open={open} onOpenChange={handleOpenChange} title={form.id ? "식당 수정" : "식당 등록"}>
       <div className="space-y-3">
         <Input value={form.regionName} onChange={(event) => update("regionName", event.target.value)} placeholder="지역명" />
         <Select value={form.tourType} onChange={(event) => update("tourType", event.target.value as Restaurant["tourType"])}>
@@ -75,7 +88,7 @@ export function RestaurantForm({ restaurant, open, saving = false, onOpenChange,
           placeholder="특이사항"
         />
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onCancel} disabled={saving}>취소</Button>
+          <Button variant="outline" onClick={handleCancel} disabled={saving}>취소</Button>
           <Button onClick={() => onSave(form)} disabled={saving}>{saving ? "저장 중" : "저장"}</Button>
         </div>
       </div>

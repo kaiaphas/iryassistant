@@ -11,9 +11,10 @@ import { RestaurantReservationSection } from "@/components/reservations/Restaura
 import { HotelReservationSection } from "@/components/reservations/HotelReservationSection";
 import { ReservationMemoSection } from "@/components/reservations/ReservationMemoSection";
 import { ScheduleOperationSection } from "@/components/reservations/ScheduleOperationSection";
-import { getRestaurantAggregateStatus, getScheduleProgressStatus } from "@/lib/reservation-status";
+import { getHotelAggregateStatus, getHotelProvisionalAggregateStatus, getRestaurantAggregateStatus, getScheduleHotelBookings, getScheduleProgressStatus } from "@/lib/reservation-status";
 import { formatPersonWithPhone } from "@/lib/schedule-display";
 import { SortableTableHead, type SortDirection } from "@/components/common/SortableTableHead";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 type ScheduleSortKey = "tourDate" | "tourType" | "productName" | "busNo" | "departureTime" | "reservationCount" | "busCompany" | "busType" | "guide" | "driver" | "restaurant" | "hotel" | "restaurantStatus" | "provisionalStatus" | "hotelStatus" | "progressStatus";
 
@@ -82,6 +83,8 @@ export function ScheduleAccordionTable({
             {schedules.map((schedule) => {
               const open = openIds.includes(schedule.id);
               const restaurantStatus = getRestaurantAggregateStatus(schedule.restaurantBookings);
+              const hotelBookings = getScheduleHotelBookings(schedule);
+              const hotelNames = hotelBookings.map((booking) => booking.name).filter(Boolean).join(" / ");
               const progressStatus = getScheduleProgressStatus(schedule);
               return (
                 <React.Fragment key={schedule.id}>
@@ -107,33 +110,38 @@ export function ScheduleAccordionTable({
                     <TableCell className="max-w-[230px] truncate font-medium" title={schedule.restaurantBookings.map((booking) => `${booking.mealType} · ${booking.name}`).join(" / ")}>
                       {schedule.restaurantBookings.map((booking) => `${booking.mealType} · ${booking.name}`).join(" / ") || "-"}
                     </TableCell>
-                    <TableCell className="max-w-[140px] truncate" title={schedule.hotelBooking.name}>{schedule.tourType === "숙박" ? schedule.hotelBooking.name || "-" : "-"}</TableCell>
+                    <TableCell className="max-w-[140px] truncate" title={hotelNames}>{schedule.tourType === "숙박" ? hotelNames || "-" : "-"}</TableCell>
                     <TableCell className="w-[112px] text-center"><StatusBadge value={restaurantStatus} /></TableCell>
-                    <TableCell className="w-[92px] text-center">{schedule.tourType === "숙박" ? <StatusBadge value={schedule.hotelBooking.provisionalStatus} /> : "-"}</TableCell>
-                    <TableCell className="w-[112px] text-center">{schedule.tourType === "숙박" ? <StatusBadge value={schedule.hotelBooking.status} /> : "-"}</TableCell>
+                    <TableCell className="w-[92px] text-center">{schedule.tourType === "숙박" ? <StatusBadge value={getHotelProvisionalAggregateStatus(hotelBookings)} /> : "-"}</TableCell>
+                    <TableCell className="w-[112px] text-center">{schedule.tourType === "숙박" ? <StatusBadge value={getHotelAggregateStatus(hotelBookings)} /> : "-"}</TableCell>
                     <TableCell className="w-[112px] text-center"><StatusBadge value={progressStatus} /></TableCell>
                   </TableRow>
                   {open ? (
-                    <TableRow className="bg-emerald-50/40 hover:bg-emerald-50/40">
-                      <TableCell colSpan={16} className="p-2">
-                        <div className="ml-2 space-y-2 border-l-2 border-emerald-200 pl-2">
-                          <ScheduleOperationSection schedule={schedule} guides={guides} drivers={drivers} onChange={onChangeSchedule} />
-                          <RestaurantReservationSection schedule={schedule} restaurants={restaurants} onChange={onChangeSchedule} />
-                          {schedule.tourType === "숙박" ? <HotelReservationSection schedule={schedule} hotels={hotels} onChange={onChangeSchedule} /> : null}
-                          <ReservationMemoSection schedule={schedule} onChange={onChangeSchedule} />
-                          <div className="flex justify-end">
+                    <TableRow className="border-b-2 border-b-emerald-200 bg-slate-100 hover:bg-slate-100">
+                      <TableCell colSpan={16} className="p-3">
+                        <div className="rounded-lg border border-emerald-300 bg-white p-3 shadow-inner">
+                          <div className="mb-3 flex items-center gap-3 border-b border-emerald-100 pb-3">
                             <Button
                               type="button"
+                              className="bg-orange-600 text-white ring-1 ring-orange-700/30 hover:bg-orange-700 hover:shadow-md"
                               onClick={(event) => {
                                 event.preventDefault();
                                 event.stopPropagation();
                                 onSaveSchedule(schedule);
                               }}
                               disabled={savingId === schedule.id}
+                              aria-busy={savingId === schedule.id}
                             >
-                              <Save className="h-4 w-4" />
+                              {savingId === schedule.id ? <LoadingSpinner /> : <Save className="h-4 w-4" />}
                               {savingId === schedule.id ? "저장 중" : "저장"}
                             </Button>
+                            <div className="text-xs font-bold text-emerald-800">상세 입력 영역</div>
+                          </div>
+                          <div className="space-y-2">
+                          <ScheduleOperationSection schedule={schedule} guides={guides} drivers={drivers} onChange={onChangeSchedule} />
+                          <RestaurantReservationSection schedule={schedule} restaurants={restaurants} onChange={onChangeSchedule} />
+                          {schedule.tourType === "숙박" ? <HotelReservationSection schedule={schedule} hotels={hotels} onChange={onChangeSchedule} /> : null}
+                          <ReservationMemoSection schedule={schedule} onChange={onChangeSchedule} />
                           </div>
                         </div>
                       </TableCell>

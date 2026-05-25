@@ -1,20 +1,23 @@
 "use client";
 
-import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { getNavItemsByRole } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { useCurrentAuth } from "@/lib/client-auth";
+import { GuardedLink, useUnsavedChanges } from "@/lib/unsaved-changes";
 
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const auth = useCurrentAuth();
+  const { confirmNavigation, clearUnsavedChanges } = useUnsavedChanges();
   const navItems = getNavItemsByRole(auth.role);
   const roleLabel = auth.role === "admin" ? "관리자" : "담당자";
 
   async function logout() {
+    if (!confirmNavigation()) return;
+    clearUnsavedChanges();
     await fetch("/api/auth/logout", { method: "POST" });
     router.replace("/login");
     router.refresh();
@@ -27,7 +30,7 @@ export function AppSidebar() {
           const active = pathname === item.href;
           const Icon = item.icon;
           return (
-            <Link
+            <GuardedLink
               key={item.href}
               href={item.href}
               title={item.title}
@@ -38,7 +41,7 @@ export function AppSidebar() {
             >
               <Icon className="h-4 w-4 shrink-0" />
               <span className="hidden whitespace-nowrap group-hover/sidebar:inline">{item.title}</span>
-            </Link>
+            </GuardedLink>
           );
         })}
       </nav>

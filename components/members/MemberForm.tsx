@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Sheet } from "@/components/ui/sheet";
+import { useUnsavedForm } from "@/lib/unsaved-changes";
 
 type MemberFormState = {
   name: string;
@@ -35,18 +36,25 @@ export function MemberForm({
   });
   const [saving, setSaving] = React.useState(false);
   const [message, setMessage] = React.useState("");
+  const initialForm = React.useMemo<MemberFormState>(() => ({
+    name: member?.name ?? "",
+    role: member?.role ?? "담당자",
+    department: member?.department ?? "",
+    phone: member?.phone ?? "",
+    status: member?.status ?? "active",
+  }), [member]);
+  const { confirmClose } = useUnsavedForm("member-form", open, initialForm, form);
 
   React.useEffect(() => {
     if (!open) return;
-    setForm({
-      name: member?.name ?? "",
-      role: member?.role ?? "담당자",
-      department: member?.department ?? "",
-      phone: member?.phone ?? "",
-      status: member?.status ?? "active",
-    });
+    setForm(initialForm);
     setMessage("");
-  }, [member, open]);
+  }, [initialForm, open]);
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen && !confirmClose()) return;
+    onOpenChange(nextOpen);
+  }
 
   function update<K extends keyof MemberFormState>(key: K, value: MemberFormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -86,7 +94,7 @@ export function MemberForm({
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} title="회원 정보 수정">
+    <Sheet open={open} onOpenChange={handleOpenChange} title="회원 정보 수정">
       <div className="space-y-3">
         <Input value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="이름" />
         <Input value={member?.loginId ?? ""} placeholder="아이디" disabled />
@@ -106,7 +114,7 @@ export function MemberForm({
         <textarea className="min-h-28 w-full rounded-md border bg-white p-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-700" placeholder="메모" />
         {message ? <p className="rounded-md bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">{message}</p> : null}
         <div className="flex justify-end gap-2 pt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>취소</Button>
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>취소</Button>
           <Button onClick={save} disabled={saving}>{saving ? "저장 중" : "저장"}</Button>
         </div>
       </div>

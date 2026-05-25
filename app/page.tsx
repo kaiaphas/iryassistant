@@ -3,7 +3,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { TodayDepartureTable } from "@/components/dashboard/TodayDepartureTable";
 import { getScheduleGroups } from "@/services/reservation-service";
-import { getRestaurantAggregateStatus } from "@/lib/reservation-status";
+import { getHotelAggregateStatus, getRestaurantAggregateStatus, getScheduleHotelBookings } from "@/lib/reservation-status";
 import { getKstDateInput } from "@/lib/date";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +27,7 @@ export default async function DashboardPage() {
     });
   const vehicleUnassigned = futureSchedules.filter((schedule) => !schedule.vehicle.busInfo && !schedule.vehicle.busType && !schedule.vehicle.busCompany).length;
   const guideUnassigned = futureSchedules.filter((schedule) => !schedule.guide.name || schedule.guide.name === "-").length;
-  const hotelNeedsCheck = futureSchedules.filter((schedule) => schedule.tourType === "숙박" && schedule.hotelBooking.status === "예약전").length;
+  const hotelNeedsCheck = futureSchedules.filter((schedule) => schedule.tourType === "숙박" && getHotelAggregateStatus(getScheduleHotelBookings(schedule)) === "예약전").length;
   const restaurantNeedsCheck = futureSchedules.filter((schedule) => getRestaurantAggregateStatus(schedule.restaurantBookings) === "예약전").length;
   const todayReservationCount = todaySchedules.reduce((total, schedule) => total + schedule.reservationCount, 0);
 

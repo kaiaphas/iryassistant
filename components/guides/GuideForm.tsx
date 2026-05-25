@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Sheet } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { formatBirthDateInput } from "@/lib/birth-date";
+import { useUnsavedForm } from "@/lib/unsaved-changes";
 
 type GuideFormProps = {
   guide?: Guide;
@@ -37,18 +38,25 @@ function createEmptyGuide(): Guide {
 }
 
 export function GuideForm({ guide, open, saving = false, onOpenChange, onSave }: GuideFormProps) {
-  const [form, setForm] = React.useState<Guide>(guide ?? createEmptyGuide());
+  const initialForm = React.useMemo(() => guide ?? createEmptyGuide(), [guide]);
+  const [form, setForm] = React.useState<Guide>(initialForm);
+  const { confirmClose } = useUnsavedForm("guide-form", open, initialForm, form);
 
   React.useEffect(() => {
-    if (open) setForm(guide ?? createEmptyGuide());
-  }, [guide, open]);
+    if (open) setForm(initialForm);
+  }, [initialForm, open]);
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen && !confirmClose()) return;
+    onOpenChange(nextOpen);
+  }
 
   function update<K extends keyof Guide>(key: K, value: Guide[K]) {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} title="가이드 등록 / 수정">
+    <Sheet open={open} onOpenChange={handleOpenChange} title="가이드 등록 / 수정">
       <div className="space-y-3">
         <Input value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="이름" />
         <Input value={form.phone} onChange={(event) => update("phone", event.target.value)} placeholder="전화번호" />
@@ -80,7 +88,7 @@ export function GuideForm({ guide, open, saving = false, onOpenChange, onSave }:
           placeholder="메모"
         />
         <div className="flex justify-end gap-2 pt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>취소</Button>
+          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={saving}>취소</Button>
           <Button onClick={() => onSave(form)} disabled={saving}>{saving ? "저장 중" : "저장"}</Button>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Sheet } from "@/components/ui/sheet";
+import { useUnsavedForm } from "@/lib/unsaved-changes";
 
 const roomRows: Array<[keyof Hotel["roomRates"], string]> = [["double", "2인실"], ["triple", "3인실"], ["quad", "4인실"]];
 const fields: Array<[keyof RoomRate, string]> = [["weekday", "단가/주중"], ["friday", "금"], ["saturday", "토"], ["peak", "성수기"], ["breakfast", "조식"]];
@@ -44,11 +45,23 @@ function toMoneyNumber(value: string) {
 }
 
 export function HotelForm({ hotel, open, saving = false, onOpenChange, onSave, onCancel }: HotelFormProps) {
-  const [form, setForm] = React.useState<Hotel>(hotel ?? createEmptyHotel());
+  const initialForm = React.useMemo(() => hotel ?? createEmptyHotel(), [hotel]);
+  const [form, setForm] = React.useState<Hotel>(initialForm);
+  const { confirmClose } = useUnsavedForm("hotel-form", open, initialForm, form);
 
   React.useEffect(() => {
-    if (open) setForm(hotel ?? createEmptyHotel());
-  }, [hotel, open]);
+    if (open) setForm(initialForm);
+  }, [initialForm, open]);
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen && !confirmClose()) return;
+    onOpenChange(nextOpen);
+  }
+
+  function handleCancel() {
+    if (!confirmClose()) return;
+    onCancel();
+  }
 
   function update<K extends keyof Hotel>(key: K, value: Hotel[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -68,7 +81,7 @@ export function HotelForm({ hotel, open, saving = false, onOpenChange, onSave, o
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} title={form.id ? "호텔 수정" : "호텔 등록"} className="w-[min(96vw,760px)]">
+    <Sheet open={open} onOpenChange={handleOpenChange} title={form.id ? "호텔 수정" : "호텔 등록"} className="w-[min(96vw,760px)]">
       <div className="space-y-3">
         <Input value={form.regionName} onChange={(event) => update("regionName", event.target.value)} placeholder="지역명" />
         <Input value={form.shopName} onChange={(event) => update("shopName", event.target.value)} placeholder="상호명" />
@@ -120,7 +133,7 @@ export function HotelForm({ hotel, open, saving = false, onOpenChange, onSave, o
           </label>
         </div>
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onCancel} disabled={saving}>취소</Button>
+          <Button variant="outline" onClick={handleCancel} disabled={saving}>취소</Button>
           <Button onClick={() => onSave(form)} disabled={saving}>{saving ? "저장 중" : "저장"}</Button>
         </div>
       </div>

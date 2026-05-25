@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bus, CalendarDays, CircleGauge, Hotel, ReceiptText, Soup, UserRound, UserRoundCog } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrentAuth } from "@/lib/client-auth";
+import { GuardedLink } from "@/lib/unsaved-changes";
 
 const tabs = [
   { title: "대시보드", href: "/", icon: CircleGauge },
@@ -28,10 +28,10 @@ export function MobileBottomTabs() {
         const Icon = tab.icon;
         const active = pathname === tab.href;
         return (
-          <Link key={tab.href} href={tab.href} className={cn("flex flex-col items-center gap-1 rounded-md py-1.5 text-[11px] font-medium", active ? "text-emerald-700" : "text-slate-500")}>
+          <GuardedLink key={tab.href} href={tab.href} className={cn("flex flex-col items-center gap-1 rounded-md py-1.5 text-[11px] font-medium", active ? "text-emerald-700" : "text-slate-500")}>
             <Icon className="h-4 w-4" />
             {tab.title}
-          </Link>
+          </GuardedLink>
         );
       })}
     </nav>

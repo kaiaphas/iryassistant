@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { TablePagination, tablePageSize } from "@/components/common/TablePagination";
 import { SortableTableHead } from "@/components/common/SortableTableHead";
 import { useTableSort } from "@/lib/table-sort";
+import { useUnsavedChanges } from "@/lib/unsaved-changes";
 
 const emptyRefund: RefundItem = {
   id: "",
@@ -97,6 +98,7 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
   const [openIds, setOpenIds] = React.useState<string[]>([]);
   const [paymentDrafts, setPaymentDrafts] = React.useState<Record<string, Omit<RefundPayment, "id">>>({});
   const [editingPayment, setEditingPayment] = React.useState<RefundPayment | null>(null);
+  const { setUnsavedChanges, clearUnsavedChanges } = useUnsavedChanges();
 
   const filtered = items.filter((item) => {
     const q = query.trim().toLowerCase();
@@ -132,6 +134,7 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
   const totalPages = Math.max(1, Math.ceil(filtered.length / tablePageSize));
   const visibleItems = sortedItems.slice((page - 1) * tablePageSize, page * tablePageSize);
   const totalRefund = filtered.reduce((sum, item) => sum + item.refundRequestAmount, 0);
+  const hasUnsavedRefundChanges = drafts.length > 0 || Boolean(draft) || Object.keys(paymentDrafts).length > 0 || Boolean(editingPayment);
 
   React.useEffect(() => {
     setPage(1);
@@ -140,6 +143,12 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
   React.useEffect(() => {
     setPage((current) => Math.min(current, totalPages));
   }, [totalPages]);
+
+  React.useEffect(() => {
+    setUnsavedChanges("refunds", hasUnsavedRefundChanges);
+  }, [hasUnsavedRefundChanges, setUnsavedChanges]);
+
+  React.useEffect(() => () => clearUnsavedChanges("refunds"), [clearUnsavedChanges]);
 
   function addRow() {
     const defaultRefundDate = startDate || getKstDateInput();

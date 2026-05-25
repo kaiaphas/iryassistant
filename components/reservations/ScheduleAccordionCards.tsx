@@ -11,8 +11,9 @@ import { RestaurantReservationSection } from "@/components/reservations/Restaura
 import { HotelReservationSection } from "@/components/reservations/HotelReservationSection";
 import { ReservationMemoSection } from "@/components/reservations/ReservationMemoSection";
 import { ScheduleOperationSection } from "@/components/reservations/ScheduleOperationSection";
-import { getRestaurantAggregateStatus, getScheduleProgressStatus } from "@/lib/reservation-status";
+import { getHotelAggregateStatus, getHotelProvisionalAggregateStatus, getRestaurantAggregateStatus, getScheduleHotelBookings, getScheduleProgressStatus } from "@/lib/reservation-status";
 import { formatPersonWithPhone } from "@/lib/schedule-display";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 export function ScheduleAccordionCards({
   schedules,
@@ -42,6 +43,8 @@ export function ScheduleAccordionCards({
       {schedules.map((schedule) => {
         const open = openIds.includes(schedule.id);
         const restaurantStatus = getRestaurantAggregateStatus(schedule.restaurantBookings);
+        const hotelBookings = getScheduleHotelBookings(schedule);
+        const hotelNames = hotelBookings.map((booking) => booking.name).filter(Boolean).join(" / ");
         const progressStatus = getScheduleProgressStatus(schedule);
         return (
           <Card key={schedule.id} className={open ? "border-emerald-600 bg-emerald-50/40" : ""}>
@@ -69,10 +72,10 @@ export function ScheduleAccordionCards({
                 {schedule.tourType === "숙박" ? (
                   <div className="rounded-lg border bg-white p-2">
                     <p className="text-slate-500">숙소</p>
-                    <p className="mt-1 font-semibold">{schedule.hotelBooking.name || "-"}</p>
+                    <p className="mt-1 font-semibold">{hotelNames || "-"}</p>
                     <div className="mt-1 flex flex-wrap gap-1">
-                      <StatusBadge value={`가예약 ${schedule.hotelBooking.provisionalStatus}`} />
-                      <StatusBadge value={`실제 ${schedule.hotelBooking.status}`} />
+                      <StatusBadge value={`가예약 ${getHotelProvisionalAggregateStatus(hotelBookings)}`} />
+                      <StatusBadge value={`실제 ${getHotelAggregateStatus(hotelBookings)}`} />
                     </div>
                   </div>
                 ) : null}
@@ -81,24 +84,28 @@ export function ScheduleAccordionCards({
                 <StatusBadge value={progressStatus} />
               </div>
               {open ? (
-                <div className="mt-4 space-y-3">
+                <div className="mt-4 space-y-3 rounded-lg border border-emerald-300 bg-slate-50 p-3">
+                  <div className="flex items-center gap-3 border-b border-emerald-100 pb-3">
+                    <Button
+                      type="button"
+                      className="bg-orange-600 text-white ring-1 ring-orange-700/30 hover:bg-orange-700 hover:shadow-md"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        onSaveSchedule(schedule);
+                      }}
+                      disabled={savingId === schedule.id}
+                      aria-busy={savingId === schedule.id}
+                    >
+                      {savingId === schedule.id ? <LoadingSpinner /> : <Save className="h-4 w-4" />}
+                      {savingId === schedule.id ? "저장 중" : "저장"}
+                    </Button>
+                    <div className="text-xs font-bold text-emerald-800">상세 입력 영역</div>
+                  </div>
                   <ScheduleOperationSection schedule={schedule} guides={guides} drivers={drivers} onChange={onChangeSchedule} />
                   <RestaurantReservationSection schedule={schedule} restaurants={restaurants} onChange={onChangeSchedule} />
                   {schedule.tourType === "숙박" ? <HotelReservationSection schedule={schedule} hotels={hotels} onChange={onChangeSchedule} /> : null}
                   <ReservationMemoSection schedule={schedule} onChange={onChangeSchedule} />
-                  <Button
-                    type="button"
-                    className="w-full"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      onSaveSchedule(schedule);
-                    }}
-                    disabled={savingId === schedule.id}
-                  >
-                    <Save className="h-4 w-4" />
-                    {savingId === schedule.id ? "저장 중" : "저장"}
-                  </Button>
                 </div>
               ) : null}
             </CardContent>

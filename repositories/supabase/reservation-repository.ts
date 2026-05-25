@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { FacilityBookingStatus, RestaurantBooking, ScheduleGroup } from "@/lib/types";
+import type { FacilityBookingStatus, HotelBooking, RestaurantBooking, ScheduleGroup } from "@/lib/types";
 
 type ReservationScheduleOverviewRow = {
   id: string;
@@ -54,6 +54,13 @@ type HotelBookingRow = {
   provisional_triple_room_count?: number | null;
   provisional_quad_room_count?: number | null;
   booking_status: "BEFORE" | "COMPLETED" | "CANCELED";
+  sort_order?: number | null;
+};
+
+type HotelRoomAssignmentRow = {
+  hotel_booking_id: string;
+  room_type: "DOUBLE" | "TRIPLE" | "QUAD";
+  room_count: number;
 };
 
 const overviewSelectWithContacts =
@@ -140,6 +147,29 @@ function mapRestaurantRow(row: RestaurantBookingRow): RestaurantBooking {
   };
 }
 
+function mapHotelRow(row: HotelBookingRow, roomAssignments: HotelRoomAssignmentRow[]): HotelBooking {
+  const rooms = { double: 0, triple: 0, quadruple: 0 };
+  for (const assignment of roomAssignments) {
+    if (assignment.room_type === "DOUBLE") rooms.double = assignment.room_count;
+    if (assignment.room_type === "TRIPLE") rooms.triple = assignment.room_count;
+    if (assignment.room_type === "QUAD") rooms.quadruple = assignment.room_count;
+  }
+
+  return {
+    id: row.id,
+    name: row.hotel_name,
+    phone: row.hotel_phone ?? "",
+    provisionalRooms: {
+      double: row.provisional_double_room_count ?? 0,
+      triple: row.provisional_triple_room_count ?? 0,
+      quadruple: row.provisional_quad_room_count ?? 0,
+    },
+    rooms,
+    provisionalStatus: normalizeFacilityStatus(row.provisional_booking_status),
+    status: normalizeFacilityStatus(row.booking_status),
+  };
+}
+
 function mapOverviewRow(row: ReservationScheduleOverviewRow): ScheduleGroup {
   const productName = row.product_name ?? "상품명 미정";
   const tourDate = row.tour_date;
@@ -169,6 +199,7 @@ function mapOverviewRow(row: ReservationScheduleOverviewRow): ScheduleGroup {
     hotel: row.hotel_name ? { name: row.hotel_name } : undefined,
     restaurantBookings: parseRestaurantBookings(row),
     hotelBooking: {
+      id: undefined,
       name: row.hotel_name ?? "",
       phone: row.hotel_phone ?? "",
       provisionalRooms: { double: 0, triple: 0, quadruple: 0 },
@@ -263,6 +294,7 @@ export async function findScheduleGroupsFromSupabase() {
 
   const restaurantRows: RestaurantBookingRow[] = [];
   const hotelRows: HotelBookingRow[] = [];
+  const hotelRoomRows: HotelRoomAssignmentRow[] = [];
   const detailLookupChunkSize = 100;
 
   for (const ids of chunk(scheduleIds, detailLookupChunkSize)) {
@@ -274,8 +306,9 @@ export async function findScheduleGroupsFromSupabase() {
         .order("sort_order", { ascending: true }),
       supabase
         .from("schedule_hotel_bookings")
-        .select("id,schedule_id,hotel_name,hotel_phone,hotel_memo,provisional_booking_status,provisional_double_room_count,provisional_triple_room_count,provisional_quad_room_count,booking_status")
-        .in("schedule_id", ids),
+        .select("id,schedule_id,hotel_name,hotel_phone,hotel_memo,provisional_booking_status,provisional_double_room_count,provisional_triple_room_count,provisional_quad_room_count,booking_status,sort_order")
+        .in("schedule_id", ids)
+        .order("sort_order", { ascending: true }),
     ]);
     let hotelData = hotelResult.data;
     let hotelError = hotelResult.error;
@@ -285,13 +318,23 @@ export async function findScheduleGroupsFromSupabase() {
         .from("schedule_hotel_bookings")
         .select("id,schedule_id,hotel_name,hotel_phone,hotel_memo,booking_status")
         .in("schedule_id", ids);
-      hotelData = (fallback.data ?? []).map((row) => ({
+      hotelData = (fallback.data ?? []).map((row, index) => ({
         ...row,
         provisional_booking_status: null,
         provisional_double_room_count: null,
         provisional_triple_room_count: null,
         provisional_quad_room_count: null,
+        sort_order: index + 1,
       }));
+      hotelError = fallback.error;
+    }
+
+    if (hotelError?.message?.includes("sort_order")) {
+      const fallback = await supabase
+        .from("schedule_hotel_bookings")
+        .select("id,schedule_id,hotel_name,hotel_phone,hotel_memo,provisional_booking_status,provisional_double_room_count,provisional_triple_room_count,provisional_quad_room_count,booking_status")
+        .in("schedule_id", ids);
+      hotelData = (fallback.data ?? []).map((row, index) => ({ ...row, sort_order: index + 1 }));
       hotelError = fallback.error;
     }
 
@@ -307,6 +350,20 @@ export async function findScheduleGroupsFromSupabase() {
     hotelRows.push(...((hotelData ?? []) as HotelBookingRow[]));
   }
 
+  for (const hotelIds of chunk(hotelRows.map((row) => row.id), detailLookupChunkSize)) {
+    if (hotelIds.length === 0) continue;
+    const { data, error } = await supabase
+      .from("schedule_hotel_room_assignments")
+      .select("hotel_booking_id,room_type,room_count")
+      .in("hotel_booking_id", hotelIds);
+
+    if (error) {
+      throw new Error(`숙소 객실 배정 Supabase 조회 실패: ${error.message}`);
+    }
+
+    hotelRoomRows.push(...((data ?? []) as HotelRoomAssignmentRow[]));
+  }
+
   const restaurantsBySchedule = new Map<string, RestaurantBooking[]>();
   for (const row of restaurantRows) {
     const items = restaurantsBySchedule.get(row.schedule_id) ?? [];
@@ -314,34 +371,37 @@ export async function findScheduleGroupsFromSupabase() {
     restaurantsBySchedule.set(row.schedule_id, items);
   }
 
-  const hotelsBySchedule = new Map<string, HotelBookingRow>();
+  const roomAssignmentsByHotel = new Map<string, HotelRoomAssignmentRow[]>();
+  for (const row of hotelRoomRows) {
+    const items = roomAssignmentsByHotel.get(row.hotel_booking_id) ?? [];
+    items.push(row);
+    roomAssignmentsByHotel.set(row.hotel_booking_id, items);
+  }
+
+  const hotelsBySchedule = new Map<string, HotelBooking[]>();
   for (const row of hotelRows) {
-    hotelsBySchedule.set(row.schedule_id, row);
+    const items = hotelsBySchedule.get(row.schedule_id) ?? [];
+    items.push(mapHotelRow(row, roomAssignmentsByHotel.get(row.id) ?? []));
+    hotelsBySchedule.set(row.schedule_id, items);
   }
 
   return rows.map((row) => {
-    const hotel = hotelsBySchedule.get(row.id);
+    const hotels = hotelsBySchedule.get(row.id) ?? [];
+    const hotel = hotels[0];
     const schedule = mapOverviewRow({
       ...row,
       restaurant_bookings: restaurantsBySchedule.get(row.id),
-      hotel_name: hotel?.hotel_name ?? row.hotel_name,
-      hotel_phone: hotel?.hotel_phone ?? row.hotel_phone,
-      hotel_memo: hotel?.hotel_memo ?? row.hotel_memo,
-      hotel_provisional_status_label: hotel ? normalizeFacilityStatus(hotel.provisional_booking_status) : undefined,
-      hotel_status_label: hotel ? normalizeFacilityStatus(hotel.booking_status) : row.hotel_status_label,
-      memo: hotel?.hotel_memo ? [row.memo, `숙소메모: ${hotel.hotel_memo}`].filter(Boolean).join("\n") : row.memo,
+      hotel_name: hotel?.name ?? row.hotel_name,
+      hotel_phone: hotel?.phone ?? row.hotel_phone,
+      hotel_memo: row.hotel_memo,
+      hotel_provisional_status_label: hotel?.provisionalStatus,
+      hotel_status_label: hotel?.status ?? row.hotel_status_label,
     });
     if (!hotel) return schedule;
     return {
       ...schedule,
-      hotelBooking: {
-        ...schedule.hotelBooking,
-        provisionalRooms: {
-          double: hotel.provisional_double_room_count ?? 0,
-          triple: hotel.provisional_triple_room_count ?? 0,
-          quadruple: hotel.provisional_quad_room_count ?? 0,
-        },
-      },
+      hotelBooking: hotel,
+      hotelBookings: hotels,
     };
   });
 }

@@ -7,10 +7,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ReservationFilters, type ReservationFilterState } from "@/components/reservations/ReservationFilters";
 import { ScheduleAccordionCards } from "@/components/reservations/ScheduleAccordionCards";
 import { ScheduleAccordionTable } from "@/components/reservations/ScheduleAccordionTable";
-import { getRestaurantAggregateStatus, getScheduleProgressStatus } from "@/lib/reservation-status";
+import { getHotelAggregateStatus, getHotelProvisionalAggregateStatus, getRestaurantAggregateStatus, getScheduleHotelBookings, getScheduleProgressStatus } from "@/lib/reservation-status";
 import { getKstDateInput } from "@/lib/date";
 import { TablePagination } from "@/components/common/TablePagination";
 import { useTableSort } from "@/lib/table-sort";
+import { useUnsavedChanges } from "@/lib/unsaved-changes";
 
 function getDefaultDateRange() {
   return {
@@ -53,6 +54,7 @@ export function ReservationsClient({
   const [schedules, setSchedules] = React.useState(scheduleGroups);
   const [savingId, setSavingId] = React.useState<string | null>(null);
   const [saveMessage, setSaveMessage] = React.useState<string>("");
+  const [dirtyScheduleIds, setDirtyScheduleIds] = React.useState<Set<string>>(() => new Set());
   const [page, setPage] = React.useState(1);
   const [filters, setFilters] = React.useState<ReservationFilterState>({
     query: "",
@@ -65,6 +67,12 @@ export function ReservationsClient({
     hotelStatus: "",
   });
   const [openIds, setOpenIds] = React.useState<string[]>([scheduleGroups[2]?.id].filter(Boolean));
+  const { setUnsavedChanges, clearUnsavedChanges } = useUnsavedChanges();
+
+  React.useEffect(() => () => clearUnsavedChanges("reservations"), [clearUnsavedChanges]);
+  React.useEffect(() => {
+    setUnsavedChanges("reservations", dirtyScheduleIds.size > 0);
+  }, [dirtyScheduleIds, setUnsavedChanges]);
 
   const filtered = schedules.filter((schedule) => {
     const q = filters.query.trim().toLowerCase();
@@ -79,7 +87,7 @@ export function ReservationsClient({
         schedule.guide.name,
         schedule.driver.name,
         ...schedule.restaurantBookings.flatMap((booking) => [booking.name, booking.mealType]),
-        schedule.hotelBooking.name,
+        ...getScheduleHotelBookings(schedule).map((booking) => booking.name),
         schedule.vehicle.busInfo,
       ].some((value) => value?.toLowerCase().includes(q));
     const statusMatch = !filters.status || getScheduleProgressStatus(schedule) === filters.status;
@@ -89,7 +97,7 @@ export function ReservationsClient({
       && (!filters.tourType || schedule.tourType === filters.tourType)
       && (!filters.guide || schedule.guide.name === filters.guide)
       && (!filters.restaurantStatus || getRestaurantAggregateStatus(schedule.restaurantBookings) === filters.restaurantStatus)
-      && (!filters.hotelStatus || schedule.tourType === "당일" || schedule.hotelBooking.status === filters.hotelStatus);
+      && (!filters.hotelStatus || schedule.tourType === "당일" || getHotelAggregateStatus(getScheduleHotelBookings(schedule)) === filters.hotelStatus);
   }).sort(sortSchedules);
   const getSortValue = React.useCallback((schedule: ScheduleGroup, key: "tourDate" | "tourType" | "productName" | "busNo" | "departureTime" | "reservationCount" | "busCompany" | "busType" | "guide" | "driver" | "restaurant" | "hotel" | "restaurantStatus" | "provisionalStatus" | "hotelStatus" | "progressStatus") => ({
     tourDate: schedule.tourDate,
@@ -103,10 +111,10 @@ export function ReservationsClient({
     guide: schedule.guide.name,
     driver: schedule.driver.name,
     restaurant: schedule.restaurantBookings.map((booking) => `${booking.mealType} ${booking.name}`).join(" / "),
-    hotel: schedule.hotelBooking.name,
+    hotel: getScheduleHotelBookings(schedule).map((booking) => booking.name).join(" / "),
     restaurantStatus: getRestaurantAggregateStatus(schedule.restaurantBookings),
-    provisionalStatus: schedule.hotelBooking.provisionalStatus,
-    hotelStatus: schedule.hotelBooking.status,
+    provisionalStatus: getHotelProvisionalAggregateStatus(getScheduleHotelBookings(schedule)),
+    hotelStatus: getHotelAggregateStatus(getScheduleHotelBookings(schedule)),
     progressStatus: getScheduleProgressStatus(schedule),
   }[key]), []);
   const { sortedItems, sortKey, sortDirection, sortApplied, toggleSort } = useTableSort<ScheduleGroup, "tourDate" | "tourType" | "productName" | "busNo" | "departureTime" | "reservationCount" | "busCompany" | "busType" | "guide" | "driver" | "restaurant" | "hotel" | "restaurantStatus" | "provisionalStatus" | "hotelStatus" | "progressStatus">(filtered, "tourDate", getSortValue);
@@ -128,6 +136,7 @@ export function ReservationsClient({
 
   function updateSchedule(nextSchedule: ScheduleGroup) {
     setSchedules((current) => current.map((schedule) => schedule.id === nextSchedule.id ? nextSchedule : schedule));
+    setDirtyScheduleIds((current) => new Set(current).add(nextSchedule.id));
   }
 
   async function saveSchedule(schedule: ScheduleGroup) {
@@ -152,6 +161,11 @@ export function ReservationsClient({
       }
 
       setSaveMessage(`${schedule.productName} 저장 완료`);
+      setDirtyScheduleIds((current) => {
+        const next = new Set(current);
+        next.delete(schedule.id);
+        return next;
+      });
     } catch (error) {
       setSaveMessage(error instanceof Error ? error.message : "저장에 실패했습니다.");
     } finally {

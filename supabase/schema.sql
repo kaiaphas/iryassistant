@@ -203,15 +203,24 @@ create table if not exists public.schedule_hotel_bookings (
   hotel_phone text,
   hotel_memo text,
 
+  provisional_booking_status public.reservation_work_status not null default 'BEFORE',
+  provisional_double_room_count int not null default 0 check (provisional_double_room_count >= 0),
+  provisional_triple_room_count int not null default 0 check (provisional_triple_room_count >= 0),
+  provisional_quad_room_count int not null default 0 check (provisional_quad_room_count >= 0),
   booking_status public.reservation_work_status not null default 'BEFORE',
+  sort_order int not null default 0,
 
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-
-  constraint schedule_hotel_bookings_one_per_schedule unique (schedule_id)
+  updated_at timestamptz not null default now()
 );
 
-comment on table public.schedule_hotel_bookings is '일정별 숙소 예약현황. 숙박 일정에서만 사용';
+comment on table public.schedule_hotel_bookings is '일정별 숙소 예약현황. 숙박 일정은 여러 숙소를 등록할 수 있음';
+
+create index if not exists idx_schedule_hotel_bookings_schedule
+  on public.schedule_hotel_bookings (schedule_id);
+
+create index if not exists idx_schedule_hotel_bookings_sort
+  on public.schedule_hotel_bookings (schedule_id, sort_order);
 
 create index if not exists idx_schedule_hotel_bookings_status
   on public.schedule_hotel_bookings (booking_status);
