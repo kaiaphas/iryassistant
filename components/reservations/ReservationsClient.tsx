@@ -187,17 +187,26 @@ export function ReservationsClient({
     const titleText = printTitleTextRef.current;
     if (!title || !titleText) return;
 
-    let fontSize = 176;
-    titleText.style.fontSize = `${fontSize}px`;
-    titleText.style.transform = "translate(-50%, -50%) scale(1)";
+    const containerWidth = title.clientWidth;
+    const containerHeight = title.clientHeight;
 
-    while (fontSize > 44 && titleText.scrollHeight > title.clientHeight) {
-      fontSize -= 4;
-      titleText.style.fontSize = `${fontSize}px`;
+    let minSize = 10;
+    let maxSize = 400;
+    let optimalSize = 10;
+
+    while (minSize <= maxSize) {
+      const mid = Math.floor((minSize + maxSize) / 2);
+      titleText.style.fontSize = `${mid}px`;
+
+      if (titleText.scrollWidth <= containerWidth && titleText.scrollHeight <= containerHeight) {
+        optimalSize = mid;
+        minSize = mid + 1;
+      } else {
+        maxSize = mid - 1;
+      }
     }
 
-    const scale = Math.min(1, title.clientWidth / titleText.scrollWidth, title.clientHeight / titleText.scrollHeight);
-    titleText.style.transform = `translate(-50%, -50%) scale(${Math.max(0.1, scale)})`;
+    titleText.style.fontSize = `${Math.floor(optimalSize * 0.98)}px`;
   }, []);
 
   React.useEffect(() => {

@@ -44,7 +44,6 @@ textarea {
 
 .schedule-print-root {
   display: none;
-  color: #0047ff;
 }
 
 .schedule-print-page {
@@ -54,7 +53,7 @@ textarea {
   width: 297mm;
   height: 210mm;
   overflow: hidden;
-  padding: 8mm 10mm 8mm;
+  padding: 10mm 15mm;
   background: white;
   break-after: avoid;
   page-break-after: avoid;
@@ -62,27 +61,29 @@ textarea {
 
 .schedule-print-title {
   position: absolute;
-  left: 10mm;
-  right: 10mm;
-  top: 8mm;
-  bottom: 44mm;
+  left: 15mm;
+  right: 15mm;
+  top: 10mm;
+  bottom: 55mm;
   box-sizing: border-box;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
 }
 
 .schedule-print-title-text {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  display: inline-block;
-  max-width: none;
-  color: #0047ff;
-  transform-origin: center center;
+  display: block;
+  width: 100%;
+  color: #0014ff;
+  font-family: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
   font-weight: 900;
-  line-height: 1.04;
+  line-height: 1.15;
   letter-spacing: 0;
-  white-space: nowrap;
+  text-align: center;
+  white-space: pre-wrap;
+  word-break: keep-all;
 }
 
 .schedule-print-logo-wrap {
@@ -90,8 +91,8 @@ textarea {
   left: 50%;
   bottom: 12mm;
   display: flex;
-  width: 170mm;
-  height: 30mm;
+  width: 250mm;
+  height: 38mm;
   align-items: center;
   justify-content: center;
   overflow: hidden;
@@ -100,9 +101,9 @@ textarea {
 
 .schedule-print-logo {
   display: block;
-  width: 170mm;
-  height: auto;
-  max-height: 30mm;
+  width: auto;
+  height: 100%;
+  max-height: 38mm;
   object-fit: contain;
 }
 
@@ -119,19 +120,25 @@ textarea {
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 
-  body > * {
+  body > :not(.schedule-print-root) {
     display: none !important;
   }
 
   .schedule-print-root {
     display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 297mm;
     height: 210mm;
     margin: 0 !important;
     overflow: hidden !important;
     background: white;
+    z-index: 9999999;
   }
 
   .schedule-print-page {
@@ -139,8 +146,4 @@ textarea {
     height: 210mm;
   }
 
-  .schedule-print-logo {
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-  }
 }
