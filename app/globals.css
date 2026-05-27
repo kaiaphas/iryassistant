@@ -43,31 +43,29 @@ textarea {
 }
 
 .schedule-print-root {
-  position: fixed;
-  left: -9999px;
-  top: 0;
-  width: 210mm;
-  height: 297mm;
-  overflow: hidden;
-  background: white;
+  display: none;
   color: #0047ff;
 }
 
 .schedule-print-page {
   display: flex;
-  width: 210mm;
-  height: 297mm;
+  box-sizing: border-box;
+  width: 297mm;
+  height: 210mm;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  padding: 26mm 16mm 18mm;
+  overflow: hidden;
+  padding: 18mm 18mm 12mm;
   background: white;
+  break-after: avoid;
+  page-break-after: avoid;
 }
 
 .schedule-print-title {
   display: flex;
-  width: 178mm;
-  height: 210mm;
+  width: 261mm;
+  height: 146mm;
   align-items: center;
   justify-content: center;
   overflow: hidden;
@@ -82,39 +80,56 @@ textarea {
 
 .schedule-print-logo-wrap {
   display: flex;
-  width: 178mm;
-  height: 34mm;
+  width: 236mm;
+  height: 28mm;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .schedule-print-logo {
-  width: 178mm;
+  display: block;
+  width: 236mm;
   height: auto;
-  max-height: 34mm;
+  max-height: 28mm;
   object-fit: contain;
 }
 
 @media print {
   @page {
-    size: A4 portrait;
+    size: A4 landscape;
     margin: 0;
   }
 
-  body * {
-    visibility: hidden;
+  html,
+  body {
+    width: 297mm;
+    height: 210mm;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
   }
 
-  .schedule-print-root,
-  .schedule-print-root * {
-    visibility: visible;
+  body > * {
+    display: none !important;
   }
 
   .schedule-print-root {
-    left: 0;
-    top: 0;
-    width: 210mm;
-    height: 297mm;
-    overflow: hidden;
+    display: block !important;
+    width: 297mm;
+    height: 210mm;
+    margin: 0 !important;
+    overflow: hidden !important;
+    background: white;
+  }
+
+  .schedule-print-page {
+    width: 297mm;
+    height: 210mm;
+  }
+
+  .schedule-print-logo {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 }

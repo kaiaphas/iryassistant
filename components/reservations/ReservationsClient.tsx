@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
+import { createPortal } from "react-dom";
 import type { Driver, Guide, Hotel, Restaurant, ScheduleGroup } from "@/lib/types";
 import { CalendarDays } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -58,6 +58,7 @@ export function ReservationsClient({
   const [dirtyScheduleIds, setDirtyScheduleIds] = React.useState<Set<string>>(() => new Set());
   const [printSchedule, setPrintSchedule] = React.useState<ScheduleGroup | null>(null);
   const [printQueued, setPrintQueued] = React.useState(false);
+  const [printMounted, setPrintMounted] = React.useState(false);
   const [page, setPage] = React.useState(1);
   const printTitleRef = React.useRef<HTMLDivElement | null>(null);
   const [filters, setFilters] = React.useState<ReservationFilterState>({
@@ -77,6 +78,9 @@ export function ReservationsClient({
   React.useEffect(() => {
     setUnsavedChanges("reservations", dirtyScheduleIds.size > 0);
   }, [dirtyScheduleIds, setUnsavedChanges]);
+  React.useEffect(() => {
+    setPrintMounted(true);
+  }, []);
 
   const filtered = schedules.filter((schedule) => {
     const q = filters.query.trim().toLowerCase();
@@ -181,10 +185,10 @@ export function ReservationsClient({
     const title = printTitleRef.current;
     if (!title) return;
 
-    let fontSize = 128;
+    let fontSize = 138;
     title.style.fontSize = `${fontSize}px`;
 
-    while (fontSize > 42 && (title.scrollWidth > title.clientWidth || title.scrollHeight > title.clientHeight)) {
+    while (fontSize > 36 && (title.scrollWidth > title.clientWidth || title.scrollHeight > title.clientHeight)) {
       fontSize -= 2;
       title.style.fontSize = `${fontSize}px`;
     }
@@ -258,17 +262,19 @@ export function ReservationsClient({
         <div className="overflow-hidden rounded-lg border bg-white">
           <TablePagination totalCount={filtered.length} page={page} onPageChange={setPage} unit="개" />
         </div>
-        {printSchedule ? (
+        {printMounted && printSchedule ? createPortal(
           <div className="schedule-print-root" aria-hidden="true">
             <div className="schedule-print-page">
               <div className="schedule-print-title" ref={printTitleRef}>
                 {printSchedule.productName}
               </div>
               <div className="schedule-print-logo-wrap">
-                <Image className="schedule-print-logo" src="/incheon-royal-tour-logo.jpg" alt="인천로열투어" width={1059} height={212} priority />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="schedule-print-logo" src="/incheon-royal-tour-logo.jpg" alt="인천로열투어" />
               </div>
             </div>
-          </div>
+          </div>,
+          document.body,
         ) : null}
     </div>
   );
