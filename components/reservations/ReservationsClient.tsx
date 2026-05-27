@@ -185,11 +185,11 @@ export function ReservationsClient({
     const title = printTitleRef.current;
     if (!title) return;
 
-    let fontSize = 138;
+    let fontSize = 176;
     title.style.fontSize = `${fontSize}px`;
 
-    while (fontSize > 36 && (title.scrollWidth > title.clientWidth || title.scrollHeight > title.clientHeight)) {
-      fontSize -= 2;
+    while (fontSize > 44 && (title.scrollWidth > title.clientWidth || title.scrollHeight > title.clientHeight)) {
+      fontSize -= 4;
       title.style.fontSize = `${fontSize}px`;
     }
   }, []);
