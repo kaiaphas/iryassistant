@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight, Printer, Save } from "lucide-react";
 import type { Driver, Guide, Hotel, Restaurant, ScheduleGroup } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { TourTypeBadge } from "@/components/common/TourTypeBadge";
 import { RestaurantReservationSection } from "@/components/reservations/RestaurantReservationSection";
@@ -22,6 +23,8 @@ export function ScheduleAccordionCards({
   onChangeSchedule,
   onSaveSchedule,
   onPrintSchedule,
+  printTextByScheduleId,
+  onChangePrintText,
   savingId,
   guides,
   drivers,
@@ -34,6 +37,8 @@ export function ScheduleAccordionCards({
   onChangeSchedule: (schedule: ScheduleGroup) => void;
   onSaveSchedule: (schedule: ScheduleGroup) => void;
   onPrintSchedule: (schedule: ScheduleGroup) => void;
+  printTextByScheduleId: Record<string, string>;
+  onChangePrintText: (scheduleId: string, value: string) => void;
   savingId?: string | null;
   guides: Guide[];
   drivers: Driver[];
@@ -87,7 +92,7 @@ export function ScheduleAccordionCards({
               </div>
               {open ? (
                 <div className="mt-4 space-y-3 rounded-lg border border-emerald-300 bg-slate-50 p-3">
-                  <div className="flex items-center gap-3 border-b border-emerald-100 pb-3">
+                  <div className="flex flex-wrap items-center gap-3 border-b border-emerald-100 pb-3">
                     <Button
                       type="button"
                       className="bg-orange-600 text-white ring-1 ring-orange-700/30 hover:bg-orange-700 hover:shadow-md"
@@ -114,6 +119,13 @@ export function ScheduleAccordionCards({
                       <Printer className="h-4 w-4" />
                       인쇄
                     </Button>
+                    <Input
+                      className="h-9 min-w-[220px] flex-1"
+                      value={printTextByScheduleId[schedule.id] ?? ""}
+                      onChange={(event) => onChangePrintText(schedule.id, event.target.value)}
+                      onClick={(event) => event.stopPropagation()}
+                      placeholder="인쇄 문구 직접 입력"
+                    />
                     <div className="text-xs font-bold text-emerald-800">상세 입력 영역</div>
                   </div>
                   <ScheduleOperationSection schedule={schedule} guides={guides} drivers={drivers} onChange={onChangeSchedule} />

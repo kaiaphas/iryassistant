@@ -4,6 +4,7 @@ import * as React from "react";
 import { ChevronDown, ChevronRight, Printer, Save } from "lucide-react";
 import type { Driver, Guide, Hotel, Restaurant, ScheduleGroup } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { TourTypeBadge } from "@/components/common/TourTypeBadge";
@@ -25,6 +26,8 @@ export function ScheduleAccordionTable({
   onChangeSchedule,
   onSaveSchedule,
   onPrintSchedule,
+  printTextByScheduleId,
+  onChangePrintText,
   savingId,
   guides,
   drivers,
@@ -41,6 +44,8 @@ export function ScheduleAccordionTable({
   onChangeSchedule: (schedule: ScheduleGroup) => void;
   onSaveSchedule: (schedule: ScheduleGroup) => void;
   onPrintSchedule: (schedule: ScheduleGroup) => void;
+  printTextByScheduleId: Record<string, string>;
+  onChangePrintText: (scheduleId: string, value: string) => void;
   savingId?: string | null;
   guides: Guide[];
   drivers: Driver[];
@@ -122,7 +127,7 @@ export function ScheduleAccordionTable({
                     <TableRow className="border-b-2 border-b-emerald-200 bg-slate-100 hover:bg-slate-100">
                       <TableCell colSpan={16} className="p-3">
                         <div className="rounded-lg border border-emerald-300 bg-white p-3 shadow-inner">
-                          <div className="mb-3 flex items-center gap-3 border-b border-emerald-100 pb-3">
+                          <div className="mb-3 flex flex-wrap items-center gap-3 border-b border-emerald-100 pb-3">
                             <Button
                               type="button"
                               className="bg-orange-600 text-white ring-1 ring-orange-700/30 hover:bg-orange-700 hover:shadow-md"
@@ -149,6 +154,13 @@ export function ScheduleAccordionTable({
                               <Printer className="h-4 w-4" />
                               인쇄
                             </Button>
+                            <Input
+                              className="h-9 w-[280px]"
+                              value={printTextByScheduleId[schedule.id] ?? ""}
+                              onChange={(event) => onChangePrintText(schedule.id, event.target.value)}
+                              onClick={(event) => event.stopPropagation()}
+                              placeholder="인쇄 문구 직접 입력"
+                            />
                             <div className="text-xs font-bold text-emerald-800">상세 입력 영역</div>
                           </div>
                           <div className="space-y-2">

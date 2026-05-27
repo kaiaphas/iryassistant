@@ -68,6 +68,7 @@ export function ReservationsClient({
   const [saveMessage, setSaveMessage] = React.useState<string>("");
   const [dirtyScheduleIds, setDirtyScheduleIds] = React.useState<Set<string>>(() => new Set());
   const [printSchedule, setPrintSchedule] = React.useState<ScheduleGroup | null>(null);
+  const [printTextByScheduleId, setPrintTextByScheduleId] = React.useState<Record<string, string>>({});
   const [printQueued, setPrintQueued] = React.useState(false);
   const [printMounted, setPrintMounted] = React.useState(false);
   const [page, setPage] = React.useState(1);
@@ -241,7 +242,8 @@ export function ReservationsClient({
   }, [fitPrintTitle, printQueued, printSchedule]);
 
   function printScheduleName(schedule: ScheduleGroup) {
-    setPrintSchedule(schedule);
+    const printText = printTextByScheduleId[schedule.id]?.trim();
+    setPrintSchedule(printText ? { ...schedule, productName: printText } : schedule);
     setPrintQueued(true);
   }
 
@@ -268,6 +270,8 @@ export function ReservationsClient({
           onChangeSchedule={updateSchedule}
           onSaveSchedule={saveSchedule}
           onPrintSchedule={printScheduleName}
+          printTextByScheduleId={printTextByScheduleId}
+          onChangePrintText={(scheduleId, value) => setPrintTextByScheduleId((current) => ({ ...current, [scheduleId]: value }))}
           savingId={savingId}
           guides={guides}
           drivers={drivers}
@@ -285,6 +289,8 @@ export function ReservationsClient({
           onChangeSchedule={updateSchedule}
           onSaveSchedule={saveSchedule}
           onPrintSchedule={printScheduleName}
+          printTextByScheduleId={printTextByScheduleId}
+          onChangePrintText={(scheduleId, value) => setPrintTextByScheduleId((current) => ({ ...current, [scheduleId]: value }))}
           savingId={savingId}
           guides={guides}
           drivers={drivers}
