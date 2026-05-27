@@ -36,6 +36,17 @@ function sortSchedules(left: ScheduleGroup, right: ScheduleGroup) {
   return left.busNo.localeCompare(right.busNo, "ko", { numeric: true });
 }
 
+function formatBusSignText(value: string) {
+  const text = value.trim();
+  if (text.includes("\n")) return text;
+  if (text.includes(" ")) return text.replaceAll(" ", "\n");
+  if (text.length >= 5) {
+    const mid = Math.ceil(text.length / 2);
+    return `${text.slice(0, mid)}\n${text.slice(mid)}`;
+  }
+  return text;
+}
+
 const pageSize = 20;
 
 export function ReservationsClient({
@@ -60,6 +71,7 @@ export function ReservationsClient({
   const [printQueued, setPrintQueued] = React.useState(false);
   const [printMounted, setPrintMounted] = React.useState(false);
   const [page, setPage] = React.useState(1);
+  const printRootRef = React.useRef<HTMLDivElement | null>(null);
   const printTitleRef = React.useRef<HTMLDivElement | null>(null);
   const printTitleTextRef = React.useRef<HTMLSpanElement | null>(null);
   const [filters, setFilters] = React.useState<ReservationFilterState>({
@@ -185,20 +197,24 @@ export function ReservationsClient({
   const fitPrintTitle = React.useCallback(() => {
     const title = printTitleRef.current;
     const titleText = printTitleTextRef.current;
-    if (!title || !titleText) return;
+    const printRoot = printRootRef.current;
+    if (!title || !titleText || !printRoot) return;
+
+    printRoot.style.display = "block";
 
     const containerWidth = title.clientWidth;
     const containerHeight = title.clientHeight;
 
     let minSize = 10;
-    let maxSize = 400;
+    let maxSize = 500;
     let optimalSize = 10;
 
     while (minSize <= maxSize) {
       const mid = Math.floor((minSize + maxSize) / 2);
       titleText.style.fontSize = `${mid}px`;
+      const rect = titleText.getBoundingClientRect();
 
-      if (titleText.scrollWidth <= containerWidth && titleText.scrollHeight <= containerHeight) {
+      if (rect.width <= containerWidth && rect.height <= containerHeight) {
         optimalSize = mid;
         minSize = mid + 1;
       } else {
@@ -206,7 +222,8 @@ export function ReservationsClient({
       }
     }
 
-    titleText.style.fontSize = `${Math.floor(optimalSize * 0.98)}px`;
+    titleText.style.fontSize = `${Math.floor(optimalSize * 0.95)}px`;
+    printRoot.style.display = "";
   }, []);
 
   React.useEffect(() => {
@@ -278,11 +295,11 @@ export function ReservationsClient({
           <TablePagination totalCount={filtered.length} page={page} onPageChange={setPage} unit="개" />
         </div>
         {printMounted && printSchedule ? createPortal(
-          <div className="schedule-print-root" aria-hidden="true">
+          <div className="schedule-print-root" ref={printRootRef} aria-hidden="true">
             <div className="schedule-print-page">
               <div className="schedule-print-title" ref={printTitleRef}>
                 <span className="schedule-print-title-text" ref={printTitleTextRef}>
-                  {printSchedule.productName}
+                  {formatBusSignText(printSchedule.productName)}
                 </span>
               </div>
               <div className="schedule-print-logo-wrap">

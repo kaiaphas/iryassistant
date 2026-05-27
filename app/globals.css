@@ -74,8 +74,8 @@ textarea {
 }
 
 .schedule-print-title-text {
-  display: block;
-  width: 100%;
+  display: inline-block;
+  width: auto;
   color: #0014ff;
   font-family: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
   font-weight: 900;
