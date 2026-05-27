@@ -134,6 +134,7 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
   const totalPages = Math.max(1, Math.ceil(filtered.length / tablePageSize));
   const visibleItems = sortedItems.slice((page - 1) * tablePageSize, page * tablePageSize);
   const totalRefund = filtered.reduce((sum, item) => sum + item.refundRequestAmount, 0);
+  const pendingRefundCount = items.filter((item) => item.status !== "환불완료").length;
   const hasUnsavedRefundChanges = drafts.length > 0 || Boolean(draft) || Object.keys(paymentDrafts).length > 0 || Boolean(editingPayment);
 
   React.useEffect(() => {
@@ -178,6 +179,13 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
     const today = getKstDateInput();
     setStartDate(addDays(today, -days));
     setEndDate(today);
+  }
+
+  function showPendingRefunds() {
+    setStartDate("");
+    setEndDate("");
+    setQuery("");
+    setStatus("환불신청");
   }
 
   function toggleOpen(id: string) {
@@ -467,10 +475,11 @@ export function RefundTable({ refunds, activeAdminUsers }: { refunds: RefundItem
         {message ? <p className="mt-3 text-sm text-slate-600">{message}</p> : null}
       </div>
 
-      <div className="grid gap-2 md:grid-cols-3">
+      <div className="grid gap-2 md:grid-cols-4">
         <SummaryCard label="총 건수" value={`${filtered.length}건`} />
         <SummaryCard label="환불요청금액 합계" value={formatCurrency(totalRefund)} strong />
         <SummaryCard label="환불완료" value={`${filtered.filter((item) => item.status === "환불완료").length}건`} />
+        <SummaryCard label="미처리건" value={`${pendingRefundCount}건`} onClick={showPendingRefunds} active={status === "환불신청" && !startDate && !endDate && !query} />
       </div>
 
       <div className="overflow-hidden rounded-lg border bg-white shadow-soft">
@@ -575,11 +584,26 @@ function DateFilterInput({ label, value, onChange }: { label: string; value: str
   );
 }
 
-function SummaryCard({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
-  return (
-    <div className="rounded-lg border bg-white p-4 shadow-soft">
+function SummaryCard({ label, value, strong = false, active = false, onClick }: { label: string; value: string; strong?: boolean; active?: boolean; onClick?: () => void }) {
+  const className = `rounded-lg border bg-white p-4 text-left shadow-soft ${onClick ? "cursor-pointer transition hover:border-emerald-500 hover:bg-emerald-50/40" : ""} ${active ? "border-emerald-600 bg-emerald-50" : ""}`;
+  const content = (
+    <>
       <p className="text-sm text-slate-500">{label}</p>
       <p className={`mt-1 text-2xl font-bold ${strong ? "text-rose-700" : "text-slate-950"}`}>{value}</p>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button type="button" className={className} onClick={onClick}>
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className={className}>
+      {content}
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { GuideForm } from "@/components/guides/GuideForm";
 import { TablePagination, tablePageSize } from "@/components/common/TablePagination";
 import { SortableTableHead } from "@/components/common/SortableTableHead";
 import { useTableSort } from "@/lib/table-sort";
+import { maskResidentRegistrationNumber } from "@/lib/birth-date";
 
 export function GuideTable({ guides }: { guides: Guide[] }) {
   const [items, setItems] = React.useState(guides);
@@ -120,7 +121,7 @@ export function GuideTable({ guides }: { guides: Guide[] }) {
               <TableRow>
                 <SortableTableHead label="이름" className="w-[120px] text-center" active={sortApplied && sortKey === "name"} direction={sortDirection} onClick={() => toggleSort("name")} />
                 <SortableTableHead label="전화번호" className="w-[150px] text-center" active={sortApplied && sortKey === "phone"} direction={sortDirection} onClick={() => toggleSort("phone")} />
-                <SortableTableHead label="생년월일" className="w-[120px] text-center" active={sortApplied && sortKey === "birthDate"} direction={sortDirection} onClick={() => toggleSort("birthDate")} />
+                <SortableTableHead label="주민번호" className="w-[130px] text-center" active={sortApplied && sortKey === "birthDate"} direction={sortDirection} onClick={() => toggleSort("birthDate")} />
                 <SortableTableHead label="계좌번호" className="w-[180px] text-center" active={sortApplied && sortKey === "bankAccount"} direction={sortDirection} onClick={() => toggleSort("bankAccount")} />
                 <SortableTableHead label="주중" className="w-[80px] text-center" active={sortApplied && sortKey === "availableWeekday"} direction={sortDirection} onClick={() => toggleSort("availableWeekday")} />
                 <SortableTableHead label="주말" className="w-[80px] text-center" active={sortApplied && sortKey === "availableWeekend"} direction={sortDirection} onClick={() => toggleSort("availableWeekend")} />
@@ -135,7 +136,7 @@ export function GuideTable({ guides }: { guides: Guide[] }) {
                 <TableRow key={guide.id}>
                   <TableCell className="whitespace-nowrap text-center font-semibold">{guide.name}</TableCell>
                   <TableCell className="whitespace-nowrap text-center">{guide.phone}</TableCell>
-                  <TableCell className="whitespace-nowrap text-center">{guide.birthDate || "-"}</TableCell>
+                  <TableCell className="whitespace-nowrap text-center">{maskResidentRegistrationNumber(guide.birthDate)}</TableCell>
                   <TableCell className="whitespace-nowrap text-center">{guide.bankAccount || "-"}</TableCell>
                   <TableCell className="text-center">{guide.availableWeekday ? "가능" : "-"}</TableCell>
                   <TableCell className="text-center">{guide.availableWeekend ? "가능" : "-"}</TableCell>

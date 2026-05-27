@@ -12,6 +12,7 @@ import { DriverForm } from "@/components/drivers/DriverForm";
 import { TablePagination, tablePageSize } from "@/components/common/TablePagination";
 import { SortableTableHead } from "@/components/common/SortableTableHead";
 import { useTableSort } from "@/lib/table-sort";
+import { maskResidentRegistrationNumber } from "@/lib/birth-date";
 
 export function DriverTable({ drivers }: { drivers: Driver[] }) {
   const [items, setItems] = React.useState(drivers);
@@ -107,7 +108,7 @@ export function DriverTable({ drivers }: { drivers: Driver[] }) {
                 <SortableTableHead label="이름" className="w-[120px] text-center" active={sortApplied && sortKey === "name"} direction={sortDirection} onClick={() => toggleSort("name")} />
                 <SortableTableHead label="인승" className="w-[90px] text-center" active={sortApplied && sortKey === "capacity"} direction={sortDirection} onClick={() => toggleSort("capacity")} />
                 <SortableTableHead label="전화번호" className="w-[150px] text-center" active={sortApplied && sortKey === "phone"} direction={sortDirection} onClick={() => toggleSort("phone")} />
-                <SortableTableHead label="생년월일" className="w-[120px] text-center" active={sortApplied && sortKey === "birthDate"} direction={sortDirection} onClick={() => toggleSort("birthDate")} />
+                <SortableTableHead label="주민번호" className="w-[130px] text-center" active={sortApplied && sortKey === "birthDate"} direction={sortDirection} onClick={() => toggleSort("birthDate")} />
                 <SortableTableHead label="계좌번호" className="w-[180px] text-center" active={sortApplied && sortKey === "bankAccount"} direction={sortDirection} onClick={() => toggleSort("bankAccount")} />
                 <SortableTableHead label="회사" className="w-[160px] text-center" active={sortApplied && sortKey === "company"} direction={sortDirection} onClick={() => toggleSort("company")} />
                 <SortableTableHead label="구분" className="w-[90px] text-center" active={sortApplied && sortKey === "driverType"} direction={sortDirection} onClick={() => toggleSort("driverType")} />
@@ -123,7 +124,7 @@ export function DriverTable({ drivers }: { drivers: Driver[] }) {
                   <TableCell className="whitespace-nowrap text-center font-semibold">{driver.name}</TableCell>
                   <TableCell className="whitespace-nowrap text-center">{driver.capacity}</TableCell>
                   <TableCell className="whitespace-nowrap text-center">{driver.phone}</TableCell>
-                  <TableCell className="whitespace-nowrap text-center">{driver.birthDate || "-"}</TableCell>
+                  <TableCell className="whitespace-nowrap text-center">{maskResidentRegistrationNumber(driver.birthDate)}</TableCell>
                   <TableCell className="whitespace-nowrap text-center">{driver.bankAccount || "-"}</TableCell>
                   <TableCell className="max-w-[160px] truncate text-center" title={driver.company}>{driver.company}</TableCell>
                   <TableCell className="whitespace-nowrap text-center">{driver.driverType}</TableCell>

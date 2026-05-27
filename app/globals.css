@@ -41,3 +41,80 @@ textarea {
   background: #cbd5d1;
   border-radius: 999px;
 }
+
+.schedule-print-root {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 210mm;
+  height: 297mm;
+  overflow: hidden;
+  background: white;
+  color: #0047ff;
+}
+
+.schedule-print-page {
+  display: flex;
+  width: 210mm;
+  height: 297mm;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26mm 16mm 18mm;
+  background: white;
+}
+
+.schedule-print-title {
+  display: flex;
+  width: 178mm;
+  height: 210mm;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  text-align: center;
+  font-weight: 900;
+  line-height: 1.12;
+  letter-spacing: 0;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+.schedule-print-logo-wrap {
+  display: flex;
+  width: 178mm;
+  height: 34mm;
+  align-items: center;
+  justify-content: center;
+}
+
+.schedule-print-logo {
+  width: 178mm;
+  height: auto;
+  max-height: 34mm;
+  object-fit: contain;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .schedule-print-root,
+  .schedule-print-root * {
+    visibility: visible;
+  }
+
+  .schedule-print-root {
+    left: 0;
+    top: 0;
+    width: 210mm;
+    height: 297mm;
+    overflow: hidden;
+  }
+}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { deleteGuideFromSupabase, upsertGuideToSupabase } from "@/repositories/supabase/master-repository";
 import type { Guide } from "@/lib/types";
-import { isValidPartialBirthDate } from "@/lib/birth-date";
+import { isValidResidentRegistrationNumber } from "@/lib/birth-date";
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,8 +9,8 @@ export async function POST(request: NextRequest) {
     if (!guide.name?.trim()) {
       return NextResponse.json({ message: "가이드명을 입력해주세요." }, { status: 400 });
     }
-    if (!isValidPartialBirthDate(guide.birthDate?.trim() ?? "")) {
-      return NextResponse.json({ message: "생년월일은 연도, 연월, 연월일 형식으로 입력해주세요." }, { status: 400 });
+    if (!isValidResidentRegistrationNumber(guide.birthDate?.trim() ?? "")) {
+      return NextResponse.json({ message: "주민번호는 000000-0000000 형식으로 입력해주세요." }, { status: 400 });
     }
 
     const saved = await upsertGuideToSupabase({

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import type { Driver, Guide, Hotel, Restaurant, ScheduleGroup } from "@/lib/types";
 import { CalendarDays } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -55,7 +56,10 @@ export function ReservationsClient({
   const [savingId, setSavingId] = React.useState<string | null>(null);
   const [saveMessage, setSaveMessage] = React.useState<string>("");
   const [dirtyScheduleIds, setDirtyScheduleIds] = React.useState<Set<string>>(() => new Set());
+  const [printSchedule, setPrintSchedule] = React.useState<ScheduleGroup | null>(null);
+  const [printQueued, setPrintQueued] = React.useState(false);
   const [page, setPage] = React.useState(1);
+  const printTitleRef = React.useRef<HTMLDivElement | null>(null);
   const [filters, setFilters] = React.useState<ReservationFilterState>({
     query: "",
     startDate: defaultDateRange.startDate,
@@ -173,6 +177,38 @@ export function ReservationsClient({
     }
   }
 
+  const fitPrintTitle = React.useCallback(() => {
+    const title = printTitleRef.current;
+    if (!title) return;
+
+    let fontSize = 128;
+    title.style.fontSize = `${fontSize}px`;
+
+    while (fontSize > 42 && (title.scrollWidth > title.clientWidth || title.scrollHeight > title.clientHeight)) {
+      fontSize -= 2;
+      title.style.fontSize = `${fontSize}px`;
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (!printQueued || !printSchedule) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      fitPrintTitle();
+      window.setTimeout(() => {
+        window.print();
+        setPrintQueued(false);
+      }, 100);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [fitPrintTitle, printQueued, printSchedule]);
+
+  function printScheduleName(schedule: ScheduleGroup) {
+    setPrintSchedule(schedule);
+    setPrintQueued(true);
+  }
+
   return (
     <div className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-1">
@@ -195,6 +231,7 @@ export function ReservationsClient({
           onToggle={toggleSchedule}
           onChangeSchedule={updateSchedule}
           onSaveSchedule={saveSchedule}
+          onPrintSchedule={printScheduleName}
           savingId={savingId}
           guides={guides}
           drivers={drivers}
@@ -211,6 +248,7 @@ export function ReservationsClient({
           onToggle={toggleSchedule}
           onChangeSchedule={updateSchedule}
           onSaveSchedule={saveSchedule}
+          onPrintSchedule={printScheduleName}
           savingId={savingId}
           guides={guides}
           drivers={drivers}
@@ -220,6 +258,18 @@ export function ReservationsClient({
         <div className="overflow-hidden rounded-lg border bg-white">
           <TablePagination totalCount={filtered.length} page={page} onPageChange={setPage} unit="개" />
         </div>
+        {printSchedule ? (
+          <div className="schedule-print-root" aria-hidden="true">
+            <div className="schedule-print-page">
+              <div className="schedule-print-title" ref={printTitleRef}>
+                {printSchedule.productName}
+              </div>
+              <div className="schedule-print-logo-wrap">
+                <Image className="schedule-print-logo" src="/incheon-royal-tour-logo.jpg" alt="인천로열투어" width={1059} height={212} priority />
+              </div>
+            </div>
+          </div>
+        ) : null}
     </div>
   );
 }

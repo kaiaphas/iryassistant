@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, ChevronRight, Save } from "lucide-react";
+import { ChevronDown, ChevronRight, Printer, Save } from "lucide-react";
 import type { Driver, Guide, Hotel, Restaurant, ScheduleGroup } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
@@ -24,6 +24,7 @@ export function ScheduleAccordionTable({
   onToggle,
   onChangeSchedule,
   onSaveSchedule,
+  onPrintSchedule,
   savingId,
   guides,
   drivers,
@@ -39,6 +40,7 @@ export function ScheduleAccordionTable({
   onToggle: (id: string) => void;
   onChangeSchedule: (schedule: ScheduleGroup) => void;
   onSaveSchedule: (schedule: ScheduleGroup) => void;
+  onPrintSchedule: (schedule: ScheduleGroup) => void;
   savingId?: string | null;
   guides: Guide[];
   drivers: Driver[];
@@ -134,6 +136,18 @@ export function ScheduleAccordionTable({
                             >
                               {savingId === schedule.id ? <LoadingSpinner /> : <Save className="h-4 w-4" />}
                               {savingId === schedule.id ? "저장 중" : "저장"}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                onPrintSchedule(schedule);
+                              }}
+                            >
+                              <Printer className="h-4 w-4" />
+                              인쇄
                             </Button>
                             <div className="text-xs font-bold text-emerald-800">상세 입력 영역</div>
                           </div>

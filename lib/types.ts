@@ -129,6 +129,28 @@ export type Driver = {
   memo?: string;
 };
 
+export type SettlementType = "GUIDE" | "DRIVER";
+
+export type SettlementItem = {
+  id: string;
+  settlementMonth: string;
+  settlementType: SettlementType;
+  scheduleId: string;
+  personId: string;
+  personName: string;
+  personPhone?: string;
+  bankAccount?: string;
+  tourDate: string;
+  tourType: "당일" | "숙박";
+  productName: string;
+  busCompany?: string;
+  amount: number;
+  withholdingRate: number;
+  withholdingAmount: number;
+  netAmount: number;
+  memo?: string;
+};
+
 export type Restaurant = {
   id: string;
   tourType: "당일" | "숙박";

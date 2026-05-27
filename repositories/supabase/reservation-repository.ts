@@ -14,8 +14,10 @@ type ReservationScheduleOverviewRow = {
   vehicle_no: string | null;
   bus_company: string | null;
   vehicle_capacity: string | null;
+  guide_id: string | null;
   guide_name: string | null;
   guide_phone: string | null;
+  driver_id: string | null;
   driver_name: string | null;
   driver_phone: string | null;
   restaurant_names: string | null;
@@ -64,7 +66,7 @@ type HotelRoomAssignmentRow = {
 };
 
 const overviewSelectWithContacts =
-  "id,source_schedule_key,tour_date,tour_type_label,product_code,product_name,reservation_count,departure_time,return_time,vehicle_no,bus_company,vehicle_capacity,guide_name,guide_phone,driver_name,driver_phone,restaurant_names,restaurant_status_labels,hotel_name,hotel_status_label,room_assignments,progress_status_label,memo,notice_memo";
+  "id,source_schedule_key,tour_date,tour_type_label,product_code,product_name,reservation_count,departure_time,return_time,vehicle_no,bus_company,vehicle_capacity,guide_id,guide_name,guide_phone,driver_id,driver_name,driver_phone,restaurant_names,restaurant_status_labels,hotel_name,hotel_status_label,room_assignments,progress_status_label,memo,notice_memo";
 
 const overviewSelectFallback =
   "id,source_schedule_key,tour_date,tour_type_label,product_code,product_name,departure_time,return_time,vehicle_no,vehicle_capacity,guide_name,driver_name,restaurant_names,restaurant_status_labels,hotel_name,hotel_status_label,room_assignments,progress_status_label,memo,notice_memo";
@@ -193,8 +195,8 @@ function mapOverviewRow(row: ReservationScheduleOverviewRow): ScheduleGroup {
       busCompany: row.bus_company ?? "",
       seatCount: Number.parseInt(vehicleLabel, 10) || 0,
     },
-    guide: { name: row.guide_name ?? "-", phone: row.guide_phone ?? undefined },
-    driver: { name: row.driver_name ?? "-", phone: row.driver_phone ?? undefined },
+    guide: { id: row.guide_id ?? undefined, name: row.guide_name ?? "-", phone: row.guide_phone ?? undefined },
+    driver: { id: row.driver_id ?? undefined, name: row.driver_name ?? "-", phone: row.driver_phone ?? undefined },
     restaurant: { name: row.restaurant_names ?? "-" },
     hotel: row.hotel_name ? { name: row.hotel_name } : undefined,
     restaurantBookings: parseRestaurantBookings(row),
@@ -224,7 +226,9 @@ function chunk<T>(items: T[], size: number) {
 function needsLegacyOverviewFallback(message: string | undefined) {
   return Boolean(
     message?.includes("bus_company")
+    || message?.includes("guide_id")
     || message?.includes("guide_phone")
+    || message?.includes("driver_id")
     || message?.includes("driver_phone")
     || message?.includes("reservation_count"),
   );
@@ -256,7 +260,9 @@ async function fetchOverviewRows(
     const page = ((data ?? []) as Partial<ReservationScheduleOverviewRow>[]).map((row) => ({
       ...row,
       bus_company: withFallbackColumns ? row.bus_company : null,
+      guide_id: withFallbackColumns ? row.guide_id : null,
       guide_phone: withFallbackColumns ? row.guide_phone : null,
+      driver_id: withFallbackColumns ? row.driver_id : null,
       driver_phone: withFallbackColumns ? row.driver_phone : null,
     })) as ReservationScheduleOverviewRow[];
 

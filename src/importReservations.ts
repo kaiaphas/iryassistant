@@ -27,6 +27,75 @@ function toNullableString(value: unknown) {
   return String(value).trim();
 }
 
+function normalizePersonName(value: string | null) {
+  return value?.replace(/\s+/g, " ").trim() || null;
+}
+
+function getPersonMatchKey(value: string | null) {
+  return normalizePersonName(value)?.replace(/\s+/g, "") ?? null;
+}
+
+function parsePersonText(value: unknown) {
+  const text = toNullableString(value);
+  if (!text) return { name: null, phone: null };
+
+  const phoneMatch = text.match(/(?:\+?82[-.\s]?)?0\d{1,2}[-.\s]?\d{3,4}[-.\s]?\d{4}/);
+  const phone = phoneMatch?.[0].replace(/\s+/g, "-") ?? null;
+  const name = normalizePersonName(
+    text
+      .replace(/(?:\+?82[-.\s]?)?0\d{1,2}[-.\s]?\d{3,4}[-.\s]?\d{4}/g, "")
+      .replace(/[()[\]{}]/g, " ")
+      .replace(/[\/,|·]+/g, " ")
+      .replace(/\s*\d+$/, ""),
+  );
+
+  return { name: name || text, phone };
+}
+
+type MasterPerson = {
+  id: string;
+  name: string;
+  phone: string | null;
+};
+
+function createUniquePersonMap(people: MasterPerson[]) {
+  const map = new Map<string, MasterPerson | null>();
+
+  for (const person of people) {
+    const key = getPersonMatchKey(person.name);
+    if (!key) continue;
+
+    if (map.has(key)) {
+      map.set(key, null);
+      continue;
+    }
+
+    map.set(key, person);
+  }
+
+  return map;
+}
+
+function applyMasterPerson(personText: unknown, masterMap: Map<string, MasterPerson | null>) {
+  const parsed = parsePersonText(personText);
+  const key = getPersonMatchKey(parsed.name);
+  const master = key ? masterMap.get(key) : undefined;
+
+  if (!master) {
+    return {
+      id: null,
+      name: parsed.name,
+      phone: parsed.phone,
+    };
+  }
+
+  return {
+    id: master.id,
+    name: master.name,
+    phone: master.phone ?? parsed.phone,
+  };
+}
+
 function normalizeDate(value: unknown) {
   const text = toNullableString(value);
   if (!text) throw new Error("tour_date 누락");
@@ -151,7 +220,14 @@ function parseRestaurantBookings(row: MySqlScheduleRow, scheduleId: string) {
     });
 }
 
-export function normalizeScheduleRow(row: MySqlScheduleRow, index: number): NormalizedSchedule {
+export function normalizeScheduleRow(
+  row: MySqlScheduleRow,
+  index: number,
+  masterRefs?: {
+    guides: Map<string, MasterPerson | null>;
+    drivers: Map<string, MasterPerson | null>;
+  },
+): NormalizedSchedule {
   const sourceScheduleKey = toNullableString(row.source_schedule_key);
   if (!sourceScheduleKey) {
     throw new Error("source_schedule_key 누락");
@@ -167,6 +243,8 @@ export function normalizeScheduleRow(row: MySqlScheduleRow, index: number): Norm
   const tourType = normalizeTourType(row.tour_type, hotelName, productName, row.nights);
   const restaurants = parseRestaurantBookings(row, scheduleId);
   const hotelStatus = normalizeWorkStatus(row.hotel_status);
+  const guide = applyMasterPerson(row.guide_name, masterRefs?.guides ?? new Map());
+  const driver = applyMasterPerson(row.driver_name, masterRefs?.drivers ?? new Map());
   const hotel = tourType === "STAY" && hotelName
     ? {
         id: deterministicUuid("hotel", scheduleId),
@@ -198,8 +276,12 @@ export function normalizeScheduleRow(row: MySqlScheduleRow, index: number): Norm
     vehicle_no: toNullableString(row.vehicle_no),
     bus_company: toNullableString(row.bus_company),
     vehicle_capacity: toNullableString(row.vehicle_capacity),
-    guide_name: toNullableString(row.guide_name),
-    driver_name: toNullableString(row.driver_name),
+    guide_id: guide.id,
+    guide_name: guide.name,
+    guide_phone: guide.phone,
+    driver_id: driver.id,
+    driver_name: driver.name,
+    driver_phone: driver.phone,
     progress_status: normalizeProgressStatus(row.progress_status),
     memo: toNullableString(row.schedule_memo),
     notice_memo: toNullableString(row.notice_memo),
@@ -212,7 +294,13 @@ export function normalizeScheduleRow(row: MySqlScheduleRow, index: number): Norm
   };
 }
 
-export function validateRows(rows: MySqlScheduleRow[]): ValidationResult {
+export function validateRows(
+  rows: MySqlScheduleRow[],
+  masterRefs?: {
+    guides: Map<string, MasterPerson | null>;
+    drivers: Map<string, MasterPerson | null>;
+  },
+): ValidationResult {
   const validRows: NormalizedSchedule[] = [];
   const invalidRows: ValidationResult["invalidRows"] = [];
   const rowsBySchedule = new Map<string, MySqlScheduleRow>();
@@ -231,7 +319,7 @@ export function validateRows(rows: MySqlScheduleRow[]): ValidationResult {
 
   Array.from(rowsBySchedule.values()).forEach((row, index) => {
     try {
-      validRows.push(normalizeScheduleRow(row, index));
+      validRows.push(normalizeScheduleRow(row, index, masterRefs));
     } catch (error) {
       invalidRows.push({
         row,
@@ -241,6 +329,26 @@ export function validateRows(rows: MySqlScheduleRow[]): ValidationResult {
   });
 
   return { validRows, invalidRows };
+}
+
+async function fetchMasterRefs() {
+  const [{ data: guideData, error: guideError }, { data: driverData, error: driverError }] = await Promise.all([
+    supabase.from("master_guides").select("id,name,phone"),
+    supabase.from("master_drivers").select("id,name,phone"),
+  ]);
+
+  if (guideError) {
+    throw new Error(`master_guides 조회 실패: ${getSupabaseErrorMessage(guideError)}`);
+  }
+
+  if (driverError) {
+    throw new Error(`master_drivers 조회 실패: ${getSupabaseErrorMessage(driverError)}`);
+  }
+
+  return {
+    guides: createUniquePersonMap((guideData ?? []) as MasterPerson[]),
+    drivers: createUniquePersonMap((driverData ?? []) as MasterPerson[]),
+  };
 }
 
 export async function createImportBatch(batchId: string, fileName?: string | null) {
@@ -280,7 +388,11 @@ async function upsertSourceSchedules(rows: NormalizedSchedule[]) {
     bus_company: row.bus_company,
     vehicle_capacity: row.vehicle_capacity,
     guide_name: row.guide_name,
+    guide_id: row.guide_id,
+    guide_phone: row.guide_phone,
     driver_name: row.driver_name,
+    driver_id: row.driver_id,
+    driver_phone: row.driver_phone,
     progress_status: row.progress_status,
     memo: row.memo,
     notice_memo: row.notice_memo,
@@ -428,7 +540,8 @@ export async function importReservationSchedules(rows: MySqlScheduleRow[], mode:
       return { batchId, totalCount: 0, successCount: 0, failCount: 0, deactivatedCount: 0 };
     }
 
-    const validation = validateRows(rows);
+    const masterRefs = await fetchMasterRefs();
+    const validation = validateRows(rows, masterRefs);
     await upsertSourceSchedules(validation.validRows);
     await syncSourceRestaurantBookings(validation.validRows);
     await syncSourceHotelBookings(validation.validRows);

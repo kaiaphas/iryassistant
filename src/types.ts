@@ -101,8 +101,12 @@ export type NormalizedSchedule = {
   vehicle_no: string | null;
   bus_company: string | null;
   vehicle_capacity: string | null;
+  guide_id: string | null;
   guide_name: string | null;
+  guide_phone: string | null;
+  driver_id: string | null;
   driver_name: string | null;
+  driver_phone: string | null;
   progress_status: ScheduleProgressStatus;
   memo: string | null;
   notice_memo: string | null;

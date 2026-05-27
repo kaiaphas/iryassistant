@@ -1,23 +1,34 @@
-export function formatBirthDateInput(value: string) {
-  const digits = value.replace(/\D/g, "").slice(0, 8);
+export function formatResidentRegistrationNumberInput(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 13);
 
-  if (digits.length <= 4) return digits;
-  if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
-  return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
+  if (digits.length <= 6) return digits;
+  return `${digits.slice(0, 6)}-${digits.slice(6)}`;
 }
 
-export function isValidPartialBirthDate(value: string) {
+export function maskResidentRegistrationNumber(value: string | undefined) {
+  if (!value) return "-";
+
+  const digits = value.replace(/\D/g, "");
+  if (digits.length !== 13) return value;
+
+  return `${digits.slice(0, 6)}-${digits.slice(6, 7)}******`;
+}
+
+export function isValidResidentRegistrationNumber(value: string) {
   if (!value) return true;
-  if (!/^\d{4}(-\d{2})?(-\d{2})?$/.test(value)) return false;
+  if (!/^\d{6}-\d{7}$/.test(value)) return false;
 
-  const [yearText, monthText, dayText] = value.split("-");
-  const year = Number(yearText);
-  if (year < 1900 || year > 2100) return false;
-  if (!monthText) return true;
+  const digits = value.replace(/\D/g, "");
+  const yearText = digits.slice(0, 2);
+  const monthText = digits.slice(2, 4);
+  const dayText = digits.slice(4, 6);
+  const genderCode = Number(digits.slice(6, 7));
+  if (genderCode < 1 || genderCode > 8) return false;
 
+  const century = genderCode <= 2 || genderCode === 5 || genderCode === 6 ? 1900 : 2000;
+  const year = century + Number(yearText);
   const month = Number(monthText);
   if (month < 1 || month > 12) return false;
-  if (!dayText) return true;
 
   const day = Number(dayText);
   const lastDay = new Date(year, month, 0).getDate();

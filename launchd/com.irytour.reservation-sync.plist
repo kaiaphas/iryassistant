@@ -28,9 +28,9 @@
   <true/>
 
   <key>StandardOutPath</key>
-  <string>/Users/psh/Documents/iryAssistant/logs/reservation-sync.out.log</string>
+  <string>/Users/psh/Library/Logs/irytour/reservation-sync.out.log</string>
 
   <key>StandardErrorPath</key>
-  <string>/Users/psh/Documents/iryAssistant/logs/reservation-sync.err.log</string>
+  <string>/Users/psh/Library/Logs/irytour/reservation-sync.err.log</string>
 </dict>
 </plist>
