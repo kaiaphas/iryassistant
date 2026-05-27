@@ -61,6 +61,7 @@ export function ReservationsClient({
   const [printMounted, setPrintMounted] = React.useState(false);
   const [page, setPage] = React.useState(1);
   const printTitleRef = React.useRef<HTMLDivElement | null>(null);
+  const printTitleTextRef = React.useRef<HTMLSpanElement | null>(null);
   const [filters, setFilters] = React.useState<ReservationFilterState>({
     query: "",
     startDate: defaultDateRange.startDate,
@@ -183,15 +184,20 @@ export function ReservationsClient({
 
   const fitPrintTitle = React.useCallback(() => {
     const title = printTitleRef.current;
-    if (!title) return;
+    const titleText = printTitleTextRef.current;
+    if (!title || !titleText) return;
 
     let fontSize = 176;
-    title.style.fontSize = `${fontSize}px`;
+    titleText.style.fontSize = `${fontSize}px`;
+    titleText.style.transform = "translate(-50%, -50%) scale(1)";
 
-    while (fontSize > 44 && (title.scrollWidth > title.clientWidth || title.scrollHeight > title.clientHeight)) {
+    while (fontSize > 44 && titleText.scrollHeight > title.clientHeight) {
       fontSize -= 4;
-      title.style.fontSize = `${fontSize}px`;
+      titleText.style.fontSize = `${fontSize}px`;
     }
+
+    const scale = Math.min(1, title.clientWidth / titleText.scrollWidth, title.clientHeight / titleText.scrollHeight);
+    titleText.style.transform = `translate(-50%, -50%) scale(${Math.max(0.1, scale)})`;
   }, []);
 
   React.useEffect(() => {
@@ -266,7 +272,9 @@ export function ReservationsClient({
           <div className="schedule-print-root" aria-hidden="true">
             <div className="schedule-print-page">
               <div className="schedule-print-title" ref={printTitleRef}>
-                {printSchedule.productName}
+                <span className="schedule-print-title-text" ref={printTitleTextRef}>
+                  {printSchedule.productName}
+                </span>
               </div>
               <div className="schedule-print-logo-wrap">
                 {/* eslint-disable-next-line @next/next/no-img-element */}

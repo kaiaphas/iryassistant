@@ -48,15 +48,12 @@ textarea {
 }
 
 .schedule-print-page {
-  display: flex;
+  position: relative;
+  display: block;
   box-sizing: border-box;
   width: 297mm;
   height: 210mm;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
-  gap: 12mm;
   padding: 8mm 10mm 8mm;
   background: white;
   break-after: avoid;
@@ -64,29 +61,41 @@ textarea {
 }
 
 .schedule-print-title {
-  display: flex;
+  position: absolute;
+  left: 10mm;
+  right: 10mm;
+  top: 8mm;
+  bottom: 44mm;
   box-sizing: border-box;
-  width: 277mm;
-  height: 132mm;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
   text-align: center;
+}
+
+.schedule-print-title-text {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: inline-block;
+  max-width: none;
+  color: #0047ff;
+  transform-origin: center center;
   font-weight: 900;
   line-height: 1.04;
   letter-spacing: 0;
-  word-break: keep-all;
-  overflow-wrap: break-word;
-  white-space: normal;
+  white-space: nowrap;
 }
 
 .schedule-print-logo-wrap {
+  position: absolute;
+  left: 50%;
+  bottom: 12mm;
   display: flex;
   width: 170mm;
   height: 30mm;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  transform: translateX(-50%);
 }
 
 .schedule-print-logo {
