@@ -75,6 +75,7 @@ export function ReservationsClient({
   const printRootRef = React.useRef<HTMLDivElement | null>(null);
   const printTitleRef = React.useRef<HTMLDivElement | null>(null);
   const printTitleTextRef = React.useRef<HTMLSpanElement | null>(null);
+  const printLogoRef = React.useRef<HTMLImageElement | null>(null);
   const [filters, setFilters] = React.useState<ReservationFilterState>({
     query: "",
     startDate: defaultDateRange.startDate,
@@ -227,15 +228,27 @@ export function ReservationsClient({
     printRoot.style.display = "";
   }, []);
 
+  async function waitForPrintLogo() {
+    const logo = printLogoRef.current;
+    if (!logo || logo.complete) return;
+
+    await new Promise<void>((resolve) => {
+      logo.onload = () => resolve();
+      logo.onerror = () => resolve();
+    });
+  }
+
   React.useEffect(() => {
     if (!printQueued || !printSchedule) return;
 
     const frame = window.requestAnimationFrame(() => {
-      fitPrintTitle();
-      window.setTimeout(() => {
+      void waitForPrintLogo().then(() => {
+        fitPrintTitle();
+        return new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+      }).then(() => {
         window.print();
         setPrintQueued(false);
-      }, 100);
+      });
     });
 
     return () => window.cancelAnimationFrame(frame);
@@ -310,7 +323,7 @@ export function ReservationsClient({
               </div>
               <div className="schedule-print-logo-wrap">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="schedule-print-logo" src="/incheon-royal-tour-logo.jpg" alt="인천로열투어" />
+                <img ref={printLogoRef} className="schedule-print-logo" src="/incheon-royal-tour-logo.jpg" alt="인천로열투어" />
               </div>
             </div>
           </div>,
