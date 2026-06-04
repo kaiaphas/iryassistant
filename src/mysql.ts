@@ -64,7 +64,16 @@ function buildScheduleConditionQuery(whereClause = "") {
 		    AND o.bus = a.bus
 		    AND o.tid = a.tid
 		    AND o.tour_date = a.tour_date
-	  ) AS reservation_count
+        AND o.status not in ('취소')
+	  ) AS reservation_count,
+        (
+		  SELECT COALESCE(SUM(COALESCE(o.adult, 0) + COALESCE(o.child, 0)), 0)
+		  FROM ez_order o
+		  WHERE o.bus in ('0')
+		  	AND o.status not in ('취소')
+		    AND o.tid = a.tid
+		    AND o.tour_date = a.tour_date
+	  ) AS not_bus_count
     FROM ez_condition AS a
     LEFT JOIN ez_tour AS c
       ON a.tid = c.tid
@@ -80,6 +89,7 @@ function buildScheduleConditionQuery(whereClause = "") {
 		    AND o.bus = a.bus
 		    AND o.tid = a.tid
 		    AND o.tour_date = a.tour_date
+        AND o.status not in ('취소')
 	  ) <> 0 
     ORDER BY a.tour_date ASC, c.tid ASC
   `;

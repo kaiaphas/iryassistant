@@ -47,7 +47,7 @@ export function ScheduleOperationSection({
         <BusFront className="h-4 w-4" />
         운영 배정 정보
       </div>
-      <div className="grid gap-2 xl:grid-cols-7">
+      <div className="grid gap-2 xl:grid-cols-6">
         <label className="space-y-1 text-xs font-medium text-slate-600">
           가이드
           <div className="relative">
@@ -105,15 +105,6 @@ export function ScheduleOperationSection({
             value={schedule.vehicle.busType || ""}
             onChange={(event) => patchVehicle({ busType: event.target.value, seatCount: Number.parseInt(event.target.value, 10) || 0 })}
             placeholder="예: 28인승"
-          />
-        </label>
-        <label className="space-y-1 text-xs font-medium text-slate-600">
-          차량번호
-          <Input
-            className="h-9 text-xs"
-            value={schedule.vehicle.busInfo || ""}
-            onChange={(event) => patchVehicle({ busInfo: event.target.value })}
-            placeholder="차량번호"
           />
         </label>
       </div>

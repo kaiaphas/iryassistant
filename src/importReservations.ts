@@ -286,6 +286,7 @@ export function normalizeScheduleRow(
     memo: toNullableString(row.schedule_memo),
     notice_memo: toNullableString(row.notice_memo),
     reservation_count: normalizeNumber(row.reservation_count, "reservation_count"),
+    not_bus_count: normalizeNumber(row.not_bus_count, "not_bus_count"),
     sort_order: index + 1,
     is_active: true,
     restaurants,
@@ -397,6 +398,7 @@ async function upsertSourceSchedules(rows: NormalizedSchedule[]) {
     memo: row.memo,
     notice_memo: row.notice_memo,
     reservation_count: row.reservation_count,
+    not_bus_count: row.not_bus_count,
     sort_order: row.sort_order,
     is_active: row.is_active,
   }));

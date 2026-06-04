@@ -9,6 +9,11 @@ type RouteContext = {
   }>;
 };
 
+function emptyIfPlaceholder(value: string | undefined) {
+  const trimmed = value?.trim();
+  return !trimmed || trimmed === "-" ? "" : value ?? "";
+}
+
 export async function PATCH(request: NextRequest, context: RouteContext) {
   const { scheduleId } = await context.params;
   const schedule = (await request.json()) as ScheduleGroup;
@@ -18,9 +23,19 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ message: "일정 ID가 올바르지 않습니다." }, { status: 400 });
   }
   const progressStatus = getScheduleProgressStatus(schedule);
+  const scheduleForSave: ScheduleGroup = {
+    ...schedule,
+    departureTime: emptyIfPlaceholder(schedule.departureTime),
+    vehicle: {
+      ...schedule.vehicle,
+      busInfo: "",
+      busCompany: emptyIfPlaceholder(schedule.vehicle.busCompany),
+      busType: emptyIfPlaceholder(schedule.vehicle.busType),
+    },
+  };
   const { error } = await supabase.rpc("save_reservation_schedule_atomic", {
     p_schedule: {
-      ...schedule,
+      ...scheduleForSave,
       progressStatus,
     },
   });

@@ -43,7 +43,7 @@ async function main() {
   if (command === "query:schedules") {
     const { data, error } = await supabase
       .from("reservation_schedule_overview")
-      .select("id,source_schedule_key,tour_date,tour_type_label,product_name,departure_time,return_time,vehicle_no,bus_company,vehicle_capacity,guide_name,driver_name,restaurant_names,hotel_name,room_assignments,progress_status_label,notice_memo")
+      .select("id,source_schedule_key,tour_date,tour_type_label,product_name,departure_time,return_time,reservation_count,not_bus_count,vehicle_no,bus_company,vehicle_capacity,guide_name,driver_name,restaurant_names,hotel_name,room_assignments,progress_status_label,notice_memo")
       .eq("is_active", true)
       .order("tour_date", { ascending: true })
       .order("departure_time", { ascending: true })

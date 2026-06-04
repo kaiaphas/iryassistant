@@ -22,6 +22,7 @@ export function TodayDepartureTable({ schedules }: { schedules: ScheduleGroup[] 
     { label: "구분", className: "w-[64px] text-center" },
     { label: "출발시간", className: "w-[82px] text-center" },
     { label: "인원", className: "w-[64px] text-center" },
+    { label: "미배정인원", className: "w-[92px] text-center" },
     { label: "상품명", className: "w-[150px]" },
     { label: "호차", className: "w-[70px] text-center" },
     { label: "가이드", className: "w-[150px] text-center" },
@@ -37,7 +38,7 @@ export function TodayDepartureTable({ schedules }: { schedules: ScheduleGroup[] 
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
-          <Table className="min-w-[780px]">
+          <Table className="min-w-[880px]">
             <TableHeader>
               <TableRow>
                 {headers.map((head) => (
@@ -52,6 +53,9 @@ export function TodayDepartureTable({ schedules }: { schedules: ScheduleGroup[] 
                   <TableCell className="text-center">{schedule.tourType}</TableCell>
                   <TableCell className="text-center font-semibold">{schedule.departureTime}</TableCell>
                   <TableCell className="text-center font-semibold">{schedule.reservationCount}명</TableCell>
+                  <TableCell className={schedule.notBusCount > 0 ? "text-center font-bold text-red-600" : "text-center text-slate-500"}>
+                    {schedule.notBusCount}명
+                  </TableCell>
                   <TableCell className="font-medium text-slate-900">{schedule.productName}</TableCell>
                   <TableCell className="text-center">{schedule.busNo || "-"}</TableCell>
                   <TableCell className="text-center">{schedule.guide.name || "-"}</TableCell>
@@ -61,7 +65,7 @@ export function TodayDepartureTable({ schedules }: { schedules: ScheduleGroup[] 
                 </TableRow>
               )) : (
                 <TableRow>
-                  <TableCell colSpan={10} className="py-8 text-center text-slate-500">
+                  <TableCell colSpan={11} className="py-8 text-center text-slate-500">
                     금일 이후 7일 일정이 없습니다.
                   </TableCell>
                 </TableRow>

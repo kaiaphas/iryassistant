@@ -74,6 +74,7 @@ export type ScheduleGroup = {
   productCode: string;
   productName: string;
   reservationCount: number;
+  notBusCount: number;
   departureTime: string;
   returnTime: string;
   busNo: string;

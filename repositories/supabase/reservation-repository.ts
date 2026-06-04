@@ -9,6 +9,7 @@ type ReservationScheduleOverviewRow = {
   product_code: string | null;
   product_name: string | null;
   reservation_count: number | null;
+  not_bus_count: number | null;
   departure_time: string | null;
   return_time: string | null;
   vehicle_no: string | null;
@@ -65,7 +66,19 @@ type HotelRoomAssignmentRow = {
   room_count: number;
 };
 
+type SourceScheduleVehicleRow = {
+  id: string;
+  source_schedule_key: string | null;
+  departure_time: string | null;
+  vehicle_no: string | null;
+  bus_company: string | null;
+  vehicle_capacity: string | null;
+};
+
 const overviewSelectWithContacts =
+  "id,source_schedule_key,tour_date,tour_type_label,product_code,product_name,reservation_count,not_bus_count,departure_time,return_time,vehicle_no,bus_company,vehicle_capacity,guide_id,guide_name,guide_phone,driver_id,driver_name,driver_phone,restaurant_names,restaurant_status_labels,hotel_name,hotel_status_label,room_assignments,progress_status_label,memo,notice_memo";
+
+const overviewSelectWithoutNotBusCount =
   "id,source_schedule_key,tour_date,tour_type_label,product_code,product_name,reservation_count,departure_time,return_time,vehicle_no,bus_company,vehicle_capacity,guide_id,guide_name,guide_phone,driver_id,driver_name,driver_phone,restaurant_names,restaurant_status_labels,hotel_name,hotel_status_label,room_assignments,progress_status_label,memo,notice_memo";
 
 const overviewSelectFallback =
@@ -186,6 +199,7 @@ function mapOverviewRow(row: ReservationScheduleOverviewRow): ScheduleGroup {
     productCode: row.product_code ?? row.source_schedule_key ?? row.id,
     productName,
     reservationCount: row.reservation_count ?? 0,
+    notBusCount: row.not_bus_count ?? 0,
     departureTime: row.departure_time ?? "-",
     returnTime: row.return_time ?? "-",
     busNo: row.vehicle_no ?? "",
@@ -230,8 +244,30 @@ function needsLegacyOverviewFallback(message: string | undefined) {
     || message?.includes("guide_phone")
     || message?.includes("driver_id")
     || message?.includes("driver_phone")
-    || message?.includes("reservation_count"),
+    || message?.includes("reservation_count")
+    || message?.includes("not_bus_count"),
   );
+}
+
+function getErrorMessage(error: unknown) {
+  if (!error) return "알 수 없는 오류";
+  if (error instanceof Error) return error.message;
+  if (typeof error !== "object") return String(error);
+
+  const record = error as Record<string, unknown>;
+  const parts = [record.message, record.details, record.hint, record.code]
+    .filter((value): value is string => typeof value === "string" && value.length > 0);
+
+  return parts.length > 0 ? parts.join(" / ") : JSON.stringify(record);
+}
+
+function getSourceFallbackValue(current: string | null | undefined, source: string | null | undefined) {
+  const normalizedCurrent = current?.trim();
+  const normalizedSource = source?.trim();
+  if ((!normalizedCurrent || normalizedCurrent === "-") && normalizedSource && normalizedSource !== "-") {
+    return source ?? null;
+  }
+  return current ?? null;
 }
 
 async function fetchOverviewRows(
@@ -274,6 +310,37 @@ async function fetchOverviewRows(
   return rows;
 }
 
+async function applySourceOperationFields(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  rows: ReservationScheduleOverviewRow[],
+) {
+  const sourceVehicleRows: SourceScheduleVehicleRow[] = [];
+
+  for (const ids of chunk(rows.map((row) => row.id), 1000)) {
+    const { data, error } = await supabase
+      .from("reservation_schedule_sources")
+      .select("id,source_schedule_key,departure_time,vehicle_no,bus_company,vehicle_capacity")
+      .in("id", ids);
+
+    if (error) {
+      throw new Error(`원본 차량번호 조회 실패: ${error.message}`);
+    }
+
+    sourceVehicleRows.push(...((data ?? []) as SourceScheduleVehicleRow[]));
+  }
+
+  const sourceById = new Map(sourceVehicleRows.map((row) => [row.id, row]));
+  const sourceBySourceKey = new Map(sourceVehicleRows.map((row) => [row.source_schedule_key, row]));
+
+  return rows.map((row) => ({
+    ...row,
+    departure_time: getSourceFallbackValue(row.departure_time, sourceById.get(row.id)?.departure_time ?? sourceBySourceKey.get(row.source_schedule_key)?.departure_time),
+    vehicle_no: sourceById.get(row.id)?.vehicle_no ?? sourceBySourceKey.get(row.source_schedule_key)?.vehicle_no ?? row.vehicle_no,
+    bus_company: getSourceFallbackValue(row.bus_company, sourceById.get(row.id)?.bus_company ?? sourceBySourceKey.get(row.source_schedule_key)?.bus_company),
+    vehicle_capacity: getSourceFallbackValue(row.vehicle_capacity, sourceById.get(row.id)?.vehicle_capacity ?? sourceBySourceKey.get(row.source_schedule_key)?.vehicle_capacity),
+  }));
+}
+
 export async function findScheduleGroupsFromSupabase() {
   const supabase = createSupabaseServerClient();
 
@@ -281,22 +348,40 @@ export async function findScheduleGroupsFromSupabase() {
   try {
     rows = await fetchOverviewRows(supabase, overviewSelectWithContacts, true);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    if (!needsLegacyOverviewFallback(message)) {
-      throw new Error(`예약현황 Supabase 조회 실패: ${message}`);
-    }
+    const message = getErrorMessage(error);
+    if (message.includes("not_bus_count")) {
+      try {
+        rows = await fetchOverviewRows(supabase, overviewSelectWithoutNotBusCount, true);
+      } catch (notBusFallbackError) {
+        const notBusFallbackMessage = getErrorMessage(notBusFallbackError);
+        if (!needsLegacyOverviewFallback(notBusFallbackMessage)) {
+          throw new Error(`예약현황 Supabase 조회 실패: ${notBusFallbackMessage}`);
+        }
 
-    try {
-      rows = await fetchOverviewRows(supabase, overviewSelectFallback, false);
-    } catch (fallbackError) {
-      const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
-      throw new Error(`예약현황 Supabase 조회 실패: ${fallbackMessage}`);
+        try {
+          rows = await fetchOverviewRows(supabase, overviewSelectFallback, false);
+        } catch (fallbackError) {
+          const fallbackMessage = getErrorMessage(fallbackError);
+          throw new Error(`예약현황 Supabase 조회 실패: ${fallbackMessage}`);
+        }
+      }
+    } else if (!needsLegacyOverviewFallback(message)) {
+      throw new Error(`예약현황 Supabase 조회 실패: ${message}`);
+    } else {
+      try {
+        rows = await fetchOverviewRows(supabase, overviewSelectFallback, false);
+      } catch (fallbackError) {
+        const fallbackMessage = getErrorMessage(fallbackError);
+        throw new Error(`예약현황 Supabase 조회 실패: ${fallbackMessage}`);
+      }
     }
   }
 
   const scheduleIds = rows.map((row) => row.id);
 
   if (scheduleIds.length === 0) return [];
+
+  rows = await applySourceOperationFields(supabase, rows);
 
   const restaurantRows: RestaurantBookingRow[] = [];
   const hotelRows: HotelBookingRow[] = [];
