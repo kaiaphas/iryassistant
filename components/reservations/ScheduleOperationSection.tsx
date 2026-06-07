@@ -47,7 +47,7 @@ export function ScheduleOperationSection({
         <BusFront className="h-4 w-4" />
         운영 배정 정보
       </div>
-      <div className="grid gap-2 xl:grid-cols-6">
+      <div className="grid gap-2 xl:grid-cols-[minmax(120px,0.8fr)_minmax(220px,1.6fr)_minmax(120px,0.8fr)_minmax(220px,1.6fr)_minmax(110px,0.8fr)_minmax(90px,0.6fr)]">
         <label className="space-y-1 text-xs font-medium text-slate-600">
           가이드
           <div className="relative">

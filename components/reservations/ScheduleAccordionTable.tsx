@@ -19,6 +19,15 @@ import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 type ScheduleSortKey = "tourDate" | "tourType" | "productName" | "busNo" | "departureTime" | "reservationCount" | "busCompany" | "busType" | "guide" | "driver" | "restaurant" | "hotel" | "restaurantStatus" | "provisionalStatus" | "hotelStatus" | "progressStatus";
 
+function PersonCell({ person }: { person: ScheduleGroup["guide"] }) {
+  return (
+    <div className="leading-tight">
+      <div className="truncate font-medium">{person.name || "-"}</div>
+      {person.phone ? <div className="mt-0.5 whitespace-nowrap text-slate-500">{person.phone}</div> : null}
+    </div>
+  );
+}
+
 export function ScheduleAccordionTable({
   schedules,
   openIds,
@@ -65,10 +74,10 @@ export function ScheduleAccordionTable({
     { label: "인원", key: "reservationCount", className: "w-[62px] text-center" },
     { label: "버스회사", key: "busCompany", className: "w-[112px] text-center" },
     { label: "인승", key: "busType", className: "w-[74px] text-center" },
-    { label: "가이드", key: "guide", className: "w-[150px] text-center" },
-    { label: "기사", key: "driver", className: "w-[150px] text-center" },
-    { label: "식당명", key: "restaurant", className: "min-w-[180px]" },
-    { label: "숙소명", key: "hotel", className: "min-w-[130px]" },
+    { label: "가이드", key: "guide", className: "w-[170px] text-center" },
+    { label: "기사", key: "driver", className: "w-[170px] text-center" },
+    { label: "식당명", key: "restaurant", className: "w-[140px]" },
+    { label: "숙소명", key: "hotel", className: "w-[120px]" },
     { label: "식당예약", key: "restaurantStatus", className: "w-[112px] text-center" },
     { label: "임시예약", key: "provisionalStatus", className: "w-[92px] text-center" },
     { label: "숙소예약", key: "hotelStatus", className: "w-[112px] text-center" },
@@ -78,7 +87,7 @@ export function ScheduleAccordionTable({
   return (
     <div className="hidden overflow-hidden rounded-lg border bg-white shadow-soft lg:block">
       <div className="overflow-x-auto scrollbar-thin">
-        <Table className="min-w-[1370px]">
+        <Table className="min-w-[1340px]">
           <TableHeader>
             <TableRow>
               {headers.map((head) => (
@@ -112,12 +121,16 @@ export function ScheduleAccordionTable({
                     <TableCell className="whitespace-nowrap text-center font-semibold">{schedule.reservationCount}명</TableCell>
                     <TableCell className="max-w-[112px] truncate text-center" title={schedule.vehicle.busCompany || ""}>{schedule.vehicle.busCompany || "-"}</TableCell>
                     <TableCell className="whitespace-nowrap text-center font-semibold text-emerald-800">{schedule.vehicle.busType || "-"}</TableCell>
-                    <TableCell className="max-w-[150px] truncate text-center" title={formatPersonWithPhone(schedule.guide)}>{formatPersonWithPhone(schedule.guide)}</TableCell>
-                    <TableCell className="max-w-[150px] truncate text-center" title={formatPersonWithPhone(schedule.driver)}>{formatPersonWithPhone(schedule.driver)}</TableCell>
-                    <TableCell className="max-w-[230px] truncate font-medium" title={schedule.restaurantBookings.map((booking) => `${booking.mealType} · ${booking.name}`).join(" / ")}>
+                    <TableCell className="max-w-[170px] text-center" title={formatPersonWithPhone(schedule.guide)}>
+                      <PersonCell person={schedule.guide} />
+                    </TableCell>
+                    <TableCell className="max-w-[170px] text-center" title={formatPersonWithPhone(schedule.driver)}>
+                      <PersonCell person={schedule.driver} />
+                    </TableCell>
+                    <TableCell className="max-w-[140px] truncate font-medium" title={schedule.restaurantBookings.map((booking) => `${booking.mealType} · ${booking.name}`).join(" / ")}>
                       {schedule.restaurantBookings.map((booking) => `${booking.mealType} · ${booking.name}`).join(" / ") || "-"}
                     </TableCell>
-                    <TableCell className="max-w-[140px] truncate" title={hotelNames}>{schedule.tourType === "숙박" ? hotelNames || "-" : "-"}</TableCell>
+                    <TableCell className="max-w-[120px] truncate" title={hotelNames}>{schedule.tourType === "숙박" ? hotelNames || "-" : "-"}</TableCell>
                     <TableCell className="w-[112px] text-center"><StatusBadge value={restaurantStatus} /></TableCell>
                     <TableCell className="w-[92px] text-center">{schedule.tourType === "숙박" ? <StatusBadge value={getHotelProvisionalAggregateStatus(hotelBookings)} /> : "-"}</TableCell>
                     <TableCell className="w-[112px] text-center">{schedule.tourType === "숙박" ? <StatusBadge value={getHotelAggregateStatus(hotelBookings)} /> : "-"}</TableCell>

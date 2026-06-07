@@ -82,7 +82,7 @@ export function RestaurantReservationSection({
                 </button>
               ) : null}
             </div>
-            <div className="grid gap-2 xl:grid-cols-[92px_1fr_150px_1.2fr_250px]">
+            <div className="grid gap-2 xl:grid-cols-[82px_minmax(120px,0.7fr)_300px_minmax(120px,0.8fr)_220px]">
               <Select className="h-9 text-xs" value={booking.mealType} onChange={(event) => updateBooking(booking.id, { mealType: event.target.value as RestaurantBooking["mealType"] })}>
                 <option>조식</option>
                 <option>중식</option>

@@ -87,7 +87,7 @@ export function HotelReservationSection({
                   </Button>
                 ) : null}
               </div>
-              <div className="grid gap-2 xl:grid-cols-[1fr_150px_1.8fr]">
+              <div className="grid gap-2 xl:grid-cols-[minmax(140px,0.7fr)_300px_minmax(360px,1.6fr)]">
                 <Input className="h-9 bg-white text-xs" list={listId} value={booking.name} onChange={(event) => updateHotelName(index, event.target.value)} placeholder="숙소명" />
                 <Input className="h-9 bg-white text-xs" value={booking.phone || ""} onChange={(event) => patchBooking(index, { phone: event.target.value })} placeholder="연락처" />
                 <div className="space-y-2">

@@ -36,7 +36,7 @@ export async function PATCH(request: NextRequest) {
     const saved = await saveSettlementItemToSupabase({
       ...item,
       amount: Number(item.amount) || 0,
-      withholdingRate: Number(item.withholdingRate) || 0,
+      withholdingRate: Number.parseFloat(String(item.withholdingRate)) || 0,
       memo: item.memo?.trim() ?? "",
     });
 

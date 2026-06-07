@@ -78,7 +78,7 @@ function calculateWithholding(amount: number, rate: number) {
 }
 
 function getDefaultWithholdingRate(type: SettlementType) {
-  return type === "GUIDE" ? 0 : 3.3;
+  return type === "GUIDE" || type === "DRIVER" ? 3.3 : 0;
 }
 
 function normalizeName(value: string | null | undefined) {
@@ -135,6 +135,19 @@ async function fetchMasterPeople(type: SettlementType) {
   }
 
   return { byId, byName };
+}
+
+async function fetchMasterBankAccount(type: SettlementType, personId: string) {
+  const supabase = createSupabaseServerClient();
+  const table = type === "GUIDE" ? "master_guides" : "master_drivers";
+  const { data, error } = await supabase
+    .from(table)
+    .select("bank_account")
+    .eq("id", personId)
+    .maybeSingle();
+
+  if (error) throw new Error(`마스터 계좌 조회 실패: ${error.message}`);
+  return (data as Pick<MasterAccountRow, "bank_account"> | null)?.bank_account ?? null;
 }
 
 export async function findSettlementItemsFromSupabase(month: string, type: SettlementType) {
@@ -203,6 +216,7 @@ export async function findSettlementItemsFromSupabase(month: string, type: Settl
         tourType: normalizeTourType(row.tour_type_label),
         productName: row.product_name || saved.productName,
         busCompany: row.bus_company ?? saved.busCompany,
+        bankAccount: bankAccount ?? undefined,
       }];
     }
 
@@ -254,7 +268,7 @@ export async function saveSettlementItemToSupabase(item: SettlementItem) {
     person_id: item.personId,
     person_name: item.personName,
     person_phone: item.personPhone ?? null,
-    bank_account: item.bankAccount ?? null,
+    bank_account: null,
     tour_date: item.tourDate,
     tour_type_label: item.tourType,
     product_name: item.productName,
@@ -281,8 +295,10 @@ export async function saveSettlementItemToSupabase(item: SettlementItem) {
     : result;
 
   if (fallbackResult.error) throw new Error(`정산 항목 저장 실패: ${fallbackResult.error.message}`);
+  const masterBankAccount = await fetchMasterBankAccount(item.settlementType, item.personId);
   return {
     ...mapSettlementItem(fallbackResult.data as unknown as SettlementItemRow),
+    bankAccount: masterBankAccount ?? undefined,
     tourType: item.tourType,
   };
 }

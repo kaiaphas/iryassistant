@@ -19,6 +19,11 @@ function numberValue(value: string) {
   return Number(value.replaceAll(",", "")) || 0;
 }
 
+function decimalValue(value: string) {
+  if (!value.trim()) return 0;
+  return Number(value) || 0;
+}
+
 function formatNumberInput(value: number) {
   if (!value) return "";
   return new Intl.NumberFormat("ko-KR").format(value);
@@ -180,14 +185,13 @@ export function SettlementTable({ initialItems, initialMonth, initialType }: Set
 
       <div className="overflow-hidden rounded-xl border bg-white shadow-soft">
         <div className="overflow-x-auto">
-          <Table className="min-w-[1320px]">
+          <Table className="min-w-[1000px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[110px] text-center">여행일자</TableHead>
                 <TableHead className="w-[90px] text-center">구분</TableHead>
                 <TableHead>상품명/여행지</TableHead>
                 <TableHead className="w-[150px] text-center">{getTypeLabel(type)}</TableHead>
-                <TableHead className="w-[320px] text-center">계좌</TableHead>
                 <TableHead className="w-[130px] text-center">금액</TableHead>
                 <TableHead className="w-[90px] text-center">공제율</TableHead>
                 <TableHead className="w-[120px] text-center">공제액</TableHead>
@@ -200,7 +204,7 @@ export function SettlementTable({ initialItems, initialMonth, initialType }: Set
               {groupedItems.map((group) => (
                 <React.Fragment key={group.key}>
                   <TableRow className="bg-emerald-50">
-                    <TableCell colSpan={5} className="font-semibold">
+                    <TableCell colSpan={4} className="font-semibold">
                       {group.personName}
                       {group.bankAccount ? <span className="ml-3 text-xs font-normal text-slate-600">{group.bankAccount}</span> : null}
                     </TableCell>
@@ -218,7 +222,6 @@ export function SettlementTable({ initialItems, initialMonth, initialType }: Set
                       </TableCell>
                       <TableCell className="max-w-[360px] truncate" title={item.productName}>{item.productName}</TableCell>
                       <TableCell className="whitespace-nowrap text-center">{item.personName}</TableCell>
-                      <TableCell className="whitespace-nowrap text-center" title={item.bankAccount || ""}>{item.bankAccount || "-"}</TableCell>
                       <TableCell>
                         <Input
                           className="text-right"
@@ -229,8 +232,11 @@ export function SettlementTable({ initialItems, initialMonth, initialType }: Set
                       <TableCell>
                         <Input
                           className="text-right"
-                          value={item.withholdingRate}
-                          onChange={(event) => updateItem(item.id, "withholdingRate", Number(event.target.value) || 0)}
+                          type="number"
+                          inputMode="decimal"
+                          step="0.1"
+                          value={String(item.withholdingRate)}
+                          onChange={(event) => updateItem(item.id, "withholdingRate", decimalValue(event.target.value))}
                         />
                       </TableCell>
                       <TableCell className="text-right">{formatCurrency(item.withholdingAmount)}</TableCell>
