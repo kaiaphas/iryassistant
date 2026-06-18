@@ -103,6 +103,7 @@ export type Guide = {
   phone: string;
   birthDate?: string;
   bankAccount?: string;
+  cardNumber?: string;
   email?: string;
   languages: string[];
   regions: string[];
@@ -150,6 +151,61 @@ export type SettlementItem = {
   withholdingAmount: number;
   netAmount: number;
   memo?: string;
+};
+
+export type IntegratedSettlementStatus = "DRAFT" | "CONFIRMED";
+
+export type IntegratedSettlementRow = {
+  id: string;
+  batchId?: string;
+  scheduleId: string;
+  settlementYear: number;
+  settlementMonth: number;
+  sortNo: number;
+  tourDate: string;
+  tourType: "당일" | "숙박";
+  sourceProductName: string;
+  overrideProductName?: string;
+  sourcePeopleCount: number;
+  overridePeopleCount?: number;
+  notBusCount: number;
+  vehicleNo?: string;
+  busCompany?: string;
+  vehicleCapacity?: string;
+  unitPrice: number;
+  totalIncome: number;
+  totalIncomeFormula?: string;
+  operationCost: number;
+  operationCostFormula?: string;
+  vehicleCost: number;
+  vehicleCostFormula?: string;
+  guideCost: number;
+  guideCostFormula?: string;
+  kimbapQty: number;
+  kimbapUnitPrice: number;
+  kimbapCost: number;
+  kimbapFormula?: string;
+  fruitQty: number;
+  fruitUnitPrice: number;
+  fruitCost: number;
+  fruitFormula?: string;
+  riceCakeWaterQty: number;
+  riceCakeWaterUnitPrice: number;
+  riceCakeWaterExtraCost: number;
+  riceCakeWaterCost: number;
+  riceCakeWaterFormula?: string;
+  snackBoxQty: number;
+  snackBoxUnitPrice: number;
+  snackBoxCost: number;
+  snackBoxFormula?: string;
+  balance: number;
+  balanceFormula?: string;
+  adjustmentAmount: number;
+  finalBalance: number;
+  memo?: string;
+  guideId?: string;
+  guideName?: string;
+  status: IntegratedSettlementStatus;
 };
 
 export type Restaurant = {

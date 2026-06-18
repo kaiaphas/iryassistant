@@ -10,6 +10,7 @@ const tabs = [
   { title: "대시보드", href: "/", icon: CircleGauge },
   { title: "예약", href: "/reservations", icon: CalendarDays },
   { title: "정산", href: "/settlements", icon: Calculator },
+  { title: "통합", href: "/integrated-settlements", icon: Calculator },
   { title: "가이드", href: "/guides", icon: UserRoundCog },
   { title: "차량", href: "/drivers", icon: Bus },
   { title: "식당", href: "/restaurants", icon: Soup },
@@ -24,7 +25,7 @@ export function MobileBottomTabs() {
   const staffTabHrefs = ["/", "/reservations", "/restaurants", "/hotels", "/refunds"];
   const visibleTabs = auth.role === "admin" ? tabs : tabs.filter((tab) => staffTabHrefs.includes(tab.href));
   return (
-    <nav className={cn("fixed inset-x-0 bottom-0 z-40 grid border-t bg-white px-1 py-1 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] lg:hidden", auth.role === "admin" ? "grid-cols-9" : "grid-cols-5")}>
+    <nav className={cn("fixed inset-x-0 bottom-0 z-40 grid border-t bg-white px-1 py-1 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] lg:hidden", auth.role === "admin" ? "grid-cols-10" : "grid-cols-5")}>
       {visibleTabs.map((tab) => {
         const Icon = tab.icon;
         const active = pathname === tab.href;

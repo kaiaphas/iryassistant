@@ -24,6 +24,7 @@ function createEmptyGuide(): Guide {
     phone: "",
     birthDate: "",
     bankAccount: "",
+    cardNumber: "",
     languages: [],
     regions: [],
     mainCourses: [],
@@ -70,6 +71,7 @@ export function GuideForm({ guide, open, saving = false, onOpenChange, onSave }:
           aria-label="주민번호"
         />
         <Input value={form.bankAccount ?? ""} onChange={(event) => update("bankAccount", event.target.value)} placeholder="계좌번호" />
+        <Input value={form.cardNumber ?? ""} onChange={(event) => update("cardNumber", event.target.value)} placeholder="카드번호" />
         <div className="flex gap-4 rounded-md border px-3 py-2 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={form.availableWeekday} onChange={(event) => update("availableWeekday", event.target.checked)} />

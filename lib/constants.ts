@@ -18,6 +18,7 @@ export const navItems = [
   { title: "대시보드", href: "/", icon: CircleGauge },
   { title: "예약현황", href: "/reservations", icon: ClipboardList },
   { title: "정산서", href: "/settlements", icon: Calculator },
+  { title: "통합정산서", href: "/integrated-settlements", icon: Calculator },
   { title: "가이드관리", href: "/guides", icon: UserRoundCog },
   { title: "기사관리", href: "/drivers", icon: Bus },
   { title: "식당관리", href: "/restaurants", icon: Soup },

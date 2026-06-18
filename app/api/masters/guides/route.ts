@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
       phone: guide.phone?.trim() ?? "",
       birthDate: guide.birthDate?.trim() ?? "",
       bankAccount: guide.bankAccount?.trim() ?? "",
+      cardNumber: guide.cardNumber?.trim() ?? "",
       memo: guide.memo?.trim() ?? "",
     });
 

@@ -12,7 +12,6 @@ import { DriverForm } from "@/components/drivers/DriverForm";
 import { TablePagination, tablePageSize } from "@/components/common/TablePagination";
 import { SortableTableHead } from "@/components/common/SortableTableHead";
 import { useTableSort } from "@/lib/table-sort";
-import { maskResidentRegistrationNumber } from "@/lib/birth-date";
 
 export function DriverTable({ drivers }: { drivers: Driver[] }) {
   const [items, setItems] = React.useState(drivers);
@@ -124,7 +123,7 @@ export function DriverTable({ drivers }: { drivers: Driver[] }) {
                   <TableCell className="whitespace-nowrap text-center font-semibold">{driver.name}</TableCell>
                   <TableCell className="whitespace-nowrap text-center">{driver.capacity}</TableCell>
                   <TableCell className="whitespace-nowrap text-center">{driver.phone}</TableCell>
-                  <TableCell className="whitespace-nowrap text-center">{maskResidentRegistrationNumber(driver.birthDate)}</TableCell>
+                  <TableCell className="whitespace-nowrap text-center">{driver.birthDate || "-"}</TableCell>
                   <TableCell className="whitespace-nowrap text-center">{driver.bankAccount || "-"}</TableCell>
                   <TableCell className="max-w-[160px] truncate text-center" title={driver.company}>{driver.company}</TableCell>
                   <TableCell className="whitespace-nowrap text-center">{driver.driverType}</TableCell>

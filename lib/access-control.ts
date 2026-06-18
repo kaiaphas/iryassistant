@@ -10,6 +10,7 @@ const staffAllowedPaths = [
   "/api/masters/restaurants",
   "/api/masters/hotels",
   "/api/refunds",
+  "/api/refund-payments",
 ];
 
 export function normalizeAppRole(role?: string | null): AppRole {

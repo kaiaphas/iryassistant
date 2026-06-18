@@ -8,6 +8,7 @@ type GuideRow = {
   phone: string | null;
   birth_date: string | null;
   bank_account: string | null;
+  card_number?: string | null;
   assignable: boolean;
   active: boolean;
   available_weekday: boolean;
@@ -96,6 +97,7 @@ function mapGuide(row: GuideRow): Guide {
     phone: textValue(row.phone),
     birthDate: textValue(row.birth_date),
     bankAccount: textValue(row.bank_account),
+    cardNumber: textValue(row.card_number),
     languages: [],
     regions: [],
     mainCourses: [],
@@ -242,7 +244,7 @@ export async function findGuidesFromSupabase() {
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from("master_guides")
-    .select("id,name,phone,birth_date,bank_account,assignable,active,available_weekday,available_weekend,memo")
+    .select("id,name,phone,birth_date,bank_account,card_number,assignable,active,available_weekday,available_weekend,memo")
     .order("name", { ascending: true });
 
   if (isMissingTable(error)) return guides;
@@ -310,6 +312,7 @@ export async function upsertGuideToSupabase(guide: Guide) {
     phone: guide.phone || null,
     birth_date: guide.birthDate || null,
     bank_account: guide.bankAccount || null,
+    card_number: guide.cardNumber || null,
     assignable: guide.assignable,
     active: guide.active,
     available_weekday: guide.availableWeekday,
@@ -317,7 +320,7 @@ export async function upsertGuideToSupabase(guide: Guide) {
     memo: guide.memo || null,
   };
 
-  const { data, error } = await supabase.from("master_guides").upsert(payload).select("id,name,phone,birth_date,bank_account,assignable,active,available_weekday,available_weekend,memo").single();
+  const { data, error } = await supabase.from("master_guides").upsert(payload).select("id,name,phone,birth_date,bank_account,card_number,assignable,active,available_weekday,available_weekend,memo").single();
   if (error) throw new Error(`가이드 저장 실패: ${error.message}`);
   return mapGuide(data as GuideRow);
 }
