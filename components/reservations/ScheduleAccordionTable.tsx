@@ -34,6 +34,7 @@ export function ScheduleAccordionTable({
   onToggle,
   onChangeSchedule,
   onSaveSchedule,
+  onResetLinkedOperation,
   onPrintSchedule,
   printTextByScheduleId,
   onChangePrintText,
@@ -52,6 +53,7 @@ export function ScheduleAccordionTable({
   onToggle: (id: string) => void;
   onChangeSchedule: (schedule: ScheduleGroup) => void;
   onSaveSchedule: (schedule: ScheduleGroup) => void;
+  onResetLinkedOperation: (schedule: ScheduleGroup) => void;
   onPrintSchedule: (schedule: ScheduleGroup) => void;
   printTextByScheduleId: Record<string, string>;
   onChangePrintText: (scheduleId: string, value: string) => void;
@@ -177,7 +179,14 @@ export function ScheduleAccordionTable({
                             <div className="text-xs font-bold text-emerald-800">상세 입력 영역</div>
                           </div>
                           <div className="space-y-2">
-                          <ScheduleOperationSection schedule={schedule} guides={guides} drivers={drivers} onChange={onChangeSchedule} />
+                          <ScheduleOperationSection
+                            schedule={schedule}
+                            guides={guides}
+                            drivers={drivers}
+                            onChange={onChangeSchedule}
+                            onResetLinkedOperation={onResetLinkedOperation}
+                            resetting={savingId === schedule.id}
+                          />
                           <RestaurantReservationSection schedule={schedule} restaurants={restaurants} onChange={onChangeSchedule} />
                           {schedule.tourType === "숙박" ? <HotelReservationSection schedule={schedule} hotels={hotels} onChange={onChangeSchedule} /> : null}
                           <ReservationMemoSection schedule={schedule} onChange={onChangeSchedule} />

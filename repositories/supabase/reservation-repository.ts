@@ -496,3 +496,37 @@ export async function findScheduleGroupsFromSupabase() {
     };
   });
 }
+
+export async function resetScheduleOperationLinkedValues(scheduleId: string) {
+  const supabase = createSupabaseServerClient();
+
+  const { error } = await supabase
+    .from("reservation_schedules")
+    .update({
+      departure_time: null,
+      return_time: null,
+      guide_id: null,
+      guide_name: null,
+      guide_phone: null,
+      driver_id: null,
+      driver_name: null,
+      driver_phone: null,
+      vehicle_no: null,
+      bus_company: null,
+      vehicle_capacity: null,
+    })
+    .eq("id", scheduleId);
+
+  if (error) {
+    throw new Error(`운영배정 연동값 복원 실패: ${error.message}`);
+  }
+
+  const schedules = await findScheduleGroupsFromSupabase();
+  const schedule = schedules.find((item) => item.id === scheduleId);
+
+  if (!schedule) {
+    throw new Error("복원한 일정 정보를 다시 조회하지 못했습니다.");
+  }
+
+  return schedule;
+}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/repositories/supabase/reservation-repository";
+import { createSupabaseServerClient, resetScheduleOperationLinkedValues } from "@/repositories/supabase/reservation-repository";
 import type { ScheduleGroup } from "@/lib/types";
 import { getScheduleProgressStatus } from "@/lib/reservation-status";
 
@@ -16,7 +16,19 @@ function emptyIfPlaceholder(value: string | undefined) {
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
   const { scheduleId } = await context.params;
-  const schedule = (await request.json()) as ScheduleGroup;
+  const payload = await request.json();
+
+  if ((payload as { action?: string }).action === "RESET_OPERATION_LINKED_VALUES") {
+    try {
+      const schedule = await resetScheduleOperationLinkedValues(scheduleId);
+      return NextResponse.json({ ok: true, schedule });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "운영배정 연동값 복원 실패";
+      return NextResponse.json({ message }, { status: 500 });
+    }
+  }
+
+  const schedule = payload as ScheduleGroup;
   const supabase = createSupabaseServerClient();
 
   if (!scheduleId || scheduleId !== schedule.id) {

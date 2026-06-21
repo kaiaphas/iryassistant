@@ -332,8 +332,8 @@ export function IntegratedSettlementTable({ initialRows, initialYear, initialMon
                 <TableHead className={`w-[220px] text-center ${readOnlyHeadClass}`}><HeadLabel label="떡,생수" hint="자동" /></TableHead>
                 <TableHead className={`w-[180px] text-center ${readOnlyHeadClass}`}><HeadLabel label="간식상자" hint="자동" /></TableHead>
                 <TableHead className={`w-[130px] text-center ${readOnlyHeadClass}`}><HeadLabel label="잔액" hint="자동" /></TableHead>
-                <TableHead className={`w-[220px] text-center ${inputHeadClass}`}><HeadLabel label="비고" hint="입력" /></TableHead>
                 <TableHead className={`w-[130px] text-center ${readOnlyHeadClass}`}><HeadLabel label="가이드명" hint="연동" /></TableHead>
+                <TableHead className={`w-[220px] text-center ${inputHeadClass}`}><HeadLabel label="비고" hint="입력" /></TableHead>
                 <TableHead className={`w-[110px] text-center ${inputHeadClass}`}><HeadLabel label="정산상태" hint="입력" /></TableHead>
                 <TableHead className={`w-[140px] text-center ${inputHeadClass}`}><HeadLabel label="관리" hint="저장" /></TableHead>
               </TableRow>
@@ -420,10 +420,10 @@ export function IntegratedSettlementTable({ initialRows, initialYear, initialMon
                       placeholder="조정"
                     />
                   </TableCell>
+                  <TableCell className={`whitespace-nowrap text-center ${readOnlyCellClass}`}>{row.guideName || "-"}</TableCell>
                   <TableCell>
                     <Input className="h-8 text-xs" value={row.memo ?? ""} onChange={(event) => patchRow(row.id, { memo: event.target.value })} placeholder="비고" />
                   </TableCell>
-                  <TableCell className={`whitespace-nowrap text-center ${readOnlyCellClass}`}>{row.guideName || "-"}</TableCell>
                   <TableCell>
                     <Select value={row.status} onChange={(event) => patchRow(row.id, { status: event.target.value as IntegratedSettlementStatus })}>
                       <option value="DRAFT">작성중</option>

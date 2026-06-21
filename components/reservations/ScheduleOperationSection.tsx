@@ -1,19 +1,24 @@
 "use client";
 
-import { BusFront, UserRound } from "lucide-react";
+import { BusFront, RotateCcw, UserRound } from "lucide-react";
 import type { Driver, Guide, ScheduleGroup } from "@/lib/types";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export function ScheduleOperationSection({
   schedule,
   guides,
   drivers,
   onChange,
+  onResetLinkedOperation,
+  resetting = false,
 }: {
   schedule: ScheduleGroup;
   guides: Guide[];
   drivers: Driver[];
   onChange: (schedule: ScheduleGroup) => void;
+  onResetLinkedOperation?: (schedule: ScheduleGroup) => void;
+  resetting?: boolean;
 }) {
   function patch(next: Partial<ScheduleGroup>) {
     onChange({ ...schedule, ...next });
@@ -43,9 +48,28 @@ export function ScheduleOperationSection({
 
   return (
     <section className="rounded-lg border bg-white p-3">
-      <div className="mb-2 flex items-center gap-2 text-sm font-bold text-emerald-900">
-        <BusFront className="h-4 w-4" />
-        운영 배정 정보
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm font-bold text-emerald-900">
+          <BusFront className="h-4 w-4" />
+          운영 배정 정보
+        </div>
+        {onResetLinkedOperation ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onResetLinkedOperation(schedule);
+            }}
+            disabled={resetting}
+            title="가이드, 기사, 출발, 버스회사, 인승을 연동값으로 복원합니다. 식당, 숙소, 메모는 유지됩니다."
+          >
+            <RotateCcw className="h-4 w-4" />
+            {resetting ? "복원 중" : "연동값 복원"}
+          </Button>
+        ) : null}
       </div>
       <div className="grid gap-2 xl:grid-cols-[minmax(120px,0.8fr)_minmax(220px,1.6fr)_minmax(120px,0.8fr)_minmax(220px,1.6fr)_minmax(110px,0.8fr)_minmax(90px,0.6fr)]">
         <label className="space-y-1 text-xs font-medium text-slate-600">

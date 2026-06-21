@@ -162,6 +162,48 @@ export function ReservationsClient({
     setDirtyScheduleIds((current) => new Set(current).add(nextSchedule.id));
   }
 
+  function mergeOperationFields(current: ScheduleGroup, restored: ScheduleGroup): ScheduleGroup {
+    return {
+      ...current,
+      departureTime: restored.departureTime,
+      returnTime: restored.returnTime,
+      busNo: restored.busNo,
+      vehicle: restored.vehicle,
+      guide: restored.guide,
+      driver: restored.driver,
+    };
+  }
+
+  async function resetLinkedOperation(schedule: ScheduleGroup) {
+    if (!schedule?.id) {
+      setSaveMessage("복원할 일정 정보가 올바르지 않습니다.");
+      return;
+    }
+
+    setSavingId(schedule.id);
+    setSaveMessage("");
+
+    try {
+      const response = await fetch(`/api/reservations/${schedule.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "RESET_OPERATION_LINKED_VALUES" }),
+      });
+      const result = await response.json().catch(() => ({})) as { message?: string; schedule?: ScheduleGroup };
+
+      if (!response.ok || !result.schedule) {
+        throw new Error(result.message || "연동값 복원에 실패했습니다.");
+      }
+
+      setSchedules((current) => current.map((item) => item.id === schedule.id ? mergeOperationFields(item, result.schedule as ScheduleGroup) : item));
+      setSaveMessage(`${schedule.productName} 운영배정 연동값 복원 완료`);
+    } catch (error) {
+      setSaveMessage(error instanceof Error ? error.message : "연동값 복원에 실패했습니다.");
+    } finally {
+      setSavingId(null);
+    }
+  }
+
   async function saveSchedule(schedule: ScheduleGroup) {
     if (!schedule?.id) {
       setSaveMessage("저장할 일정 정보가 올바르지 않습니다.");
@@ -282,6 +324,7 @@ export function ReservationsClient({
           onToggle={toggleSchedule}
           onChangeSchedule={updateSchedule}
           onSaveSchedule={saveSchedule}
+          onResetLinkedOperation={resetLinkedOperation}
           onPrintSchedule={printScheduleName}
           printTextByScheduleId={printTextByScheduleId}
           onChangePrintText={(scheduleId, value) => setPrintTextByScheduleId((current) => ({ ...current, [scheduleId]: value }))}
@@ -301,6 +344,7 @@ export function ReservationsClient({
           onToggle={toggleSchedule}
           onChangeSchedule={updateSchedule}
           onSaveSchedule={saveSchedule}
+          onResetLinkedOperation={resetLinkedOperation}
           onPrintSchedule={printScheduleName}
           printTextByScheduleId={printTextByScheduleId}
           onChangePrintText={(scheduleId, value) => setPrintTextByScheduleId((current) => ({ ...current, [scheduleId]: value }))}
