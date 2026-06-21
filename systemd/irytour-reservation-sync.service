@@ -1,0 +1,14 @@
+[Unit]
+Description=Irytour MySQL reservation sync
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/prd/irytour
+Environment=NODE_ENV=production
+ExecStart=/bin/bash /prd/irytour/scripts/sync-reservations-linux.sh
+StandardOutput=append:/prd/irytour/logs/reservation-sync.out.log
+StandardError=append:/prd/irytour/logs/reservation-sync.err.log
