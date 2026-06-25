@@ -22,7 +22,7 @@ export async function createMySqlConnection() {
 function buildScheduleConditionQuery(whereClause = "") {
   return `
     SELECT
-      CONCAT(c.tid, '|', a.tour_date) AS source_schedule_key,
+      CONCAT(c.tid, '|', a.tour_date, '|', COALESCE(NULLIF(a.bus, ''), '0')) AS source_schedule_key,
       c.tid AS product_code,
       c.shot_subject AS product_name,
       a.tour_date AS tour_date,

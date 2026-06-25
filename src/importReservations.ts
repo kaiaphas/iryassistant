@@ -227,6 +227,7 @@ export function normalizeScheduleRow(
     guides: Map<string, MasterPerson | null>;
     drivers: Map<string, MasterPerson | null>;
   },
+  existingScheduleIds?: Map<string, string>,
 ): NormalizedSchedule {
   const sourceScheduleKey = toNullableString(row.source_schedule_key);
   if (!sourceScheduleKey) {
@@ -239,7 +240,7 @@ export function normalizeScheduleRow(
   }
 
   const hotelName = toNullableString(row.hotel_name);
-  const scheduleId = deterministicUuid("schedule", sourceScheduleKey);
+  const scheduleId = existingScheduleIds?.get(sourceScheduleKey) ?? deterministicUuid("schedule", sourceScheduleKey);
   const tourType = normalizeTourType(row.tour_type, hotelName, productName, row.nights);
   const restaurants = parseRestaurantBookings(row, scheduleId);
   const hotelStatus = normalizeWorkStatus(row.hotel_status);
@@ -301,6 +302,7 @@ export function validateRows(
     guides: Map<string, MasterPerson | null>;
     drivers: Map<string, MasterPerson | null>;
   },
+  existingScheduleIds?: Map<string, string>,
 ): ValidationResult {
   const validRows: NormalizedSchedule[] = [];
   const invalidRows: ValidationResult["invalidRows"] = [];
@@ -320,7 +322,7 @@ export function validateRows(
 
   Array.from(rowsBySchedule.values()).forEach((row, index) => {
     try {
-      validRows.push(normalizeScheduleRow(row, index, masterRefs));
+      validRows.push(normalizeScheduleRow(row, index, masterRefs, existingScheduleIds));
     } catch (error) {
       invalidRows.push({
         row,
@@ -330,6 +332,30 @@ export function validateRows(
   });
 
   return { validRows, invalidRows };
+}
+
+async function fetchExistingScheduleIds(sourceScheduleKeys: string[]) {
+  const scheduleIds = new Map<string, string>();
+  const keys = Array.from(new Set(sourceScheduleKeys.filter(Boolean)));
+
+  for (const keyChunk of chunk(keys, config.batch.chunkSize)) {
+    const { data, error } = await supabase
+      .from("reservation_schedule_sources")
+      .select("id,source_schedule_key")
+      .in("source_schedule_key", keyChunk);
+
+    if (error) {
+      throw new Error(`기존 원본 일정 ID 조회 실패: ${getSupabaseErrorMessage(error)}`);
+    }
+
+    for (const row of data ?? []) {
+      if (row.source_schedule_key && row.id) {
+        scheduleIds.set(row.source_schedule_key as string, row.id as string);
+      }
+    }
+  }
+
+  return scheduleIds;
 }
 
 async function fetchMasterRefs() {
@@ -543,7 +569,11 @@ export async function importReservationSchedules(rows: MySqlScheduleRow[], mode:
     }
 
     const masterRefs = await fetchMasterRefs();
-    const validation = validateRows(rows, masterRefs);
+    const sourceScheduleKeys = rows
+      .map((row) => toNullableString(row.source_schedule_key))
+      .filter((key): key is string => Boolean(key));
+    const existingScheduleIds = await fetchExistingScheduleIds(sourceScheduleKeys);
+    const validation = validateRows(rows, masterRefs, existingScheduleIds);
     await upsertSourceSchedules(validation.validRows);
     await syncSourceRestaurantBookings(validation.validRows);
     await syncSourceHotelBookings(validation.validRows);
