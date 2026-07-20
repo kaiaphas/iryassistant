@@ -34,13 +34,14 @@ export function ReservationCustomerPrint({ schedule }: { schedule: ScheduleGroup
           <col className="passenger-print-col-price" />
           <col className="passenger-print-col-people" />
           <col className="passenger-print-col-name" />
+          <col className="passenger-print-col-boarding" />
           <col className="passenger-print-col-phone" />
           <col className="passenger-print-col-payment" />
           <col className="passenger-print-col-note" />
         </colgroup>
         <tbody>
           <tr>
-            <th colSpan={8} className="passenger-print-heading">
+            <th colSpan={9} className="passenger-print-heading">
               <span>{formatPrintDate(schedule.tourDate, schedule.dayLabel)}</span>
               {schedule.productName}
             </th>
@@ -50,7 +51,7 @@ export function ReservationCustomerPrint({ schedule }: { schedule: ScheduleGroup
             <th>수배현황</th>
             <th>가격</th>
             <th>인원</th>
-            <th colSpan={3}>예약자</th>
+            <th colSpan={4}>예약자</th>
             <th>비고</th>
           </tr>
           {reservations.map((reservation, index) => (
@@ -76,7 +77,10 @@ export function ReservationCustomerPrint({ schedule }: { schedule: ScheduleGroup
                 </>
               ) : null}
               <td className="passenger-print-name">
-                {reservation ? <><strong>{reservation.customerName}</strong><span>{printPeopleLabel(reservation.adult, reservation.child)}</span></> : "-"}
+                {reservation ? <strong>{reservation.customerName}</strong> : "-"}
+              </td>
+              <td className="passenger-print-boarding">
+                {reservation ? printPeopleLabel(reservation.adult, reservation.child) : "-"}
               </td>
               <td className="passenger-print-phone">{reservation?.phone || "-"}</td>
               <td className="passenger-print-payment">{reservation?.paymentDate ? `입금일 : ${reservation.paymentDate}` : ""}</td>
@@ -84,7 +88,7 @@ export function ReservationCustomerPrint({ schedule }: { schedule: ScheduleGroup
             </tr>
           ))}
           <tr className="passenger-print-blank-row">
-            <td colSpan={8}>{schedule.dispatchMemo || ""}</td>
+            <td colSpan={9}>{schedule.dispatchMemo || ""}</td>
           </tr>
         </tbody>
       </table>

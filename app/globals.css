@@ -74,11 +74,11 @@ textarea {
 }
 
 .passenger-print-col-status {
-  width: 13%;
+  width: 12%;
 }
 
 .passenger-print-col-dispatch {
-  width: 16%;
+  width: 15%;
 }
 
 .passenger-print-col-price {
@@ -90,19 +90,23 @@ textarea {
 }
 
 .passenger-print-col-name {
-  width: 13%;
+  width: 11%;
+}
+
+.passenger-print-col-boarding {
+  width: 8%;
 }
 
 .passenger-print-col-phone {
-  width: 13%;
+  width: 12%;
 }
 
 .passenger-print-col-payment {
-  width: 14%;
+  width: 13%;
 }
 
 .passenger-print-col-note {
-  width: 18%;
+  width: 16%;
 }
 
 .passenger-print-heading {
@@ -173,6 +177,7 @@ textarea {
 }
 
 .passenger-print-name,
+.passenger-print-boarding,
 .passenger-print-phone,
 .passenger-print-payment,
 .passenger-print-note {
@@ -194,6 +199,11 @@ textarea {
 }
 
 .passenger-print-phone {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.passenger-print-boarding {
   text-align: center;
   white-space: nowrap;
 }
