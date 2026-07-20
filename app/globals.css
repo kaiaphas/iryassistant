@@ -46,6 +46,180 @@ textarea {
   display: none;
 }
 
+.passenger-print-root {
+  display: none;
+}
+
+.passenger-print-page {
+  box-sizing: border-box;
+  width: 297mm;
+  height: 210mm;
+  overflow: hidden;
+  padding: 8mm;
+  background: white;
+  color: #111;
+  font-family: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+}
+
+.passenger-print-summary {
+  width: 100%;
+  height: 194mm;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.passenger-print-summary th,
+.passenger-print-summary td {
+  border: 1.2px solid #263344;
+}
+
+.passenger-print-col-status {
+  width: 13%;
+}
+
+.passenger-print-col-dispatch {
+  width: 16%;
+}
+
+.passenger-print-col-price {
+  width: 7%;
+}
+
+.passenger-print-col-people {
+  width: 6%;
+}
+
+.passenger-print-col-name {
+  width: 13%;
+}
+
+.passenger-print-col-phone {
+  width: 13%;
+}
+
+.passenger-print-col-payment {
+  width: 14%;
+}
+
+.passenger-print-col-note {
+  width: 18%;
+}
+
+.passenger-print-heading {
+  height: 11mm;
+  padding: 1.5mm 2mm;
+  background: #fff;
+  font-size: 15pt;
+  font-weight: 700;
+  text-align: center;
+}
+
+.passenger-print-heading span {
+  margin-right: 2.5mm;
+  color: #c54e2e;
+  font-weight: 800;
+}
+
+.passenger-print-group-head {
+  height: 10mm;
+}
+
+.passenger-print-group-head th {
+  padding: 1.5mm 1mm;
+  background: #dbe5f1;
+  font-size: 12pt;
+  font-weight: 800;
+  text-align: center;
+}
+
+.passenger-print-status,
+.passenger-print-dispatch {
+  padding: 2mm;
+  font-size: 11.5pt;
+  line-height: 1.5;
+  vertical-align: top;
+}
+
+.passenger-print-status {
+  background: #dbe5f1;
+}
+
+.passenger-print-status strong {
+  display: block;
+  margin-bottom: 1mm;
+  font-size: 17pt;
+}
+
+.passenger-print-status b {
+  display: block;
+  margin-top: 1mm;
+  font-size: 11.5pt;
+}
+
+.passenger-print-status span,
+.passenger-print-dispatch span {
+  display: block;
+}
+
+.passenger-print-number {
+  padding: 2mm;
+  font-size: 14pt;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.passenger-print-reservation-row {
+  height: 9mm;
+}
+
+.passenger-print-name,
+.passenger-print-phone,
+.passenger-print-payment,
+.passenger-print-note {
+  padding: 0.4mm 1mm;
+  font-size: 10.5pt;
+  line-height: 1.1;
+  vertical-align: middle;
+  word-break: keep-all;
+}
+
+.passenger-print-name strong,
+.passenger-print-name span {
+  display: block;
+}
+
+.passenger-print-name strong {
+  margin-bottom: 0.2mm;
+  font-size: 10.5pt;
+}
+
+.passenger-print-phone {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.passenger-print-payment {
+  font-size: 9.5pt;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.passenger-print-note {
+  text-align: left;
+}
+
+.passenger-print-blank-row {
+  height: auto;
+}
+
+.passenger-print-blank-row td {
+  padding: 2mm;
+  font-size: 10.5pt;
+  text-align: left;
+  vertical-align: top;
+  white-space: pre-wrap;
+}
+
 .schedule-print-page {
   position: relative;
   display: block;
@@ -116,15 +290,16 @@ textarea {
   html,
   body {
     width: 297mm;
-    height: 210mm;
+    min-height: 210mm;
+    height: auto;
     margin: 0 !important;
     padding: 0 !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
 
-  body > :not(.schedule-print-root) {
+  body > :not(.schedule-print-root):not(.passenger-print-root) {
     display: none !important;
   }
 
@@ -144,6 +319,25 @@ textarea {
   .schedule-print-page {
     width: 297mm;
     height: 210mm;
+  }
+
+  .passenger-print-root {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 297mm;
+    height: 210mm;
+    margin: 0 !important;
+    overflow: hidden !important;
+    background: white;
+    z-index: 9999999;
+    break-after: avoid-page;
+  }
+
+  .passenger-print-page,
+  .passenger-print-summary {
+    break-inside: avoid-page;
   }
 
 }

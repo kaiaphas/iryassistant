@@ -1,5 +1,5 @@
-import type { AdminUser, Driver, Guide, Hotel, Restaurant, RoomRate } from "@/lib/types";
-import { adminUsers, drivers, guides, hotels, restaurants } from "@/lib/mock-data";
+import type { AdminUser, CodeItem, Driver, Guide, Hotel, Restaurant, RoomRate, SettlementType } from "@/lib/types";
+import { adminUsers, codeItems, drivers, guides, hotels, restaurants } from "@/lib/mock-data";
 import { createSupabaseServerClient } from "@/repositories/supabase/reservation-repository";
 
 type GuideRow = {
@@ -60,6 +60,31 @@ type AdminMemberRow = {
   status: "pending" | "active" | "inactive";
   last_login_at: string | null;
   created_at: string;
+};
+
+type CodeItemRow = {
+  id: string;
+  code_group: string;
+  code_value: string;
+  code_label: string;
+  default_value: string | null;
+  description: string | null;
+  sort_order: number | null;
+  active: boolean | null;
+  created_at: string;
+  updated_at: string | null;
+};
+
+export type SettlementDefaults = {
+  guideWithholdingRate: number;
+  driverWithholdingRate: number;
+};
+
+export type IntegratedSettlementDefaults = {
+  kimbapUnitPrice: number;
+  fruitUnitPrice: number;
+  riceCakeWaterUnitPrice: number;
+  snackBoxUnitPrice: number;
 };
 
 const emptyRate: RoomRate = {
@@ -187,6 +212,86 @@ function mapAdminMember(row: AdminMemberRow): AdminUser {
     lastLoginAt: row.last_login_at?.slice(0, 10),
     createdAt: row.created_at.slice(0, 10),
   };
+}
+
+function mapCodeItem(row: CodeItemRow): CodeItem {
+  return {
+    id: row.id,
+    group: row.code_group,
+    value: row.code_value,
+    label: row.code_label,
+    defaultValue: row.default_value ?? undefined,
+    description: textValue(row.description),
+    sortOrder: row.sort_order ?? 0,
+    active: row.active ?? true,
+    createdAt: row.created_at.slice(0, 10),
+    updatedAt: row.updated_at?.slice(0, 10),
+  };
+}
+
+function numericDefault(items: CodeItem[], group: string, value: string, fallback: number) {
+  const item = items.find((code) => code.group === group && code.value === value && code.active);
+  const parsed = Number(item?.defaultValue);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+export async function findCodeItemsFromSupabase() {
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("master_codes")
+    .select("id,code_group,code_value,code_label,default_value,description,sort_order,active,created_at,updated_at")
+    .order("code_group", { ascending: true })
+    .order("sort_order", { ascending: true })
+    .order("code_label", { ascending: true });
+
+  if (isMissingTable(error)) return codeItems;
+  if (error) throw new Error(`기준정보 Supabase 조회 실패: ${error.message}`);
+
+  return ((data ?? []) as CodeItemRow[]).map(mapCodeItem);
+}
+
+export async function upsertCodeItemToSupabase(code: CodeItem) {
+  const supabase = createSupabaseServerClient();
+  const payload = {
+    ...(code.id ? { id: code.id } : {}),
+    code_group: code.group,
+    code_value: code.value,
+    code_label: code.label,
+    default_value: code.defaultValue || null,
+    description: code.description || null,
+    sort_order: code.sortOrder || 0,
+    active: code.active,
+  };
+  const { data, error } = await supabase
+    .from("master_codes")
+    .upsert(payload, { onConflict: "code_group,code_value" })
+    .select("id,code_group,code_value,code_label,default_value,description,sort_order,active,created_at,updated_at")
+    .single();
+
+  if (error) throw new Error(`기준정보 저장 실패: ${error.message}`);
+  return mapCodeItem(data as CodeItemRow);
+}
+
+export async function getSettlementDefaultsFromSupabase(): Promise<SettlementDefaults> {
+  const items = await findCodeItemsFromSupabase();
+  return {
+    guideWithholdingRate: numericDefault(items, "SETTLEMENT_ITEM", "GUIDE_WITHHOLDING_RATE", 3.3),
+    driverWithholdingRate: numericDefault(items, "SETTLEMENT_ITEM", "DRIVER_WITHHOLDING_RATE", 3.3),
+  };
+}
+
+export async function getIntegratedSettlementDefaultsFromSupabase(): Promise<IntegratedSettlementDefaults> {
+  const items = await findCodeItemsFromSupabase();
+  return {
+    kimbapUnitPrice: numericDefault(items, "INTEGRATED_SETTLEMENT_ITEM", "KIMBAP_UNIT_PRICE", 4000),
+    fruitUnitPrice: numericDefault(items, "INTEGRATED_SETTLEMENT_ITEM", "FRUIT_UNIT_PRICE", 2900),
+    riceCakeWaterUnitPrice: numericDefault(items, "INTEGRATED_SETTLEMENT_ITEM", "RICE_CAKE_WATER_UNIT_PRICE", 1300),
+    snackBoxUnitPrice: numericDefault(items, "INTEGRATED_SETTLEMENT_ITEM", "SNACK_BOX_UNIT_PRICE", 2000),
+  };
+}
+
+export function getSettlementWithholdingRate(defaults: SettlementDefaults, type: SettlementType) {
+  return type === "GUIDE" ? defaults.guideWithholdingRate : defaults.driverWithholdingRate;
 }
 
 export async function findAdminMembersFromSupabase() {

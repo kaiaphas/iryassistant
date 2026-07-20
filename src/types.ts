@@ -39,7 +39,10 @@ export type MySqlScheduleRow = {
   bus_company?: string | number | null;
   vehicle_capacity?: string | number | null;
   guide_name?: string | null;
+  edu_guide1_name?: string | null;
+  edu_guide2_name?: string | null;
   driver_name?: string | null;
+  incen_status?: string | null;
   progress_status?: string | null;
   schedule_memo?: string | null;
   notice_memo?: string | null;
@@ -62,6 +65,21 @@ export type MySqlScheduleRow = {
   room_quad_count?: number | string | null;
 
   updated_at?: string | Date | null;
+};
+
+export type MySqlReservationCustomerRow = {
+  source_schedule_key: string | number | null;
+  customer_name: string | null;
+  phone?: string | number | null;
+  customer_message?: string | null;
+  etc?: string | null;
+  reservation_status?: string | null;
+  payment_date?: string | Date | null;
+  station?: string | null;
+  adult?: number | string | null;
+  child?: number | string | null;
+  total_people?: number | string | null;
+  reservation_date?: string | Date | null;
 };
 
 export type NormalizedRestaurantBooking = {
@@ -105,9 +123,13 @@ export type NormalizedSchedule = {
   guide_id: string | null;
   guide_name: string | null;
   guide_phone: string | null;
+  edu_guide1_name: string | null;
+  edu_guide2_name: string | null;
   driver_id: string | null;
   driver_name: string | null;
   driver_phone: string | null;
+  price: number;
+  incen_status: string | null;
   progress_status: ScheduleProgressStatus;
   memo: string | null;
   notice_memo: string | null;
@@ -118,6 +140,24 @@ export type NormalizedSchedule = {
   restaurants: NormalizedRestaurantBooking[];
   hotel: NormalizedHotelBooking | null;
   rooms: NormalizedRoomAssignment[];
+};
+
+export type NormalizedReservationCustomer = {
+  id: string;
+  schedule_id: string;
+  source_schedule_key: string;
+  customer_name: string;
+  phone: string | null;
+  customer_message: string | null;
+  etc: string | null;
+  reservation_status: string | null;
+  payment_date: string | null;
+  station: string | null;
+  adult_count: number;
+  child_count: number;
+  people_count: number;
+  reservation_date: string | null;
+  sort_order: number;
 };
 
 export type ImportBatchInsert = {

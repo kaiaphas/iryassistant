@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ReservationFilters, type ReservationFilterState } from "@/components/reservations/ReservationFilters";
 import { ScheduleAccordionCards } from "@/components/reservations/ScheduleAccordionCards";
 import { ScheduleAccordionTable } from "@/components/reservations/ScheduleAccordionTable";
+import { ReservationCustomerPrint } from "@/components/reservations/ReservationCustomerPrint";
 import { getHotelAggregateStatus, getHotelProvisionalAggregateStatus, getRestaurantAggregateStatus, getScheduleHotelBookings, getScheduleProgressStatus } from "@/lib/reservation-status";
 import { getKstDateInput } from "@/lib/date";
 import { TablePagination } from "@/components/common/TablePagination";
@@ -68,6 +69,8 @@ export function ReservationsClient({
   const [saveMessage, setSaveMessage] = React.useState<string>("");
   const [dirtyScheduleIds, setDirtyScheduleIds] = React.useState<Set<string>>(() => new Set());
   const [printSchedule, setPrintSchedule] = React.useState<ScheduleGroup | null>(null);
+  const [reservationPrintSchedule, setReservationPrintSchedule] = React.useState<ScheduleGroup | null>(null);
+  const [reservationPrintQueued, setReservationPrintQueued] = React.useState(false);
   const [printTextByScheduleId, setPrintTextByScheduleId] = React.useState<Record<string, string>>({});
   const [printQueued, setPrintQueued] = React.useState(false);
   const [printMounted, setPrintMounted] = React.useState(false);
@@ -296,10 +299,28 @@ export function ReservationsClient({
     return () => window.cancelAnimationFrame(frame);
   }, [fitPrintTitle, printQueued, printSchedule]);
 
+  React.useEffect(() => {
+    if (!reservationPrintQueued || !reservationPrintSchedule) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      window.print();
+      setReservationPrintQueued(false);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [reservationPrintQueued, reservationPrintSchedule]);
+
   function printScheduleName(schedule: ScheduleGroup) {
     const printText = printTextByScheduleId[schedule.id]?.trim();
+    setReservationPrintSchedule(null);
     setPrintSchedule(printText ? { ...schedule, productName: printText } : schedule);
     setPrintQueued(true);
+  }
+
+  function printReservationCustomers(schedule: ScheduleGroup) {
+    setPrintSchedule(null);
+    setReservationPrintSchedule(schedule);
+    setReservationPrintQueued(true);
   }
 
   return (
@@ -326,6 +347,7 @@ export function ReservationsClient({
           onSaveSchedule={saveSchedule}
           onResetLinkedOperation={resetLinkedOperation}
           onPrintSchedule={printScheduleName}
+          onPrintReservationCustomers={printReservationCustomers}
           printTextByScheduleId={printTextByScheduleId}
           onChangePrintText={(scheduleId, value) => setPrintTextByScheduleId((current) => ({ ...current, [scheduleId]: value }))}
           savingId={savingId}
@@ -346,6 +368,7 @@ export function ReservationsClient({
           onSaveSchedule={saveSchedule}
           onResetLinkedOperation={resetLinkedOperation}
           onPrintSchedule={printScheduleName}
+          onPrintReservationCustomers={printReservationCustomers}
           printTextByScheduleId={printTextByScheduleId}
           onChangePrintText={(scheduleId, value) => setPrintTextByScheduleId((current) => ({ ...current, [scheduleId]: value }))}
           savingId={savingId}
@@ -370,6 +393,12 @@ export function ReservationsClient({
                 <img ref={printLogoRef} className="schedule-print-logo" src="/incheon-royal-tour-logo.jpg" alt="인천로열투어" />
               </div>
             </div>
+          </div>,
+          document.body,
+        ) : null}
+        {printMounted && reservationPrintSchedule ? createPortal(
+          <div className="passenger-print-root" aria-hidden="true">
+            <ReservationCustomerPrint schedule={reservationPrintSchedule} />
           </div>,
           document.body,
         ) : null}

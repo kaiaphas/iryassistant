@@ -46,6 +46,10 @@ function formatNumberInput(value: number) {
   return new Intl.NumberFormat("ko-KR").format(value);
 }
 
+function formatHeaderTotal(value: number) {
+  return formatNumberInput(value) || "0";
+}
+
 function statusLabel(status: IntegratedSettlementStatus) {
   return status === "CONFIRMED" ? "완료" : "작성중";
 }
@@ -54,7 +58,7 @@ const readOnlyHeadClass = "bg-slate-100 text-slate-600";
 const inputHeadClass = "bg-white";
 const readOnlyCellClass = "bg-slate-50/70 text-slate-700";
 
-function HeadLabel({ label, hint }: { label: string; hint: "연동" | "입력" | "자동" | "저장" }) {
+function HeadLabel({ label, hint }: { label: string; hint: string }) {
   return (
     <div className="flex flex-col items-center gap-0.5">
       <span>{label}</span>
@@ -158,10 +162,28 @@ export function IntegratedSettlementTable({ initialRows, initialYear, initialMon
   const summary = filteredRows.reduce((acc, row) => {
     const totalExpense = row.operationCost + row.vehicleCost + row.guideCost + row.kimbapCost + row.fruitCost + row.riceCakeWaterCost + row.snackBoxCost;
     acc.totalIncome += row.totalIncome;
+    acc.operationCost += row.operationCost;
+    acc.vehicleCost += row.vehicleCost;
+    acc.guideCost += row.guideCost;
+    acc.kimbapCost += row.kimbapCost;
+    acc.fruitCost += row.fruitCost;
+    acc.riceCakeWaterCost += row.riceCakeWaterCost;
+    acc.snackBoxCost += row.snackBoxCost;
     acc.totalExpense += totalExpense;
     acc.finalBalance += row.finalBalance;
     return acc;
-  }, { totalIncome: 0, totalExpense: 0, finalBalance: 0 });
+  }, {
+    totalIncome: 0,
+    operationCost: 0,
+    vehicleCost: 0,
+    guideCost: 0,
+    kimbapCost: 0,
+    fruitCost: 0,
+    riceCakeWaterCost: 0,
+    snackBoxCost: 0,
+    totalExpense: 0,
+    finalBalance: 0,
+  });
 
   function replaceRow(row: IntegratedSettlementRow) {
     setRows((current) => current.map((item) => (item.id === row.id ? row : item)));
@@ -323,15 +345,15 @@ export function IntegratedSettlementTable({ initialRows, initialYear, initialMon
                 <TableHead className={`w-[260px] text-center ${readOnlyHeadClass}`}><HeadLabel label="행선지" hint="연동" /></TableHead>
                 <TableHead className={`w-[90px] text-center ${inputHeadClass}`}><HeadLabel label="인원" hint="입력" /></TableHead>
                 <TableHead className={`w-[110px] text-center ${inputHeadClass}`}><HeadLabel label="단가" hint="입력" /></TableHead>
-                <TableHead className={`w-[130px] text-center ${inputHeadClass}`}><HeadLabel label="총입금액" hint="입력" /></TableHead>
-                <TableHead className={`w-[130px] text-center ${inputHeadClass}`}><HeadLabel label="일정진행비" hint="입력" /></TableHead>
-                <TableHead className={`w-[130px] text-center ${inputHeadClass}`}><HeadLabel label="차량비" hint="입력" /></TableHead>
-                <TableHead className={`w-[130px] text-center ${inputHeadClass}`}><HeadLabel label="가이드비" hint="입력" /></TableHead>
-                <TableHead className={`w-[180px] text-center ${readOnlyHeadClass}`}><HeadLabel label="김밥" hint="자동" /></TableHead>
-                <TableHead className={`w-[180px] text-center ${readOnlyHeadClass}`}><HeadLabel label="과일" hint="자동" /></TableHead>
-                <TableHead className={`w-[220px] text-center ${readOnlyHeadClass}`}><HeadLabel label="떡,생수" hint="자동" /></TableHead>
-                <TableHead className={`w-[180px] text-center ${readOnlyHeadClass}`}><HeadLabel label="간식상자" hint="자동" /></TableHead>
-                <TableHead className={`w-[130px] text-center ${readOnlyHeadClass}`}><HeadLabel label="잔액" hint="자동" /></TableHead>
+                <TableHead className={`w-[130px] text-center ${inputHeadClass}`}><HeadLabel label="총입금액" hint={formatHeaderTotal(summary.totalIncome)} /></TableHead>
+                <TableHead className={`w-[130px] text-center ${inputHeadClass}`}><HeadLabel label="일정진행비" hint={formatHeaderTotal(summary.operationCost)} /></TableHead>
+                <TableHead className={`w-[130px] text-center ${inputHeadClass}`}><HeadLabel label="차량비" hint={formatHeaderTotal(summary.vehicleCost)} /></TableHead>
+                <TableHead className={`w-[130px] text-center ${inputHeadClass}`}><HeadLabel label="가이드비" hint={formatHeaderTotal(summary.guideCost)} /></TableHead>
+                <TableHead className={`w-[180px] text-center ${readOnlyHeadClass}`}><HeadLabel label="김밥" hint={formatHeaderTotal(summary.kimbapCost)} /></TableHead>
+                <TableHead className={`w-[180px] text-center ${readOnlyHeadClass}`}><HeadLabel label="과일" hint={formatHeaderTotal(summary.fruitCost)} /></TableHead>
+                <TableHead className={`w-[220px] text-center ${readOnlyHeadClass}`}><HeadLabel label="떡,생수" hint={formatHeaderTotal(summary.riceCakeWaterCost)} /></TableHead>
+                <TableHead className={`w-[180px] text-center ${readOnlyHeadClass}`}><HeadLabel label="간식상자" hint={formatHeaderTotal(summary.snackBoxCost)} /></TableHead>
+                <TableHead className={`w-[130px] text-center ${readOnlyHeadClass}`}><HeadLabel label="잔액" hint={formatHeaderTotal(summary.finalBalance)} /></TableHead>
                 <TableHead className={`w-[130px] text-center ${readOnlyHeadClass}`}><HeadLabel label="가이드명" hint="연동" /></TableHead>
                 <TableHead className={`w-[220px] text-center ${inputHeadClass}`}><HeadLabel label="비고" hint="입력" /></TableHead>
                 <TableHead className={`w-[110px] text-center ${inputHeadClass}`}><HeadLabel label="정산상태" hint="입력" /></TableHead>

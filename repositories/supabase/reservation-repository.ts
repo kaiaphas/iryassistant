@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { FacilityBookingStatus, HotelBooking, RestaurantBooking, ScheduleGroup } from "@/lib/types";
+import type { FacilityBookingStatus, HotelBooking, Reservation, RestaurantBooking, ScheduleGroup } from "@/lib/types";
 
 type ReservationScheduleOverviewRow = {
   id: string;
@@ -33,6 +33,10 @@ type ReservationScheduleOverviewRow = {
   progress_status_label: string | null;
   memo: string | null;
   notice_memo: string | null;
+  edu_guide1_name?: string | null;
+  edu_guide2_name?: string | null;
+  price?: number | string | null;
+  incen_status?: string | null;
 };
 
 type RestaurantBookingRow = {
@@ -73,6 +77,27 @@ type SourceScheduleVehicleRow = {
   vehicle_no: string | null;
   bus_company: string | null;
   vehicle_capacity: string | null;
+  edu_guide1_name?: string | null;
+  edu_guide2_name?: string | null;
+  price?: number | string | null;
+  incen_status?: string | null;
+};
+
+type ReservationCustomerRow = {
+  id: string;
+  schedule_id: string;
+  customer_name: string;
+  phone: string | null;
+  customer_message: string | null;
+  etc: string | null;
+  reservation_status: string | null;
+  payment_date: string | null;
+  station: string | null;
+  adult_count: number | null;
+  child_count: number | null;
+  people_count: number | null;
+  reservation_date: string | null;
+  sort_order: number;
 };
 
 const overviewSelectWithContacts =
@@ -200,6 +225,9 @@ function mapOverviewRow(row: ReservationScheduleOverviewRow): ScheduleGroup {
     productName,
     reservationCount: row.reservation_count ?? 0,
     notBusCount: row.not_bus_count ?? 0,
+    price: Number(row.price) || 0,
+    eduGuideNames: [row.edu_guide1_name, row.edu_guide2_name].filter((name): name is string => Boolean(name)),
+    incentiveStatus: row.incen_status ?? "",
     departureTime: row.departure_time ?? "-",
     returnTime: row.return_time ?? "-",
     busNo: row.vehicle_no ?? "",
@@ -226,6 +254,37 @@ function mapOverviewRow(row: ReservationScheduleOverviewRow): ScheduleGroup {
     progressStatus: row.progress_status_label ?? "진행중",
     reservations: [],
     dispatchMemo: row.memo || row.notice_memo || "",
+  };
+}
+
+function mapReservationCustomer(row: ReservationCustomerRow, schedule: ReservationScheduleOverviewRow): Reservation {
+  return {
+    orderId: row.id,
+    customerName: row.customer_name,
+    phone: row.phone ?? "",
+    tourDate: schedule.tour_date,
+    station: row.station ?? "",
+    reservationStatus: row.reservation_status ?? "",
+    totalPeople: row.people_count ?? 0,
+    adult: row.adult_count ?? 0,
+    child: row.child_count ?? 0,
+    price: 0,
+    paymentType: "",
+    paymentDate: row.payment_date ?? undefined,
+    reservationDate: row.reservation_date ?? "",
+    staffName: "",
+    busNo: schedule.vehicle_no ?? undefined,
+    customerMessage: row.customer_message ?? undefined,
+    internalMemo: row.etc ?? undefined,
+    productName: schedule.product_name ?? "",
+    departureTime: schedule.departure_time ?? undefined,
+    returnTime: schedule.return_time ?? undefined,
+    busInfo: schedule.bus_company ?? undefined,
+    busType: schedule.vehicle_capacity ?? undefined,
+    driverName: schedule.driver_name ?? undefined,
+    guideName: schedule.guide_name ?? undefined,
+    hotelName: schedule.hotel_name ?? undefined,
+    progressStatus: schedule.progress_status_label ?? undefined,
   };
 }
 
@@ -317,13 +376,25 @@ async function applySourceOperationFields(
   const sourceVehicleRows: SourceScheduleVehicleRow[] = [];
 
   for (const ids of chunk(rows.map((row) => row.id), 1000)) {
-    const { data, error } = await supabase
+    const extendedResult = await supabase
       .from("reservation_schedule_sources")
-      .select("id,source_schedule_key,departure_time,vehicle_no,bus_company,vehicle_capacity")
+      .select("id,source_schedule_key,departure_time,vehicle_no,bus_company,vehicle_capacity,edu_guide1_name,edu_guide2_name,price,incen_status")
       .in("id", ids);
+    let data = extendedResult.data as SourceScheduleVehicleRow[] | null;
+    let error = extendedResult.error;
+    const extendedErrorMessage = error?.message ?? "";
+
+    if (error && ["edu_guide1_name", "edu_guide2_name", "price", "incen_status"].some((column) => extendedErrorMessage.includes(column))) {
+      const fallback = await supabase
+        .from("reservation_schedule_sources")
+        .select("id,source_schedule_key,departure_time,vehicle_no,bus_company,vehicle_capacity")
+        .in("id", ids);
+      data = fallback.data as SourceScheduleVehicleRow[] | null;
+      error = fallback.error;
+    }
 
     if (error) {
-      throw new Error(`원본 차량번호 조회 실패: ${error.message}`);
+      throw new Error(`원본 일정 조회 실패: ${error.message}`);
     }
 
     sourceVehicleRows.push(...((data ?? []) as SourceScheduleVehicleRow[]));
@@ -338,7 +409,20 @@ async function applySourceOperationFields(
     vehicle_no: sourceById.get(row.id)?.vehicle_no ?? sourceBySourceKey.get(row.source_schedule_key)?.vehicle_no ?? row.vehicle_no,
     bus_company: getSourceFallbackValue(row.bus_company, sourceById.get(row.id)?.bus_company ?? sourceBySourceKey.get(row.source_schedule_key)?.bus_company),
     vehicle_capacity: getSourceFallbackValue(row.vehicle_capacity, sourceById.get(row.id)?.vehicle_capacity ?? sourceBySourceKey.get(row.source_schedule_key)?.vehicle_capacity),
+    edu_guide1_name: sourceById.get(row.id)?.edu_guide1_name ?? sourceBySourceKey.get(row.source_schedule_key)?.edu_guide1_name,
+    edu_guide2_name: sourceById.get(row.id)?.edu_guide2_name ?? sourceBySourceKey.get(row.source_schedule_key)?.edu_guide2_name,
+    price: sourceById.get(row.id)?.price ?? sourceBySourceKey.get(row.source_schedule_key)?.price,
+    incen_status: sourceById.get(row.id)?.incen_status ?? sourceBySourceKey.get(row.source_schedule_key)?.incen_status,
   }));
+}
+
+function isMissingTable(error: { message?: string; code?: string } | null) {
+  const message = error?.message ?? "";
+  return error?.code === "42P01"
+    || error?.code === "PGRST205"
+    || message.includes("does not exist")
+    || message.includes("schema cache")
+    || message.includes("Could not find the table");
 }
 
 export async function findScheduleGroupsFromSupabase() {
@@ -386,10 +470,11 @@ export async function findScheduleGroupsFromSupabase() {
   const restaurantRows: RestaurantBookingRow[] = [];
   const hotelRows: HotelBookingRow[] = [];
   const hotelRoomRows: HotelRoomAssignmentRow[] = [];
+  const reservationCustomerRows: ReservationCustomerRow[] = [];
   const detailLookupChunkSize = 100;
 
   for (const ids of chunk(scheduleIds, detailLookupChunkSize)) {
-    const [{ data: restaurantData, error: restaurantError }, hotelResult] = await Promise.all([
+    const [{ data: restaurantData, error: restaurantError }, hotelResult, reservationCustomerResult] = await Promise.all([
       supabase
         .from("schedule_restaurant_bookings")
         .select("id,schedule_id,meal_type,restaurant_name,restaurant_phone,restaurant_memo,booking_status,sort_order")
@@ -400,9 +485,26 @@ export async function findScheduleGroupsFromSupabase() {
         .select("id,schedule_id,hotel_name,hotel_phone,hotel_memo,provisional_booking_status,provisional_double_room_count,provisional_triple_room_count,provisional_quad_room_count,booking_status,sort_order")
         .in("schedule_id", ids)
         .order("sort_order", { ascending: true }),
+      supabase
+        .from("source_schedule_reservation_customers")
+        .select("id,schedule_id,customer_name,phone,customer_message,etc,reservation_status,payment_date,station,adult_count,child_count,people_count,reservation_date,sort_order")
+        .in("schedule_id", ids)
+        .order("sort_order", { ascending: true }),
     ]);
     let hotelData = hotelResult.data;
     let hotelError = hotelResult.error;
+    let reservationCustomerData = reservationCustomerResult.data as ReservationCustomerRow[] | null;
+    let reservationCustomerError = reservationCustomerResult.error;
+
+    if (reservationCustomerError?.message.includes("etc")) {
+      const fallback = await supabase
+        .from("source_schedule_reservation_customers")
+        .select("id,schedule_id,customer_name,phone,customer_message,reservation_status,payment_date,station,adult_count,child_count,people_count,reservation_date,sort_order")
+        .in("schedule_id", ids)
+        .order("sort_order", { ascending: true });
+      reservationCustomerData = (fallback.data ?? []).map((row) => ({ ...row, etc: null })) as ReservationCustomerRow[];
+      reservationCustomerError = fallback.error;
+    }
 
     if (hotelError?.message?.includes("provisional_")) {
       const fallback = await supabase
@@ -437,8 +539,13 @@ export async function findScheduleGroupsFromSupabase() {
       throw new Error(`숙소 예약현황 Supabase 조회 실패: ${hotelError.message}`);
     }
 
+    if (reservationCustomerError && !isMissingTable(reservationCustomerError)) {
+      throw new Error(`예약자 명단 Supabase 조회 실패: ${reservationCustomerError.message}`);
+    }
+
     restaurantRows.push(...((restaurantData ?? []) as RestaurantBookingRow[]));
     hotelRows.push(...((hotelData ?? []) as HotelBookingRow[]));
+    reservationCustomerRows.push(...(reservationCustomerData ?? []));
   }
 
   for (const hotelIds of chunk(hotelRows.map((row) => row.id), detailLookupChunkSize)) {
@@ -476,6 +583,13 @@ export async function findScheduleGroupsFromSupabase() {
     hotelsBySchedule.set(row.schedule_id, items);
   }
 
+  const reservationCustomersBySchedule = new Map<string, ReservationCustomerRow[]>();
+  for (const row of reservationCustomerRows) {
+    const items = reservationCustomersBySchedule.get(row.schedule_id) ?? [];
+    items.push(row);
+    reservationCustomersBySchedule.set(row.schedule_id, items);
+  }
+
   return rows.map((row) => {
     const hotels = hotelsBySchedule.get(row.id) ?? [];
     const hotel = hotels[0];
@@ -488,9 +602,13 @@ export async function findScheduleGroupsFromSupabase() {
       hotel_provisional_status_label: hotel?.provisionalStatus,
       hotel_status_label: hotel?.status ?? row.hotel_status_label,
     });
-    if (!hotel) return schedule;
-    return {
+    const scheduleWithReservations = {
       ...schedule,
+      reservations: (reservationCustomersBySchedule.get(row.id) ?? []).map((item) => mapReservationCustomer(item, row)),
+    };
+    if (!hotel) return scheduleWithReservations;
+    return {
+      ...scheduleWithReservations,
       hotelBooking: hotel,
       hotelBookings: hotels,
     };

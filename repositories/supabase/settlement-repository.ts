@@ -1,4 +1,5 @@
 import type { SettlementItem, SettlementType } from "@/lib/types";
+import { getSettlementDefaultsFromSupabase, getSettlementWithholdingRate } from "@/repositories/supabase/master-repository";
 import { createSupabaseServerClient } from "@/repositories/supabase/reservation-repository";
 
 type SettlementPaymentStatus = "BEFORE" | "PAID" | "HOLD";
@@ -77,10 +78,6 @@ function calculateWithholding(amount: number, rate: number) {
   return Math.round((amount * rate) / 100);
 }
 
-function getDefaultWithholdingRate(type: SettlementType) {
-  return type === "GUIDE" || type === "DRIVER" ? 3.3 : 0;
-}
-
 function normalizeName(value: string | null | undefined) {
   return value?.replace(/\s+/g, "") || "";
 }
@@ -154,13 +151,17 @@ export async function findSettlementItemsFromSupabase(month: string, type: Settl
   const { start, end } = getMonthRange(month);
   const supabase = createSupabaseServerClient();
 
-  const { data: scheduleData, error: scheduleError } = await supabase
-    .from("reservation_schedule_overview")
-    .select("id,tour_date,tour_type_label,product_name,bus_company,guide_id,guide_name,guide_phone,driver_id,driver_name,driver_phone")
-    .eq("is_active", true)
-    .gte("tour_date", start)
-    .lte("tour_date", end)
-    .order("tour_date", { ascending: true });
+  const [scheduleResult, defaults] = await Promise.all([
+    supabase
+      .from("reservation_schedule_overview")
+      .select("id,tour_date,tour_type_label,product_name,bus_company,guide_id,guide_name,guide_phone,driver_id,driver_name,driver_phone")
+      .eq("is_active", true)
+      .gte("tour_date", start)
+      .lte("tour_date", end)
+      .order("tour_date", { ascending: true }),
+    getSettlementDefaultsFromSupabase(),
+  ]);
+  const { data: scheduleData, error: scheduleError } = scheduleResult;
 
   if (scheduleError) throw new Error(`예약현황 정산 대상 조회 실패: ${scheduleError.message}`);
 
@@ -221,7 +222,7 @@ export async function findSettlementItemsFromSupabase(month: string, type: Settl
     }
 
     const amount = 0;
-    const withholdingRate = getDefaultWithholdingRate(type);
+    const withholdingRate = getSettlementWithholdingRate(defaults, type);
     const withholdingAmount = calculateWithholding(amount, withholdingRate);
 
     return [{

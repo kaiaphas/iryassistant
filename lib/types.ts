@@ -75,6 +75,9 @@ export type ScheduleGroup = {
   productName: string;
   reservationCount: number;
   notBusCount: number;
+  price?: number;
+  eduGuideNames?: string[];
+  incentiveStatus?: string;
   departureTime: string;
   returnTime: string;
   busNo: string;
@@ -266,6 +269,7 @@ export type CodeItem = {
   group: string;
   value: string;
   label: string;
+  defaultValue?: string;
   description?: string;
   sortOrder: number;
   active: boolean;

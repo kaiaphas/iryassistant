@@ -4,7 +4,9 @@ import { config } from "./config";
 import type {
   ImportBatchUpdate,
   MealType,
+  MySqlReservationCustomerRow,
   MySqlScheduleRow,
+  NormalizedReservationCustomer,
   NormalizedRestaurantBooking,
   NormalizedSchedule,
   ReservationWorkStatus,
@@ -114,6 +116,12 @@ function normalizeTimeText(value: unknown) {
   const text = toNullableString(value);
   if (!text) return null;
   return text;
+}
+
+function normalizeNullableDateText(value: unknown) {
+  const text = toNullableString(value);
+  if (!text || text.startsWith("0000-00-00")) return null;
+  return text.slice(0, 10).replaceAll("/", "-");
 }
 
 function normalizeNumber(value: unknown, field: string) {
@@ -280,9 +288,13 @@ export function normalizeScheduleRow(
     guide_id: guide.id,
     guide_name: guide.name,
     guide_phone: guide.phone,
+    edu_guide1_name: toNullableString(row.edu_guide1_name),
+    edu_guide2_name: toNullableString(row.edu_guide2_name),
     driver_id: driver.id,
     driver_name: driver.name,
     driver_phone: driver.phone,
+    price: normalizeNumber(row.price, "price"),
+    incen_status: toNullableString(row.incen_status),
     progress_status: normalizeProgressStatus(row.progress_status),
     memo: toNullableString(row.schedule_memo),
     notice_memo: toNullableString(row.notice_memo),
@@ -294,6 +306,57 @@ export function normalizeScheduleRow(
     hotel,
     rooms,
   };
+}
+
+function normalizeReservationCustomers(
+  rows: MySqlReservationCustomerRow[],
+  schedules: NormalizedSchedule[],
+) {
+  const scheduleIds = new Map(schedules.map((schedule) => [schedule.source_schedule_key, schedule.id]));
+  const sortOrderBySchedule = new Map<string, number>();
+  const normalized: NormalizedReservationCustomer[] = [];
+
+  for (const row of rows) {
+    const sourceScheduleKey = toNullableString(row.source_schedule_key);
+    const customerName = toNullableString(row.customer_name);
+    const scheduleId = sourceScheduleKey ? scheduleIds.get(sourceScheduleKey) : undefined;
+    if (!sourceScheduleKey || !scheduleId || !customerName) continue;
+
+    const sortOrder = (sortOrderBySchedule.get(scheduleId) ?? 0) + 1;
+    sortOrderBySchedule.set(scheduleId, sortOrder);
+    const adultCount = normalizeNumber(row.adult, "adult");
+    const childCount = normalizeNumber(row.child, "child");
+    const peopleCount = row.total_people === null || row.total_people === undefined || row.total_people === ""
+      ? adultCount + childCount
+      : normalizeNumber(row.total_people, "total_people");
+    const identity = [
+      sourceScheduleKey,
+      customerName,
+      toNullableString(row.phone),
+      normalizeNullableDateText(row.reservation_date),
+      sortOrder,
+    ].join(":");
+
+    normalized.push({
+      id: deterministicUuid("reservation-customer", identity),
+      schedule_id: scheduleId,
+      source_schedule_key: sourceScheduleKey,
+      customer_name: customerName,
+      phone: toNullableString(row.phone),
+      customer_message: toNullableString(row.customer_message),
+      etc: toNullableString(row.etc),
+      reservation_status: toNullableString(row.reservation_status),
+      payment_date: normalizeNullableDateText(row.payment_date),
+      station: toNullableString(row.station),
+      adult_count: adultCount,
+      child_count: childCount,
+      people_count: peopleCount,
+      reservation_date: normalizeNullableDateText(row.reservation_date),
+      sort_order: sortOrder,
+    });
+  }
+
+  return normalized;
 }
 
 export function validateRows(
@@ -417,9 +480,13 @@ async function upsertSourceSchedules(rows: NormalizedSchedule[]) {
     guide_name: row.guide_name,
     guide_id: row.guide_id,
     guide_phone: row.guide_phone,
+    edu_guide1_name: row.edu_guide1_name,
+    edu_guide2_name: row.edu_guide2_name,
     driver_name: row.driver_name,
     driver_id: row.driver_id,
     driver_phone: row.driver_phone,
+    price: row.price,
+    incen_status: row.incen_status,
     progress_status: row.progress_status,
     memo: row.memo,
     notice_memo: row.notice_memo,
@@ -436,6 +503,29 @@ async function upsertSourceSchedules(rows: NormalizedSchedule[]) {
 
     if (error) {
       throw new Error(`reservation_schedule_sources upsert 실패: ${getSupabaseErrorMessage(error)}`);
+    }
+  }
+}
+
+async function syncSourceReservationCustomers(
+  schedules: NormalizedSchedule[],
+  rows: MySqlReservationCustomerRow[],
+) {
+  const scheduleIds = schedules.map((schedule) => schedule.id);
+  if (scheduleIds.length === 0) return;
+
+  for (const ids of chunk(scheduleIds, config.batch.chunkSize)) {
+    const { error } = await supabase.from("source_schedule_reservation_customers").delete().in("schedule_id", ids);
+    if (error) {
+      throw new Error(`기존 원본 예약자 명단 삭제 실패: ${getSupabaseErrorMessage(error)}`);
+    }
+  }
+
+  const normalizedRows = normalizeReservationCustomers(rows, schedules);
+  for (const chunkRows of chunk(normalizedRows, config.batch.chunkSize)) {
+    const { error } = await supabase.from("source_schedule_reservation_customers").insert(chunkRows);
+    if (error) {
+      throw new Error(`원본 예약자 명단 저장 실패: ${getSupabaseErrorMessage(error)}`);
     }
   }
 }
@@ -551,7 +641,12 @@ export async function deactivateMissingSchedules(validRows: NormalizedSchedule[]
   return missingIds.length;
 }
 
-export async function importReservationSchedules(rows: MySqlScheduleRow[], mode: SyncMode, fileName?: string | null) {
+export async function importReservationSchedules(
+  rows: MySqlScheduleRow[],
+  mode: SyncMode,
+  fileName?: string | null,
+  reservationCustomers: MySqlReservationCustomerRow[] = [],
+) {
   const batchId = randomUUID();
   await createImportBatch(batchId, fileName);
 
@@ -575,6 +670,7 @@ export async function importReservationSchedules(rows: MySqlScheduleRow[], mode:
     const existingScheduleIds = await fetchExistingScheduleIds(sourceScheduleKeys);
     const validation = validateRows(rows, masterRefs, existingScheduleIds);
     await upsertSourceSchedules(validation.validRows);
+    await syncSourceReservationCustomers(validation.validRows, reservationCustomers);
     await syncSourceRestaurantBookings(validation.validRows);
     await syncSourceHotelBookings(validation.validRows);
     const deactivatedCount = mode === "full" ? await deactivateMissingSchedules(validation.validRows) : 0;

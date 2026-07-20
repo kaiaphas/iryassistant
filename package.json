@@ -11,7 +11,8 @@
     "export:csv": "tsx src/index.ts export:csv",
     "sync:recent": "tsx src/index.ts sync:recent",
     "query:schedules": "tsx src/index.ts query:schedules",
-    "print:mysql-query": "tsx src/index.ts print:mysql-query"
+    "print:mysql-query": "tsx src/index.ts print:mysql-query",
+    "print:mysql-reservation-query": "tsx src/index.ts print:mysql-reservation-query"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",

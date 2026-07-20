@@ -1,7 +1,7 @@
 import mysql from "mysql2/promise";
 import iconv from "iconv-lite";
 import { config } from "./config";
-import type { MySqlScheduleRow } from "./types";
+import type { MySqlReservationCustomerRow, MySqlScheduleRow } from "./types";
 
 export async function createMySqlConnection() {
   try {
@@ -36,10 +36,14 @@ function buildScheduleConditionQuery(whereClause = "") {
       a.bus_type AS vehicle_capacity,
       a.driver AS driver_name,
       a.guide AS guide_name,
+      a.edu1 as edu_guide1_name,
+      a.edu2 as edu_guide2_name,
       a.hotel AS hotel_name,
       a.hotel_status AS hotel_status,
       a.memo AS schedule_memo,
       d.memo AS notice_memo,
+      c.price_adult as price,
+      a.incen_status as incen_status,
       CASE
         WHEN IFNULL(c.days2, 0) > 0 THEN 'STAY'
         WHEN a.hotel IS NOT NULL AND a.hotel <> '' THEN 'STAY'
@@ -95,6 +99,30 @@ function buildScheduleConditionQuery(whereClause = "") {
   `;
 }
 
+function buildReservationCustomerQuery(whereClause = "") {
+  return `
+    SELECT
+      CONCAT(a.tid, '|', a.tour_date, '|', COALESCE(NULLIF(a.bus, ''), '0')) AS source_schedule_key,
+      a.name AS customer_name,
+      a.cell AS phone,
+      a.message AS customer_message,
+      a.etc AS etc,
+      a.status AS reservation_status,
+      a.date_pay AS payment_date,
+      a.station AS station,
+      COALESCE(a.adult, 0) AS adult,
+      COALESCE(a.child, 0) AS child,
+      COALESCE(a.adult, 0) + COALESCE(a.child, 0) AS total_people,
+      a.reg_date AS reservation_date
+    FROM ez_order AS a
+    WHERE a.bit IN (1, 2)
+      AND REPLACE(a.tour_date, '/', '') BETWEEN ? AND ?
+      AND a.status NOT IN ('취소')
+      ${whereClause}
+    ORDER BY a.tour_date ASC, a.bus ASC, a.reg_date DESC
+  `;
+}
+
 function decodeMysqlValue(value: unknown): unknown {
   if (Buffer.isBuffer(value)) {
     return iconv.decode(value, config.mysql.charset);
@@ -111,6 +139,16 @@ function decodeMysqlRows(rows: mysql.RowDataPacket[]) {
     }
     return decoded as MySqlScheduleRow;
   });
+}
+
+async function fetchReservationCustomersByQuery(query: string, params: string[]) {
+  const connection = await createMySqlConnection();
+  try {
+    const [rows] = await connection.execute<mysql.RowDataPacket[]>(query, params);
+    return decodeMysqlRows(rows) as MySqlReservationCustomerRow[];
+  } finally {
+    await connection.end();
+  }
 }
 
 export async function fetchReservationSchedules() {
@@ -145,4 +183,25 @@ export async function fetchRecentReservationSchedules(updatedSince: Date) {
   }
 }
 
+export async function fetchReservationCustomers() {
+  return fetchReservationCustomersByQuery(
+    buildReservationCustomerQuery(),
+    [config.mysql.syncDateFrom, config.mysql.syncDateTo],
+  );
+}
+
+export async function fetchRecentReservationCustomers(updatedSince: Date) {
+  const dateText = [
+    updatedSince.getFullYear(),
+    String(updatedSince.getMonth() + 1).padStart(2, "0"),
+    String(updatedSince.getDate()).padStart(2, "0"),
+  ].join("");
+
+  return fetchReservationCustomersByQuery(
+    buildReservationCustomerQuery("AND REPLACE(a.tour_date, '/', '') >= ?"),
+    [config.mysql.syncDateFrom, config.mysql.syncDateTo, dateText],
+  );
+}
+
 export const legacyReservationQuerySql = buildScheduleConditionQuery();
+export const reservationCustomerQuerySql = buildReservationCustomerQuery();

@@ -1,5 +1,6 @@
 import type { IntegratedSettlementRow } from "@/lib/types";
 import { calculateIntegratedSettlementRow } from "@/lib/integrated-settlement-calculator";
+import { getIntegratedSettlementDefaultsFromSupabase, type IntegratedSettlementDefaults } from "@/repositories/supabase/master-repository";
 import { createSupabaseServerClient } from "@/repositories/supabase/reservation-repository";
 
 type ScheduleSourceRow = {
@@ -213,7 +214,14 @@ function mapDbRow(row: IntegratedSettlementDbRow): IntegratedSettlementRow {
   });
 }
 
-function createDraftRow(source: ScheduleSourceRow, year: number, month: number, sortNo: number, costs?: SettlementCosts): IntegratedSettlementRow {
+function createDraftRow(
+  source: ScheduleSourceRow,
+  year: number,
+  month: number,
+  sortNo: number,
+  defaults: IntegratedSettlementDefaults,
+  costs?: SettlementCosts,
+): IntegratedSettlementRow {
   const peopleCount = source.reservation_count ?? 0;
   return calculateIntegratedSettlementRow({
     id: `draft:${year}:${month}:${source.id}`,
@@ -236,17 +244,17 @@ function createDraftRow(source: ScheduleSourceRow, year: number, month: number, 
     vehicleCost: costs?.vehicleCost ?? 0,
     guideCost: costs?.guideCost ?? 0,
     kimbapQty: peopleCount,
-    kimbapUnitPrice: 4000,
+    kimbapUnitPrice: defaults.kimbapUnitPrice,
     kimbapCost: 0,
     fruitQty: peopleCount,
-    fruitUnitPrice: 2900,
+    fruitUnitPrice: defaults.fruitUnitPrice,
     fruitCost: 0,
     riceCakeWaterQty: peopleCount,
-    riceCakeWaterUnitPrice: 1300,
+    riceCakeWaterUnitPrice: defaults.riceCakeWaterUnitPrice,
     riceCakeWaterExtraCost: 0,
     riceCakeWaterCost: 0,
     snackBoxQty: peopleCount,
-    snackBoxUnitPrice: 2000,
+    snackBoxUnitPrice: defaults.snackBoxUnitPrice,
     snackBoxCost: 0,
     balance: 0,
     balanceFormula: undefined,
@@ -332,17 +340,18 @@ async function getOrCreateBatch(year: number, month: number) {
 }
 
 export async function findIntegratedSettlementRowsFromSupabase(year: number, month: number) {
-  const [sources, savedResult, settlementCosts] = await Promise.all([
+  const [sources, savedResult, settlementCosts, defaults] = await Promise.all([
     fetchScheduleSources(year, month),
     fetchSavedRows(year, month),
     fetchSettlementCosts(year, month),
+    getIntegratedSettlementDefaultsFromSupabase(),
   ]);
   const savedByScheduleId = new Map(savedResult.rows.map((row) => [row.scheduleId, row]));
 
   return sources.map((source, index) => {
     const saved = savedByScheduleId.get(source.id);
     const costs = settlementCosts.get(source.id);
-    if (!saved) return createDraftRow(source, year, month, index + 1, costs);
+    if (!saved) return createDraftRow(source, year, month, index + 1, defaults, costs);
     return applySettlementCosts({
       ...saved,
       sortNo: saved.sortNo || index + 1,

@@ -1,6 +1,7 @@
-import { findCodeItems, findVehicles } from "@/repositories/mock/master-repository";
+import { findVehicles } from "@/repositories/mock/master-repository";
 import {
   findAdminMembersFromSupabase,
+  findCodeItemsFromSupabase,
   findDriversFromSupabase,
   findGuidesFromSupabase,
   findHotelsFromSupabase,
@@ -28,7 +29,7 @@ export async function getHotels() {
 }
 
 export async function getCodeItems() {
-  return findCodeItems();
+  return findCodeItemsFromSupabase();
 }
 
 export async function getAdminUsers() {

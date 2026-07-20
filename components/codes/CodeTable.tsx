@@ -12,11 +12,14 @@ import { CodeForm } from "@/components/codes/CodeForm";
 import { TablePagination, tablePageSize } from "@/components/common/TablePagination";
 
 export function CodeTable({ codes }: { codes: CodeItem[] }) {
+  const [items, setItems] = React.useState(codes);
   const [group, setGroup] = React.useState("PRODUCT_CODE");
   const [selected, setSelected] = React.useState<CodeItem | undefined>();
   const [open, setOpen] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState("");
   const [page, setPage] = React.useState(1);
-  const filtered = codes.filter((code) => code.group === group);
+  const filtered = items.filter((code) => code.group === group);
   const totalPages = Math.max(1, Math.ceil(filtered.length / tablePageSize));
   const visibleItems = filtered.slice((page - 1) * tablePageSize, page * tablePageSize);
   const currentLabel = codeCategories.find((category) => category.group === group)?.label || group;
@@ -34,6 +37,32 @@ export function CodeTable({ codes }: { codes: CodeItem[] }) {
     setOpen(true);
   }
 
+  async function save(code: CodeItem) {
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch("/api/masters/codes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(code),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message ?? "기준정보 저장에 실패했습니다.");
+
+      setItems((current) => {
+        const exists = current.some((item) => item.id === payload.id || (item.group === payload.group && item.value === payload.value));
+        return exists
+          ? current.map((item) => (item.id === payload.id || (item.group === payload.group && item.value === payload.value) ? payload : item))
+          : [payload, ...current];
+      });
+      setOpen(false);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "기준정보 저장에 실패했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-3 lg:flex-row">
       <CodeCategoryTabs value={group} onChange={setGroup} />
@@ -45,11 +74,12 @@ export function CodeTable({ codes }: { codes: CodeItem[] }) {
           </div>
           <Button onClick={() => edit()}>+ 코드 등록</Button>
         </div>
+        {error ? <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
         <div className="hidden overflow-hidden rounded-xl border bg-white shadow-soft lg:block">
           <Table>
             <TableHeader>
               <TableRow>
-                {["코드그룹", "코드값", "코드명", "설명", "정렬순서", "사용여부", "등록일", "수정일", ""].map((head) => <TableHead key={head}>{head}</TableHead>)}
+                {["코드그룹", "코드값", "코드명", "기본값", "설명", "정렬순서", "사용여부", "등록일", "수정일", ""].map((head) => <TableHead key={head}>{head}</TableHead>)}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -58,6 +88,7 @@ export function CodeTable({ codes }: { codes: CodeItem[] }) {
                   <TableCell>{code.group}</TableCell>
                   <TableCell className="font-mono text-xs">{code.value}</TableCell>
                   <TableCell className="font-semibold">{code.label}</TableCell>
+                  <TableCell>{code.defaultValue || "-"}</TableCell>
                   <TableCell>{code.description || "-"}</TableCell>
                   <TableCell>{code.sortOrder}</TableCell>
                   <TableCell><StatusBadge value={code.active ? "사용" : "미사용"} /></TableCell>
@@ -81,7 +112,7 @@ export function CodeTable({ codes }: { codes: CodeItem[] }) {
                   </div>
                   <StatusBadge value={code.active ? "사용" : "미사용"} />
                 </div>
-                <p className="mt-2 text-sm text-slate-600">{code.description}</p>
+                <p className="mt-2 text-sm text-slate-600">{code.defaultValue ? `기본값: ${code.defaultValue}` : code.description}</p>
                 <Button className="mt-4 w-full" variant="outline" onClick={() => edit(code)}>수정</Button>
               </CardContent>
             </Card>
@@ -91,7 +122,7 @@ export function CodeTable({ codes }: { codes: CodeItem[] }) {
           <TablePagination totalCount={filtered.length} page={page} onPageChange={setPage} />
         </div>
       </div>
-      <CodeForm code={selected} group={group} open={open} onOpenChange={setOpen} />
+      <CodeForm code={selected} group={group} open={open} saving={saving} onOpenChange={setOpen} onSave={save} />
     </div>
   );
 }

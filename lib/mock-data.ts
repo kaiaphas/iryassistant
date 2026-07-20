@@ -324,6 +324,12 @@ export const codeItems: CodeItem[] = [
   { id: "C008", group: "STATION_CODE", value: "ICN_TERMINAL", label: "인천터미널", description: "인천터미널역 집결", sortOrder: 1, active: true, createdAt: "2026-01-02" },
   { id: "C009", group: "BUS_TYPE", value: "PREMIUM", label: "우등버스", description: "28인승 우등", sortOrder: 1, active: true, createdAt: "2026-01-02" },
   { id: "C010", group: "ROLE_CODE", value: "RESERVATION", label: "예약담당자", description: "예약 조회 및 등록 권한", sortOrder: 2, active: true, createdAt: "2026-01-02" },
+  { id: "C011", group: "SETTLEMENT_ITEM", value: "GUIDE_WITHHOLDING_RATE", label: "가이드 공제율", defaultValue: "3.3", description: "정산서 가이드 기본 공제율(%)", sortOrder: 1, active: true, createdAt: "2026-01-02" },
+  { id: "C012", group: "SETTLEMENT_ITEM", value: "DRIVER_WITHHOLDING_RATE", label: "기사 공제율", defaultValue: "3.3", description: "정산서 기사 기본 공제율(%)", sortOrder: 2, active: true, createdAt: "2026-01-02" },
+  { id: "C013", group: "INTEGRATED_SETTLEMENT_ITEM", value: "KIMBAP_UNIT_PRICE", label: "김밥", defaultValue: "4000", description: "통합정산서 김밥 기본 단가", sortOrder: 1, active: true, createdAt: "2026-01-02" },
+  { id: "C014", group: "INTEGRATED_SETTLEMENT_ITEM", value: "FRUIT_UNIT_PRICE", label: "과일", defaultValue: "2900", description: "통합정산서 과일 기본 단가", sortOrder: 2, active: true, createdAt: "2026-01-02" },
+  { id: "C015", group: "INTEGRATED_SETTLEMENT_ITEM", value: "RICE_CAKE_WATER_UNIT_PRICE", label: "떡생수", defaultValue: "1300", description: "통합정산서 떡생수 기본 단가", sortOrder: 3, active: true, createdAt: "2026-01-02" },
+  { id: "C016", group: "INTEGRATED_SETTLEMENT_ITEM", value: "SNACK_BOX_UNIT_PRICE", label: "간식상자", defaultValue: "2000", description: "통합정산서 간식상자 기본 단가", sortOrder: 4, active: true, createdAt: "2026-01-02" },
 ];
 
 export const adminUsers: AdminUser[] = [

@@ -2,6 +2,8 @@ import { CodeTable } from "@/components/codes/CodeTable";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { getCodeItems } from "@/services/master-service";
 
+export const dynamic = "force-dynamic";
+
 export default async function CodesPage() {
   const codes = await getCodeItems();
 

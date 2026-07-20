@@ -11,6 +11,7 @@ import { TourTypeBadge } from "@/components/common/TourTypeBadge";
 import { RestaurantReservationSection } from "@/components/reservations/RestaurantReservationSection";
 import { HotelReservationSection } from "@/components/reservations/HotelReservationSection";
 import { ReservationMemoSection } from "@/components/reservations/ReservationMemoSection";
+import { ReservationCustomerSection } from "@/components/reservations/ReservationCustomerSection";
 import { ScheduleOperationSection } from "@/components/reservations/ScheduleOperationSection";
 import { getHotelAggregateStatus, getHotelProvisionalAggregateStatus, getRestaurantAggregateStatus, getScheduleHotelBookings, getScheduleProgressStatus } from "@/lib/reservation-status";
 import { formatPersonWithPhone } from "@/lib/schedule-display";
@@ -24,6 +25,7 @@ export function ScheduleAccordionCards({
   onSaveSchedule,
   onResetLinkedOperation,
   onPrintSchedule,
+  onPrintReservationCustomers,
   printTextByScheduleId,
   onChangePrintText,
   savingId,
@@ -39,6 +41,7 @@ export function ScheduleAccordionCards({
   onSaveSchedule: (schedule: ScheduleGroup) => void;
   onResetLinkedOperation: (schedule: ScheduleGroup) => void;
   onPrintSchedule: (schedule: ScheduleGroup) => void;
+  onPrintReservationCustomers: (schedule: ScheduleGroup) => void;
   printTextByScheduleId: Record<string, string>;
   onChangePrintText: (scheduleId: string, value: string) => void;
   savingId?: string | null;
@@ -141,6 +144,7 @@ export function ScheduleAccordionCards({
                   <RestaurantReservationSection schedule={schedule} restaurants={restaurants} onChange={onChangeSchedule} />
                   {schedule.tourType === "숙박" ? <HotelReservationSection schedule={schedule} hotels={hotels} onChange={onChangeSchedule} /> : null}
                   <ReservationMemoSection schedule={schedule} onChange={onChangeSchedule} />
+                  <ReservationCustomerSection schedule={schedule} onPrint={onPrintReservationCustomers} />
                 </div>
               ) : null}
             </CardContent>

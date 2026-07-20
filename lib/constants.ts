@@ -43,6 +43,8 @@ export const codeCategories = [
   { group: "BUS_TYPE", label: "차종", icon: Bus },
   { group: "HOTEL_STATUS", label: "숙박상태", icon: CalendarDays },
   { group: "RESTAURANT_STATUS", label: "식당상태", icon: Database },
+  { group: "SETTLEMENT_ITEM", label: "정산서 항목", icon: Calculator },
+  { group: "INTEGRATED_SETTLEMENT_ITEM", label: "통합정산서 항목", icon: Calculator },
   { group: "ROLE_CODE", label: "권한코드", icon: UsersRound },
   { group: "SMS_TEMPLATE", label: "문자템플릿", icon: ClipboardList },
 ] as const;

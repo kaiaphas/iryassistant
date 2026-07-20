@@ -1,5 +1,12 @@
 import { exportReservationsCsv } from "./exportCsv";
-import { fetchRecentReservationSchedules, fetchReservationSchedules, legacyReservationQuerySql } from "./mysql";
+import {
+  fetchRecentReservationCustomers,
+  fetchRecentReservationSchedules,
+  fetchReservationCustomers,
+  fetchReservationSchedules,
+  legacyReservationQuerySql,
+  reservationCustomerQuerySql,
+} from "./mysql";
 import { importReservationSchedules } from "./importReservations";
 import { supabase, getSupabaseErrorMessage } from "./supabase";
 import type { ScheduleOverviewRow } from "./types";
@@ -21,9 +28,12 @@ async function main() {
   }
 
   if (command === "sync") {
-    const rows = await fetchReservationSchedules();
+    const [rows, reservationCustomers] = await Promise.all([
+      fetchReservationSchedules(),
+      fetchReservationCustomers(),
+    ]);
     const exported = await exportReservationsCsv(rows);
-    const result = await importReservationSchedules(rows, "full", exported.fileName);
+    const result = await importReservationSchedules(rows, "full", exported.fileName, reservationCustomers);
     console.log(
       `전체 동기화 완료: batch=${result.batchId}, total=${result.totalCount}, success=${result.successCount}, fail=${result.failCount}, inactive=${result.deactivatedCount}`,
     );
@@ -32,8 +42,11 @@ async function main() {
 
   if (command === "sync:recent") {
     const since = getRecentSince();
-    const rows = await fetchRecentReservationSchedules(since);
-    const result = await importReservationSchedules(rows, "recent");
+    const [rows, reservationCustomers] = await Promise.all([
+      fetchRecentReservationSchedules(since),
+      fetchRecentReservationCustomers(since),
+    ]);
+    const result = await importReservationSchedules(rows, "recent", null, reservationCustomers);
     console.log(
       `최근 데이터 동기화 완료: since=${since.toISOString()}, batch=${result.batchId}, total=${result.totalCount}, success=${result.successCount}, fail=${result.failCount}`,
     );
@@ -62,7 +75,12 @@ async function main() {
     return;
   }
 
-  throw new Error(`지원하지 않는 명령입니다: ${command}. sync, export:csv, sync:recent, query:schedules, print:mysql-query 중 하나를 사용하세요.`);
+  if (command === "print:mysql-reservation-query") {
+    console.log(reservationCustomerQuerySql);
+    return;
+  }
+
+  throw new Error(`지원하지 않는 명령입니다: ${command}. sync, export:csv, sync:recent, query:schedules, print:mysql-query, print:mysql-reservation-query 중 하나를 사용하세요.`);
 }
 
 main().catch((error) => {
