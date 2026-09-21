@@ -34,6 +34,7 @@ type RefundPaymentRow = {
 
 const refundSelect = "id,no,refund_date,customer_name,departure_date,people_count,phone,payment_method,deposit_date,product_amount,deposit_amount,refund_request_amount,depositor,balance_amount,registered_by,status,bank_account,memo";
 const refundPaymentSelect = "id,refund_id,deposit_date,deposit_amount,depositor,memo";
+const supabasePageSize = 1000;
 
 function isMissingTable(error: { message?: string; code?: string } | null) {
   const message = error?.message ?? "";
@@ -107,33 +108,66 @@ function mapRefund(row: RefundRow, payments: RefundPayment[] = legacyPayment(row
   };
 }
 
-export async function findRefundsFromSupabase() {
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("refunds")
-    .select(refundSelect)
-    .order("refund_date", { ascending: false })
-    .order("no", { ascending: true });
+async function findRefundPaymentsFromSupabase(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+) {
+  const rows: RefundPaymentRow[] = [];
+  let from = 0;
 
-  if (isMissingTable(error)) return refundItems;
-  if (error) throw new Error(`환불명단 Supabase 조회 실패: ${error.message}`);
-
-  const rows = (data ?? []) as RefundRow[];
-  const refundIds = rows.map((row) => row.id);
-  let paymentRows: RefundPaymentRow[] = [];
-
-  if (refundIds.length > 0) {
-    const { data: paymentData, error: paymentError } = await supabase
+  while (true) {
+    const { data, error } = await supabase
       .from("refund_payments")
       .select(refundPaymentSelect)
-      .in("refund_id", refundIds)
-      .order("deposit_date", { ascending: true });
+      .order("deposit_date", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, from + supabasePageSize - 1);
 
-    if (!isMissingTable(paymentError) && paymentError) {
-      throw new Error(`환불 입금내역 Supabase 조회 실패: ${paymentError.message}`);
-    }
-    paymentRows = ((paymentData ?? []) as RefundPaymentRow[]);
+    if (isMissingTable(error)) return [];
+    if (error) throw new Error(`환불 입금내역 Supabase 조회 실패: ${error.message}`);
+
+    const page = (data ?? []) as RefundPaymentRow[];
+    rows.push(...page);
+    if (page.length < supabasePageSize) break;
+    from += supabasePageSize;
   }
+
+  return rows;
+}
+
+async function findRefundRowsFromSupabase(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+) {
+  const rows: RefundRow[] = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("refunds")
+      .select(refundSelect)
+      .order("refund_date", { ascending: false })
+      .order("no", { ascending: true })
+      .range(from, from + supabasePageSize - 1);
+
+    if (isMissingTable(error)) return null;
+    if (error) throw new Error(`환불명단 Supabase 조회 실패: ${error.message}`);
+
+    const page = (data ?? []) as RefundRow[];
+    rows.push(...page);
+    if (page.length < supabasePageSize) break;
+    from += supabasePageSize;
+  }
+
+  return rows;
+}
+
+export async function findRefundsFromSupabase() {
+  const supabase = createSupabaseServerClient();
+  const rows = await findRefundRowsFromSupabase(supabase);
+  if (!rows) return refundItems;
+
+  const paymentRows = rows.length > 0
+    ? await findRefundPaymentsFromSupabase(supabase)
+    : [];
 
   const paymentsByRefundId = new Map<string, RefundPayment[]>();
   for (const row of paymentRows) {
