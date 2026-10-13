@@ -9,6 +9,8 @@ import { ReservationFilters, type ReservationFilterState } from "@/components/re
 import { ScheduleAccordionCards } from "@/components/reservations/ScheduleAccordionCards";
 import { ScheduleAccordionTable } from "@/components/reservations/ScheduleAccordionTable";
 import { ReservationCustomerPrint } from "@/components/reservations/ReservationCustomerPrint";
+import { ReservationPrintConfirmDialog } from "@/components/reservations/ReservationPrintConfirmDialog";
+import { recordReservationPrint } from "@/lib/reservation-print";
 import { getHotelAggregateStatus, getHotelProvisionalAggregateStatus, getRestaurantAggregateStatus, getScheduleHotelBookings, getScheduleProgressStatus } from "@/lib/reservation-status";
 import { getKstDateInput } from "@/lib/date";
 import { TablePagination } from "@/components/common/TablePagination";
@@ -71,6 +73,10 @@ export function ReservationsClient({
   const [printSchedule, setPrintSchedule] = React.useState<ScheduleGroup | null>(null);
   const [reservationPrintSchedule, setReservationPrintSchedule] = React.useState<ScheduleGroup | null>(null);
   const [reservationPrintQueued, setReservationPrintQueued] = React.useState(false);
+  const [pendingReservationPrint, setPendingReservationPrint] = React.useState<ScheduleGroup | null>(null);
+  const [recordingReservationPrint, setRecordingReservationPrint] = React.useState(false);
+  const [reservationPrintError, setReservationPrintError] = React.useState("");
+  const reservationPrintInFlight = React.useRef(false);
   const [printTextByScheduleId, setPrintTextByScheduleId] = React.useState<Record<string, string>>({});
   const [printQueued, setPrintQueued] = React.useState(false);
   const [printMounted, setPrintMounted] = React.useState(false);
@@ -318,13 +324,44 @@ export function ReservationsClient({
   }
 
   function printReservationCustomers(schedule: ScheduleGroup) {
-    setPrintSchedule(null);
-    setReservationPrintSchedule(schedule);
-    setReservationPrintQueued(true);
+    if (reservationPrintInFlight.current || schedule.reservations.length === 0) return;
+    setReservationPrintError("");
+    setPendingReservationPrint(schedule);
+  }
+
+  async function confirmReservationPrint() {
+    if (!pendingReservationPrint || reservationPrintInFlight.current) return;
+    reservationPrintInFlight.current = true;
+    setRecordingReservationPrint(true);
+    setReservationPrintError("");
+    try {
+      const printedAt = await recordReservationPrint(pendingReservationPrint.id);
+      setSchedules((current) => current.map((schedule) => schedule.id === pendingReservationPrint.id
+        ? { ...schedule, reservationCustomersPrintedAt: printedAt, reservationCustomersPrintTimeUnavailable: false }
+        : schedule));
+      setPrintSchedule(null);
+      setReservationPrintSchedule({ ...pendingReservationPrint, reservationCustomersPrintedAt: printedAt });
+      setPendingReservationPrint(null);
+      setReservationPrintQueued(true);
+    } catch {
+      setReservationPrintError("인쇄 시간을 저장하지 못했습니다. 로그인 상태와 연결을 확인하고 다시 시도해주세요.");
+    } finally {
+      reservationPrintInFlight.current = false;
+      setRecordingReservationPrint(false);
+    }
   }
 
   return (
     <div className="space-y-3">
+      <ReservationPrintConfirmDialog
+        open={pendingReservationPrint !== null}
+        saving={recordingReservationPrint}
+        error={reservationPrintError}
+        onCancel={() => {
+          if (!reservationPrintInFlight.current) setPendingReservationPrint(null);
+        }}
+        onConfirm={confirmReservationPrint}
+      />
       <div className="grid gap-3 sm:grid-cols-1">
         <Card>
           <CardContent className="flex items-center justify-between p-3">

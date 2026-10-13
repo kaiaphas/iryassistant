@@ -2,6 +2,7 @@
 
 import { Printer, Users } from "lucide-react";
 import type { ScheduleGroup } from "@/lib/types";
+import { formatReservationPrintTime } from "@/lib/reservation-print";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -24,10 +25,17 @@ export function ReservationCustomerSection({
           예약자 명단
           <span className="text-xs font-medium text-slate-500">{schedule.reservations.length}건</span>
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={() => onPrint(schedule)} disabled={schedule.reservations.length === 0}>
-          <Printer className="h-4 w-4" />
-          예약자 명단 인쇄
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-slate-500" aria-live="polite">
+            {schedule.reservationCustomersPrintTimeUnavailable ? "인쇄 시간 확인 불가" : schedule.reservationCustomersPrintedAt ? (
+              <>마지막 인쇄: <time dateTime={schedule.reservationCustomersPrintedAt}>{formatReservationPrintTime(schedule.reservationCustomersPrintedAt)}</time></>
+            ) : "인쇄 기록 없음"}
+          </span>
+          <Button type="button" variant="outline" size="sm" onClick={() => onPrint(schedule)} disabled={schedule.reservations.length === 0}>
+            <Printer className="h-4 w-4" />
+            예약자 명단 인쇄
+          </Button>
+        </div>
       </div>
 
       {schedule.reservations.length > 0 ? (

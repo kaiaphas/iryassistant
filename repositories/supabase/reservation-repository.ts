@@ -449,8 +449,10 @@ export async function findScheduleGroupsFromSupabase() {
   const hotelRows: HotelBookingRow[] = [];
   const hotelRoomRows: HotelRoomAssignmentRow[] = [];
   const reservationCustomerRows: ReservationCustomerRow[] = [];
+  const printedAtBySchedule = new Map<string, string>();
+  const unavailablePrintTimes = new Set<string>();
   for (const ids of chunkForFilter(scheduleIds)) {
-    const [{ data: restaurantData, error: restaurantError }, hotelResult, reservationCustomerResult] = await Promise.all([
+    const [{ data: restaurantData, error: restaurantError }, hotelResult, reservationCustomerResult, printResult] = await Promise.all([
       readAllRows((from, to) => supabase
         .from("schedule_restaurant_bookings")
         .select("id,schedule_id,meal_type,restaurant_name,restaurant_phone,restaurant_memo,booking_status,sort_order")
@@ -472,7 +474,18 @@ export async function findScheduleGroupsFromSupabase() {
         .order("sort_order", { ascending: true })
         .order("id", { ascending: true })
         .range(from, to)),
+      readAllRows((from, to) => supabase
+        .from("reservation_schedule_prints")
+        .select("schedule_id,printed_at")
+        .in("schedule_id", ids)
+        .order("schedule_id", { ascending: true })
+        .range(from, to)).catch(() => ({ data: null, error: { message: "Print history unavailable" } })),
     ]);
+    if (printResult.error) {
+      ids.forEach((id) => unavailablePrintTimes.add(id));
+    } else {
+      for (const print of printResult.data ?? []) printedAtBySchedule.set(print.schedule_id, print.printed_at);
+    }
     let hotelData = hotelResult.data;
     let hotelError = hotelResult.error;
     let reservationCustomerData = reservationCustomerResult.data as ReservationCustomerRow[] | null;
@@ -595,6 +608,8 @@ export async function findScheduleGroupsFromSupabase() {
     });
     const scheduleWithReservations = {
       ...schedule,
+      reservationCustomersPrintedAt: printedAtBySchedule.get(row.id),
+      reservationCustomersPrintTimeUnavailable: unavailablePrintTimes.has(row.id),
       reservations: (reservationCustomersBySchedule.get(row.id) ?? []).map((item) => mapReservationCustomer(item, row)),
     };
     if (!hotel) return scheduleWithReservations;

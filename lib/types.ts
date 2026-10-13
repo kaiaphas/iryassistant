@@ -97,6 +97,8 @@ export type ScheduleGroup = {
   hotelBookings?: HotelBooking[];
   progressStatus: string;
   reservations: Reservation[];
+  reservationCustomersPrintedAt?: string;
+  reservationCustomersPrintTimeUnavailable?: boolean;
   dispatchMemo?: string;
 };
 
