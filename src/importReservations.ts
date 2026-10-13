@@ -16,6 +16,8 @@ import type {
   ValidationResult,
 } from "./types";
 
+const FILTER_CHUNK_SIZE = 100;
+
 function chunk<T>(items: T[], size: number) {
   const chunks: T[][] = [];
   for (let index = 0; index < items.length; index += size) {
@@ -401,7 +403,7 @@ async function fetchExistingScheduleIds(sourceScheduleKeys: string[]) {
   const scheduleIds = new Map<string, string>();
   const keys = Array.from(new Set(sourceScheduleKeys.filter(Boolean)));
 
-  for (const keyChunk of chunk(keys, config.batch.chunkSize)) {
+  for (const keyChunk of chunk(keys, FILTER_CHUNK_SIZE)) {
     const { data, error } = await supabase
       .from("reservation_schedule_sources")
       .select("id,source_schedule_key")
@@ -514,7 +516,7 @@ async function syncSourceReservationCustomers(
   const scheduleIds = schedules.map((schedule) => schedule.id);
   if (scheduleIds.length === 0) return;
 
-  for (const ids of chunk(scheduleIds, config.batch.chunkSize)) {
+  for (const ids of chunk(scheduleIds, FILTER_CHUNK_SIZE)) {
     const { error } = await supabase.from("source_schedule_reservation_customers").delete().in("schedule_id", ids);
     if (error) {
       throw new Error(`기존 원본 예약자 명단 삭제 실패: ${getSupabaseErrorMessage(error)}`);
@@ -534,7 +536,7 @@ async function syncSourceRestaurantBookings(rows: NormalizedSchedule[]) {
   const scheduleIds = rows.map((row) => row.id);
   if (scheduleIds.length === 0) return;
 
-  for (const ids of chunk(scheduleIds, config.batch.chunkSize)) {
+  for (const ids of chunk(scheduleIds, FILTER_CHUNK_SIZE)) {
     const { error } = await supabase.from("source_schedule_restaurant_bookings").delete().in("schedule_id", ids);
     if (error) {
       throw new Error(`기존 원본 식당 예약현황 삭제 실패: ${getSupabaseErrorMessage(error)}`);
@@ -560,7 +562,7 @@ async function syncSourceHotelBookings(rows: NormalizedSchedule[]) {
     .filter((row) => !row.hotel)
     .map((row) => row.id);
 
-  for (const ids of chunk(schedulesWithoutHotel, config.batch.chunkSize)) {
+  for (const ids of chunk(schedulesWithoutHotel, FILTER_CHUNK_SIZE)) {
     const { error } = await supabase.from("source_schedule_hotel_bookings").delete().in("schedule_id", ids);
     if (error) {
       throw new Error(`기존 원본 숙소 예약현황 삭제 실패: ${getSupabaseErrorMessage(error)}`);
@@ -578,7 +580,7 @@ async function syncSourceHotelBookings(rows: NormalizedSchedule[]) {
   }
 
   const hotelIds = hotelRows.map((row) => row.id);
-  for (const ids of chunk(hotelIds, config.batch.chunkSize)) {
+  for (const ids of chunk(hotelIds, FILTER_CHUNK_SIZE)) {
     const { error } = await supabase.from("source_schedule_hotel_room_assignments").delete().in("hotel_booking_id", ids);
     if (error) {
       throw new Error(`기존 원본 객실배정 삭제 실패: ${getSupabaseErrorMessage(error)}`);
@@ -627,7 +629,7 @@ export async function deactivateMissingSchedules(validRows: NormalizedSchedule[]
   const importedIds = new Set(validRows.map((row) => row.id));
   const missingIds = currentIds.filter((id) => !importedIds.has(id));
 
-  for (const ids of chunk(missingIds, config.batch.chunkSize)) {
+  for (const ids of chunk(missingIds, FILTER_CHUNK_SIZE)) {
     const { error } = await supabase
       .from("reservation_schedule_sources")
       .update({ is_active: false })
