@@ -193,3 +193,16 @@ DINNER / 석식
 - 당일 일정은 앱에서 식당 1개만 허용하고, 숙소 데이터는 적재하지 않습니다.
 - 숙박 일정은 `restaurant_bookings_json`으로 중식/석식 등 여러 식당을 적재할 수 있습니다.
 - `source_schedule_key`는 동일 일정의 고유키입니다. 이 값이 바뀌면 Supabase에서는 새 일정으로 인식됩니다.
+
+### 대량 데이터 연동 검증
+
+- 목록은 ID를 포함한 고정 정렬로 끝까지 페이지 조회합니다. 중간 페이지 실패 시 일부 명단을 정상 결과로 반환하지 않습니다.
+- 검색 조건은 최대 100개·인코딩 6,000바이트, 저장 요청은 최대 100개·1 MiB로 분할합니다. `BATCH_CHUNK_SIZE`는 1~500 정수만 허용합니다.
+- 동기화 서버 업데이트 전에 `supabase/migrations/20261013074424_harden_reservation_sync.sql`을 적용해야 합니다. 새 함수는 `service_role`만 실행할 수 있습니다.
+- 원본 예약자·식당·숙소·객실은 배치별 단일 트랜잭션으로 교체하여 실패한 배치의 기존 상세를 보존합니다. 전체 동기화 및 일정 기본정보까지 한 트랜잭션인 것은 아닙니다.
+- 아래 운영 검증은 읽기 전용이며 개인정보를 출력하지 않습니다. DB 건수와 화면 조회 함수의 결과를 비교합니다.
+
+```bash
+node --import tsx --test tests/supabase-batch.test.ts
+node --import tsx scripts/verify-supabase-links.ts 2026-10
+```

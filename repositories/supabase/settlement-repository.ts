@@ -1,6 +1,7 @@
 import type { SettlementItem, SettlementType } from "@/lib/types";
 import { getSettlementDefaultsFromSupabase, getSettlementWithholdingRate } from "@/repositories/supabase/master-repository";
 import { createSupabaseServerClient } from "@/repositories/supabase/reservation-repository";
+import { readAllRows } from "@/lib/supabase-batch";
 
 type SettlementPaymentStatus = "BEFORE" | "PAID" | "HOLD";
 
@@ -117,7 +118,8 @@ function mapSettlementItem(row: SettlementItemRow): SettlementItem {
 async function fetchMasterPeople(type: SettlementType) {
   const supabase = createSupabaseServerClient();
   const table = type === "GUIDE" ? "master_guides" : "master_drivers";
-  const { data, error } = await supabase.from(table).select("id,name,phone,bank_account");
+  const { data, error } = await readAllRows((from, to) => supabase.from(table)
+    .select("id,name,phone,bank_account").order("id", { ascending: true }).range(from, to));
   if (error) throw new Error(`마스터 조회 실패: ${error.message}`);
 
   const byId = new Map<string, MasterAccountRow>();
@@ -152,13 +154,15 @@ export async function findSettlementItemsFromSupabase(month: string, type: Settl
   const supabase = createSupabaseServerClient();
 
   const [scheduleResult, defaults] = await Promise.all([
-    supabase
+    readAllRows((from, to) => supabase
       .from("reservation_schedule_overview")
       .select("id,tour_date,tour_type_label,product_name,bus_company,guide_id,guide_name,guide_phone,driver_id,driver_name,driver_phone")
       .eq("is_active", true)
       .gte("tour_date", start)
       .lte("tour_date", end)
-      .order("tour_date", { ascending: true }),
+      .order("tour_date", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, to)),
     getSettlementDefaultsFromSupabase(),
   ]);
   const { data: scheduleData, error: scheduleError } = scheduleResult;
@@ -185,18 +189,22 @@ export async function findSettlementItemsFromSupabase(month: string, type: Settl
     }];
   });
   const [settlementResult] = await Promise.all([
-    supabase
+    readAllRows((from, to) => supabase
       .from("settlement_items")
       .select("id,settlement_month,settlement_type,schedule_id,person_id,person_name,person_phone,bank_account,tour_date,tour_type_label,product_name,bus_company,amount,withholding_rate,withholding_amount,net_amount,payment_status,payment_date,memo")
       .eq("settlement_month", month)
-      .eq("settlement_type", type),
+      .eq("settlement_type", type)
+      .order("id", { ascending: true })
+      .range(from, to)),
   ]);
   const savedData = settlementResult.error?.message.includes("tour_type_label")
-    ? await supabase
+    ? await readAllRows((from, to) => supabase
       .from("settlement_items")
       .select("id,settlement_month,settlement_type,schedule_id,person_id,person_name,person_phone,bank_account,tour_date,product_name,bus_company,amount,withholding_rate,withholding_amount,net_amount,payment_status,payment_date,memo")
       .eq("settlement_month", month)
       .eq("settlement_type", type)
+      .order("id", { ascending: true })
+      .range(from, to))
     : settlementResult;
 
   if (!isMissingTable(savedData.error) && savedData.error) {

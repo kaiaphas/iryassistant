@@ -1,6 +1,7 @@
 import type { AdminUser, CodeItem, Driver, Guide, Hotel, Restaurant, RoomRate, SettlementType } from "@/lib/types";
 import { adminUsers, codeItems, drivers, guides, hotels, restaurants } from "@/lib/mock-data";
 import { createSupabaseServerClient } from "@/repositories/supabase/reservation-repository";
+import { readAllRows } from "@/lib/supabase-batch";
 
 type GuideRow = {
   id: string;
@@ -237,12 +238,14 @@ function numericDefault(items: CodeItem[], group: string, value: string, fallbac
 
 export async function findCodeItemsFromSupabase() {
   const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  const { data, error } = await readAllRows((from, to) => supabase
     .from("master_codes")
     .select("id,code_group,code_value,code_label,default_value,description,sort_order,active,created_at,updated_at")
     .order("code_group", { ascending: true })
     .order("sort_order", { ascending: true })
-    .order("code_label", { ascending: true });
+    .order("code_label", { ascending: true })
+    .order("id", { ascending: true })
+    .range(from, to));
 
   if (isMissingTable(error)) return codeItems;
   if (error) throw new Error(`기준정보 Supabase 조회 실패: ${error.message}`);
@@ -296,10 +299,12 @@ export function getSettlementWithholdingRate(defaults: SettlementDefaults, type:
 
 export async function findAdminMembersFromSupabase() {
   const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  const { data, error } = await readAllRows((from, to) => supabase
     .from("admin_members")
     .select("id,auth_user_id,name,email,role,department,phone,status,last_login_at,created_at")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: true })
+    .range(from, to));
 
   if (isMissingTable(error)) return adminUsers;
   if (error) throw new Error(`회원관리 Supabase 조회 실패: ${error.message}`);
@@ -347,10 +352,12 @@ export async function updateAdminMember(member: Pick<AdminUser, "id" | "name" | 
 
 export async function findGuidesFromSupabase() {
   const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  const { data, error } = await readAllRows((from, to) => supabase
     .from("master_guides")
     .select("id,name,phone,birth_date,bank_account,card_number,assignable,active,available_weekday,available_weekend,memo")
-    .order("name", { ascending: true });
+    .order("name", { ascending: true })
+    .order("id", { ascending: true })
+    .range(from, to));
 
   if (isMissingTable(error)) return guides;
   if (error) throw new Error(`가이드관리 Supabase 조회 실패: ${error.message}`);
@@ -360,10 +367,12 @@ export async function findGuidesFromSupabase() {
 
 export async function findDriversFromSupabase() {
   const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  const { data, error } = await readAllRows((from, to) => supabase
     .from("master_drivers")
     .select("id,name,capacity,phone,birth_date,bank_account,company,driver_type,assignable,active,memo")
-    .order("name", { ascending: true });
+    .order("name", { ascending: true })
+    .order("id", { ascending: true })
+    .range(from, to));
 
   if (isMissingTable(error)) return drivers;
   if (error) throw new Error(`기사관리 Supabase 조회 실패: ${error.message}`);
@@ -373,18 +382,22 @@ export async function findDriversFromSupabase() {
 
 export async function findRestaurantsFromSupabase() {
   const supabase = createSupabaseServerClient();
-  let { data, error }: { data: RestaurantRow[] | null; error: { message?: string; code?: string } | null } = await supabase
+  let { data, error }: { data: RestaurantRow[] | null; error: { message?: string; code?: string } | null } = await readAllRows((from, to) => supabase
     .from("master_restaurants")
     .select("id,tour_type,product_name,region_name,shop_name,menu,retail_price,deposit_price,service_type,phone,address,note")
     .order("region_name", { ascending: true })
-    .order("shop_name", { ascending: true });
+    .order("shop_name", { ascending: true })
+    .order("id", { ascending: true })
+    .range(from, to));
 
   if (error?.message?.includes("tour_type")) {
-    const fallback = await supabase
+    const fallback = await readAllRows((from, to) => supabase
       .from("master_restaurants")
       .select("id,product_name,region_name,shop_name,menu,retail_price,deposit_price,service_type,phone,address,note")
       .order("region_name", { ascending: true })
-      .order("shop_name", { ascending: true });
+      .order("shop_name", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, to));
     data = (fallback.data ?? null) as RestaurantRow[] | null;
     error = fallback.error;
   }
@@ -397,11 +410,13 @@ export async function findRestaurantsFromSupabase() {
 
 export async function findHotelsFromSupabase() {
   const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  const { data, error } = await readAllRows((from, to) => supabase
     .from("master_hotels")
     .select("id,region_name,shop_name,room_rates,phone,address,note,driver_benefit,guide_benefit")
     .order("region_name", { ascending: true })
-    .order("shop_name", { ascending: true });
+    .order("shop_name", { ascending: true })
+    .order("id", { ascending: true })
+    .range(from, to));
 
   if (isMissingTable(error)) return hotels;
   if (error) throw new Error(`호텔관리 Supabase 조회 실패: ${error.message}`);

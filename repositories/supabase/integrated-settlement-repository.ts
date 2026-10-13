@@ -2,6 +2,7 @@ import type { IntegratedSettlementRow } from "@/lib/types";
 import { calculateIntegratedSettlementRow } from "@/lib/integrated-settlement-calculator";
 import { getIntegratedSettlementDefaultsFromSupabase, type IntegratedSettlementDefaults } from "@/repositories/supabase/master-repository";
 import { createSupabaseServerClient } from "@/repositories/supabase/reservation-repository";
+import { chunkForPayload, readAllRows } from "@/lib/supabase-batch";
 
 type ScheduleSourceRow = {
   id: string;
@@ -269,14 +270,16 @@ function createDraftRow(
 async function fetchScheduleSources(year: number, month: number) {
   const { start, end } = normalizeMonth(year, month);
   const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  const { data, error } = await readAllRows((from, to) => supabase
     .from("reservation_schedule_overview")
     .select("id,tour_date,tour_type_label,product_name,reservation_count,not_bus_count,vehicle_no,bus_company,vehicle_capacity,guide_id,guide_name")
     .eq("is_active", true)
     .gte("tour_date", start)
     .lte("tour_date", end)
     .order("tour_date", { ascending: true })
-    .order("product_name", { ascending: true });
+    .order("product_name", { ascending: true })
+    .order("id", { ascending: true })
+    .range(from, to));
 
   if (error) throw new Error(`통합정산 예약현황 조회 실패: ${error.message}`);
   return (data ?? []) as ScheduleSourceRow[];
@@ -285,11 +288,13 @@ async function fetchScheduleSources(year: number, month: number) {
 async function fetchSettlementCosts(year: number, month: number) {
   const supabase = createSupabaseServerClient();
   const settlementMonth = `${year}-${String(month).padStart(2, "0")}`;
-  const { data, error } = await supabase
+  const { data, error } = await readAllRows((from, to) => supabase
     .from("settlement_items")
     .select("schedule_id,settlement_type,amount")
     .eq("settlement_month", settlementMonth)
-    .in("settlement_type", ["GUIDE", "DRIVER"]);
+    .in("settlement_type", ["GUIDE", "DRIVER"])
+    .order("id", { ascending: true })
+    .range(from, to));
 
   if (isMissingTable(error)) return new Map<string, SettlementCosts>();
   if (error) throw new Error(`정산서 차량비/가이드비 조회 실패: ${error.message}`);
@@ -306,11 +311,13 @@ async function fetchSettlementCosts(year: number, month: number) {
 
 async function fetchSavedRows(year: number, month: number) {
   const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  const { data, error } = await readAllRows((from, to) => supabase
     .from("integrated_settlement_rows")
     .select(selectColumns)
     .eq("settlement_year", year)
-    .eq("settlement_month", month);
+    .eq("settlement_month", month)
+    .order("id", { ascending: true })
+    .range(from, to));
 
   if (isMissingTable(error)) return { rows: [], missingTable: true };
   if (error) throw new Error(`통합정산 저장값 조회 실패: ${error.message}`);
@@ -444,10 +451,11 @@ export async function syncIntegratedSettlementRowsToSupabase(year: number, month
   if (drafts.length === 0) return rows;
 
   const supabase = createSupabaseServerClient();
-  const { error } = await supabase
-    .from("integrated_settlement_rows")
-    .upsert(drafts.map((row) => toPayload(row, batchId)), { onConflict: "settlement_year,settlement_month,schedule_id" });
-
-  if (error) throw new Error(`통합정산 연동 생성 실패: ${error.message}`);
+  for (const batch of chunkForPayload(drafts.map((row) => toPayload(row, batchId)))) {
+    const { error } = await supabase
+      .from("integrated_settlement_rows")
+      .upsert(batch, { onConflict: "settlement_year,settlement_month,schedule_id" });
+    if (error) throw new Error(`통합정산 연동 생성 실패: ${error.message}`);
+  }
   return findIntegratedSettlementRowsFromSupabase(year, month);
 }

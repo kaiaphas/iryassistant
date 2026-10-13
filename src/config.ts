@@ -20,6 +20,14 @@ function optionalNumberEnv(name: string, defaultValue: number) {
   return parsed;
 }
 
+function batchChunkSize() {
+  const size = optionalNumberEnv("BATCH_CHUNK_SIZE", 500);
+  if (!Number.isSafeInteger(size) || size < 1 || size > 500) {
+    throw new Error("BATCH_CHUNK_SIZE 값은 1~500 사이 정수여야 합니다.");
+  }
+  return size;
+}
+
 export const config = {
   mysql: {
     host: requireEnv("MYSQL_HOST"),
@@ -37,6 +45,6 @@ export const config = {
     serviceRoleKey: requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
   },
   batch: {
-    chunkSize: optionalNumberEnv("BATCH_CHUNK_SIZE", 500),
+    chunkSize: batchChunkSize(),
   },
 };

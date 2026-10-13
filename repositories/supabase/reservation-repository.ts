@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { chunkForFilter, readAllRows } from "@/lib/supabase-batch";
 import type { FacilityBookingStatus, HotelBooking, Reservation, RestaurantBooking, ScheduleGroup } from "@/lib/types";
 
 type ReservationScheduleOverviewRow = {
@@ -288,14 +289,6 @@ function mapReservationCustomer(row: ReservationCustomerRow, schedule: Reservati
   };
 }
 
-function chunk<T>(items: T[], size: number) {
-  const chunks: T[][] = [];
-  for (let index = 0; index < items.length; index += size) {
-    chunks.push(items.slice(index, index + size));
-  }
-  return chunks;
-}
-
 function needsLegacyOverviewFallback(message: string | undefined) {
   return Boolean(
     message?.includes("bus_company")
@@ -334,25 +327,17 @@ async function fetchOverviewRows(
   select: string,
   withFallbackColumns: boolean,
 ) {
-  const rows: ReservationScheduleOverviewRow[] = [];
-  const pageSize = 1000;
-  let from = 0;
-
-  while (true) {
-    const to = from + pageSize - 1;
-    const { data, error } = await supabase
+  const { data, error } = await readAllRows((from, to) => supabase
       .from("reservation_schedule_overview")
       .select(select)
       .eq("is_active", true)
       .order("tour_date", { ascending: true })
       .order("vehicle_no", { ascending: true, nullsFirst: false })
-      .range(from, to);
+      .order("id", { ascending: true })
+      .range(from, to));
 
-    if (error) {
-      throw error;
-    }
-
-    const page = ((data ?? []) as Partial<ReservationScheduleOverviewRow>[]).map((row) => ({
+  if (error) throw error;
+  return ((data ?? []) as Partial<ReservationScheduleOverviewRow>[]).map((row) => ({
       ...row,
       bus_company: withFallbackColumns ? row.bus_company : null,
       guide_id: withFallbackColumns ? row.guide_id : null,
@@ -360,13 +345,6 @@ async function fetchOverviewRows(
       driver_id: withFallbackColumns ? row.driver_id : null,
       driver_phone: withFallbackColumns ? row.driver_phone : null,
     })) as ReservationScheduleOverviewRow[];
-
-    rows.push(...page);
-    if (page.length < pageSize) break;
-    from += pageSize;
-  }
-
-  return rows;
 }
 
 async function applySourceOperationFields(
@@ -375,7 +353,7 @@ async function applySourceOperationFields(
 ) {
   const sourceVehicleRows: SourceScheduleVehicleRow[] = [];
 
-  for (const ids of chunk(rows.map((row) => row.id), 1000)) {
+  for (const ids of chunkForFilter(rows.map((row) => row.id))) {
     const extendedResult = await supabase
       .from("reservation_schedule_sources")
       .select("id,source_schedule_key,departure_time,vehicle_no,bus_company,vehicle_capacity,edu_guide1_name,edu_guide2_name,price,incen_status")
@@ -471,25 +449,29 @@ export async function findScheduleGroupsFromSupabase() {
   const hotelRows: HotelBookingRow[] = [];
   const hotelRoomRows: HotelRoomAssignmentRow[] = [];
   const reservationCustomerRows: ReservationCustomerRow[] = [];
-  const detailLookupChunkSize = 100;
-
-  for (const ids of chunk(scheduleIds, detailLookupChunkSize)) {
+  for (const ids of chunkForFilter(scheduleIds)) {
     const [{ data: restaurantData, error: restaurantError }, hotelResult, reservationCustomerResult] = await Promise.all([
-      supabase
+      readAllRows((from, to) => supabase
         .from("schedule_restaurant_bookings")
         .select("id,schedule_id,meal_type,restaurant_name,restaurant_phone,restaurant_memo,booking_status,sort_order")
         .in("schedule_id", ids)
-        .order("sort_order", { ascending: true }),
-      supabase
+        .order("sort_order", { ascending: true })
+        .order("id", { ascending: true })
+        .range(from, to)),
+      readAllRows((from, to) => supabase
         .from("schedule_hotel_bookings")
         .select("id,schedule_id,hotel_name,hotel_phone,hotel_memo,provisional_booking_status,provisional_double_room_count,provisional_triple_room_count,provisional_quad_room_count,booking_status,sort_order")
         .in("schedule_id", ids)
-        .order("sort_order", { ascending: true }),
-      supabase
+        .order("sort_order", { ascending: true })
+        .order("id", { ascending: true })
+        .range(from, to)),
+      readAllRows((from, to) => supabase
         .from("source_schedule_reservation_customers")
         .select("id,schedule_id,customer_name,phone,customer_message,etc,reservation_status,payment_date,station,adult_count,child_count,people_count,reservation_date,sort_order")
         .in("schedule_id", ids)
-        .order("sort_order", { ascending: true }),
+        .order("sort_order", { ascending: true })
+        .order("id", { ascending: true })
+        .range(from, to)),
     ]);
     let hotelData = hotelResult.data;
     let hotelError = hotelResult.error;
@@ -497,20 +479,24 @@ export async function findScheduleGroupsFromSupabase() {
     let reservationCustomerError = reservationCustomerResult.error;
 
     if (reservationCustomerError?.message.includes("etc")) {
-      const fallback = await supabase
+      const fallback = await readAllRows((from, to) => supabase
         .from("source_schedule_reservation_customers")
         .select("id,schedule_id,customer_name,phone,customer_message,reservation_status,payment_date,station,adult_count,child_count,people_count,reservation_date,sort_order")
         .in("schedule_id", ids)
-        .order("sort_order", { ascending: true });
+        .order("sort_order", { ascending: true })
+        .order("id", { ascending: true })
+        .range(from, to));
       reservationCustomerData = (fallback.data ?? []).map((row) => ({ ...row, etc: null })) as ReservationCustomerRow[];
       reservationCustomerError = fallback.error;
     }
 
     if (hotelError?.message?.includes("provisional_")) {
-      const fallback = await supabase
+      const fallback = await readAllRows((from, to) => supabase
         .from("schedule_hotel_bookings")
         .select("id,schedule_id,hotel_name,hotel_phone,hotel_memo,booking_status")
-        .in("schedule_id", ids);
+        .in("schedule_id", ids)
+        .order("id", { ascending: true })
+        .range(from, to));
       hotelData = (fallback.data ?? []).map((row, index) => ({
         ...row,
         provisional_booking_status: null,
@@ -523,10 +509,12 @@ export async function findScheduleGroupsFromSupabase() {
     }
 
     if (hotelError?.message?.includes("sort_order")) {
-      const fallback = await supabase
+      const fallback = await readAllRows((from, to) => supabase
         .from("schedule_hotel_bookings")
         .select("id,schedule_id,hotel_name,hotel_phone,hotel_memo,provisional_booking_status,provisional_double_room_count,provisional_triple_room_count,provisional_quad_room_count,booking_status")
-        .in("schedule_id", ids);
+        .in("schedule_id", ids)
+        .order("id", { ascending: true })
+        .range(from, to));
       hotelData = (fallback.data ?? []).map((row, index) => ({ ...row, sort_order: index + 1 }));
       hotelError = fallback.error;
     }
@@ -548,12 +536,15 @@ export async function findScheduleGroupsFromSupabase() {
     reservationCustomerRows.push(...(reservationCustomerData ?? []));
   }
 
-  for (const hotelIds of chunk(hotelRows.map((row) => row.id), detailLookupChunkSize)) {
+  for (const hotelIds of chunkForFilter(hotelRows.map((row) => row.id))) {
     if (hotelIds.length === 0) continue;
-    const { data, error } = await supabase
+    const { data, error } = await readAllRows((from, to) => supabase
       .from("schedule_hotel_room_assignments")
       .select("hotel_booking_id,room_type,room_count")
-      .in("hotel_booking_id", hotelIds);
+      .in("hotel_booking_id", hotelIds)
+      .order("hotel_booking_id", { ascending: true })
+      .order("room_type", { ascending: true })
+      .range(from, to));
 
     if (error) {
       throw new Error(`숙소 객실 배정 Supabase 조회 실패: ${error.message}`);
