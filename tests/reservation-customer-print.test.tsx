@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -59,4 +60,19 @@ test("single boarding groups and empty reservations retain their existing placeh
   const schedule = makeSchedule();
   schedule.reservations = [];
   assert.match(render(schedule), /class="passenger-print-boarding">-<\/td>/);
+});
+
+test("price and headcount use the smaller centered print style with narrow horizontal padding", () => {
+  const schedule = makeSchedule();
+  schedule.price = 282000;
+  schedule.reservationCount = 17;
+  const html = render(schedule);
+  assert.match(html, /class="passenger-print-number"[^>]*>282,000<\/td>/);
+  assert.match(html, /class="passenger-print-number"[^>]*>17<\/td>/);
+  const css = readFileSync("app/globals.css", "utf8");
+  const numberStyle = css.match(/\.passenger-print-number\s*\{([^}]+)\}/)?.[1] ?? "";
+  assert.match(numberStyle, /font-size:\s*11pt/);
+  assert.match(numberStyle, /padding:\s*2mm 0\.5mm/);
+  assert.match(numberStyle, /text-align:\s*center/);
+  assert.match(numberStyle, /vertical-align:\s*middle/);
 });
