@@ -1,3 +1,4 @@
+import * as React from "react";
 import type { ScheduleGroup } from "@/lib/types";
 
 function formatPrice(value?: number) {
@@ -10,7 +11,7 @@ function formatPrintDate(value: string, dayLabel: string) {
 }
 
 function printPeopleLabel(adult: number, child: number) {
-  return [adult > 0 ? `주안:${adult}` : "", child > 0 ? `메가:${child}` : ""].filter(Boolean).join(" / ") || "-";
+  return [adult > 0 ? `주안:${adult}` : "", child > 0 ? `메가:${child}` : ""].filter(Boolean).join("\n") || "-";
 }
 
 function incentiveLabel(value?: string) {
@@ -19,6 +20,8 @@ function incentiveLabel(value?: string) {
 }
 
 export function ReservationCustomerPrint({ schedule }: { schedule: ScheduleGroup }) {
+  const driverPhone = schedule.driver.phone?.trim();
+  const guidePhone = schedule.guide.phone?.trim();
   const apprenticeNames = schedule.eduGuideNames?.join(", ") || "-";
   const hotelNames = schedule.hotelBookings?.map((hotel) => hotel.name).filter(Boolean).join(", ")
     || schedule.hotel?.name
@@ -67,7 +70,9 @@ export function ReservationCustomerPrint({ schedule }: { schedule: ScheduleGroup
                   <td className="passenger-print-dispatch" rowSpan={reservations.length}>
                     <span>차량: {[schedule.vehicle.busCompany, schedule.vehicle.busType].filter(Boolean).join(" ") || "-"}</span>
                     <span>기사: {schedule.driver.name || "-"}</span>
+                    {driverPhone && driverPhone !== "-" ? <span>{driverPhone}</span> : null}
                     <span>가이드: {schedule.guide.name || "-"}</span>
+                    {guidePhone && guidePhone !== "-" ? <span>{guidePhone}</span> : null}
                     <span>견습: {apprenticeNames}</span>
                     <span>호텔: {hotelNames}</span>
                     <span>인센: {incentiveLabel(schedule.incentiveStatus)}</span>

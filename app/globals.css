@@ -205,7 +205,8 @@ textarea {
 
 .passenger-print-boarding {
   text-align: center;
-  white-space: nowrap;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 
 .passenger-print-payment {
